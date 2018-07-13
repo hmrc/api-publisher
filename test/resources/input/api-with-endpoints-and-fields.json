@@ -1,0 +1,77 @@
+{
+  "name" : "Test",
+  "description" : "Test API",
+  "context" : "test",
+  "versions" : [
+    {
+      "version" : "1.0",
+      "access" : {
+        "type" : "PRIVATE",
+        "whitelistApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+      },
+      "status" : "PUBLISHED",
+      "endpoints" : [
+        {
+          "uriPattern" : "/hello",
+          "endpointName": "Say Hello",
+          "method" : "GET",
+          "authType" : "NONE",
+          "throttlingTier" : "UNLIMITED"
+        }
+      ],
+      "fieldDefinitions": [
+        {
+          "name": "callback-url",
+          "description": "Callback URL",
+          "hint": "Just a hint",
+          "type": "URL"
+        },
+        {
+          "name": "token",
+          "description": "Secure Token",
+          "hint": "Just a hint",
+          "type": "SecureToken"
+        }
+      ]
+    },
+    {
+      "version" : "2.0",
+      "access" : {
+        "type" : "PUBLIC"
+      },
+      "status" : "PUBLISHED",
+      "endpoints" : [
+        {
+          "uriPattern" : "/hello",
+          "endpointName": "Say Hello",
+          "method" : "GET",
+          "authType" : "NONE",
+          "throttlingTier" : "UNLIMITED",
+          "scope": "read:hello"
+        }
+      ],
+      "fieldDefinitions": [
+        {
+          "name": "callback-url-only",
+          "description": "Only a callback URL",
+          "hint": "Just a hint",
+          "type": "URL"
+        }
+      ]
+    },
+    {
+      "version" : "3.0",
+      "status" : "PROTOTYPED",
+      "endpoints" : [
+        {
+          "uriPattern" : "/hello",
+          "endpointName": "Say Hello",
+          "method" : "GET",
+          "authType" : "NONE",
+          "throttlingTier" : "UNLIMITED",
+          "scope": "read:hello"
+        }
+      ]
+    }
+  ]
+}

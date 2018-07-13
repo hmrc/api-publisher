@@ -1,0 +1,7 @@
+[
+    {
+      "key": "read:hello",
+      "name": "Say Hello",
+      "description": "Ability to Say Hello"
+    }
+]

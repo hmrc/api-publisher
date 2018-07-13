@@ -1,0 +1,16 @@
+{
+  "fieldDefinitions": [
+    {
+      "name": "callback-url",
+      "description": "Callback URL",
+      "hint": "Just a hint",
+      "type": "URL"
+    },
+    {
+      "name": "token",
+      "description": "Secure Token",
+      "hint": "Just a hint",
+      "type": "SecureToken"
+    }
+  ]
+}

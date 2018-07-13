@@ -1,0 +1,10 @@
+{
+  "fieldDefinitions": [
+    {
+      "name": "callback-url-only",
+      "description": "Only a callback URL",
+      "hint": "Just a hint",
+      "type": "URL"
+    }
+  ]
+}

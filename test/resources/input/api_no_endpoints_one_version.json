@@ -1,0 +1,11 @@
+{
+  "name" : "Test",
+  "description" : "Test API",
+  "context" : "test",
+  "versions" : [
+    {
+      "version" : "1.0",
+      "status" : "PUBLISHED"
+    }
+  ]
+}
