@@ -1,0 +1,27 @@
+{
+  "version" : "1.0",
+  "access" : {
+    "type" : "PRIVATE",
+    "whitelistApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+  },
+  "status" : "PUBLISHED",
+  "endpoints" : [
+    {
+      "uriPattern" : "/hello",
+      "endpointName": "Say Hello",
+      "method" : "GET",
+      "authType" : "NONE",
+      "throttlingTier" : "UNLIMITED",
+      "queryParameters": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "desc",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

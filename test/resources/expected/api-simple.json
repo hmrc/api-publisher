@@ -1,0 +1,21 @@
+{
+  "name" : "Test",
+  "description" : "Test API",
+  "context" : "test",
+  "versions" : [
+    {
+      "version" : "1.0",
+      "status" : "PUBLISHED",
+      "endpoints" : [
+        {
+          "uriPattern" : "/hello",
+          "endpointName": "Say Hello",
+          "method" : "GET",
+          "scope": "read:hello",
+          "authType" : "USER",
+          "throttlingTier" : "UNLIMITED"
+        }
+      ]
+    }
+  ]
+}
