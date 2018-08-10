@@ -42,10 +42,14 @@ response:
 # Running the tests
 Mongo version 3.2 must be running to execute the tests.
 Can start the correct version using docker with the following command:
-`docker run -p 27017:27017 --name mongo -d mongo:3.2` .
+```
+docker run -p 27017:27017 --name mongo -d mongo:3.2
+```
 
-Execute tests via sbt tool:
- `sbt clean test it:test`
+Execute tests via sbt:
+```
+sbt clean test it:test
+```
 
 # License
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")
