@@ -40,13 +40,10 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
   val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
   val FAILED_TO_APPROVE_SERVICES = "FAILED_TO_APPROVE_SERVICES"
 
-  def publish: Action[JsValue] = Action.async(BodyParsers.parse.json) {
-    implicit request =>
-      handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
-        requestBody => {
-          publishService(requestBody)
-        }
-      }
+  def publish: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+    handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
+      requestBody => publishService(requestBody)
+    }
   }
 
   private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
@@ -61,34 +58,28 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
     } recover recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}")
   }
 
-  def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) {
-    implicit request =>
-      handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) {
-        requestBody => {
-          publisherService.validateAPIDefinitionAndScopes(requestBody).map {
-            case Some(errors) => BadRequest(errors)
-            case None => NoContent
-          } recover recovery(FAILED_TO_VALIDATE)
-        }
-      }
+  def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+    handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
+      publisherService.validateAPIDefinitionAndScopes(requestBody).map {
+        case Some(errors) => BadRequest(errors)
+        case None => NoContent
+      } recover recovery(FAILED_TO_VALIDATE)
+    }
   }
 
-  def fetchUnapprovedServices(): Action[AnyContent] = Action.async {
-    implicit request =>
-      approvalService.fetchUnapprovedServices().map {
-        result => Ok(Json.toJson(result.seq))
-      } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
+  def fetchUnapprovedServices(): Action[AnyContent] = Action.async { implicit request =>
+    approvalService.fetchUnapprovedServices().map {
+      result => Ok(Json.toJson(result.seq))
+    } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
   }
 
-  def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async {
-    implicit request =>
-      approvalService.fetchServiceApproval(serviceName).map {
-        result => Ok(Json.toJson(result))
-      } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
+  def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
+    approvalService.fetchServiceApproval(serviceName)
+      .map(res => Ok(Json.toJson(res)))
+      .recover(recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES))
   }
 
-  def approve(serviceName: String): Action[AnyContent] = Action.async {
-    implicit request => {
+  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request => {
       for {
         serviceLocation <- approvalService.approveService(serviceName)
         result <- publishService(serviceLocation)
@@ -96,7 +87,7 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
     } recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
-  private def handleRequest[T](prefix: String)(f: (T) => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+  private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
