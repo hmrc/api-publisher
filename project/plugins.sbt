@@ -1,5 +1,7 @@
+
 resolvers += Resolver.url("hmrc-sbt-plugin-releases", url("https://dl.bintray.com/hmrc/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
+resolvers += "HMRC Releases" at "https://dl.bintray.com/hmrc/releases"
 
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.13")
 addSbtPlugin("uk.gov.hmrc" % "sbt-distributables" % "1.0.0")
