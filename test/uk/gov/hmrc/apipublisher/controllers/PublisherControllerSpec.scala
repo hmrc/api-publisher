@@ -31,7 +31,6 @@ import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocati
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
@@ -41,7 +40,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with OneAppPerS
   private val serviceLocation = ServiceLocation("TestService", "http://test.example.com")
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
-  trait Setup extends MicroserviceFilterSupport {
+  trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService = mock[PublisherService]
     val mockApprovalService = mock[ApprovalService]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.bootstrap.config.ControllerConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.play.http.ws.WSHttp
 
 import scala.concurrent.Future
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.config
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
+import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
 class Module (environment: Environment, configuration: Configuration) extends AbstractModule {
