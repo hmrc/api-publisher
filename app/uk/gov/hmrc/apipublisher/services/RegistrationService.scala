@@ -17,6 +17,8 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
+import play.Play
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apipublisher.config.AppContext
 import uk.gov.hmrc.apipublisher.connectors.ServiceLocatorConnector
 import uk.gov.hmrc.apipublisher.models.Subscription
@@ -27,7 +29,11 @@ import scala.concurrent.Future
 
 @Singleton
 class RegistrationService @Inject()(val serviceLocatorConnector : ServiceLocatorConnector,
-                                    val appContext: AppContext) extends ServicesConfig {
+                                    val appContext: AppContext,
+                                    override val runModeConfiguration: Configuration,
+                                    environment: Environment) extends ServicesConfig {
+
+  override protected def mode = environment.mode
 
   def registerPublishCallback(): Future[Unit] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()

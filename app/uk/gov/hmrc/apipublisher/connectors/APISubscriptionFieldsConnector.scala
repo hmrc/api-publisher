@@ -21,16 +21,16 @@ import java.nio.charset.StandardCharsets
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
-import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("api-subscription-fields")
 

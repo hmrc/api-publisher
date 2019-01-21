@@ -17,17 +17,18 @@
 package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.Inject
-
-import play.api.Configuration
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-class AppContext @Inject()(configuration: Configuration) extends ServicesConfig {
+class AppContext @Inject()(override val runModeConfiguration: Configuration) extends ServicesConfig {
 
-  lazy val appName = configuration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl = configuration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  override protected def mode = Play.current.mode
+
+  lazy val appName = runModeConfiguration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl = runModeConfiguration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl = s"$appUrl/publish"
-  lazy val preventAutoDeploy: Boolean = configuration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(configuration)
+  lazy val preventAutoDeploy: Boolean = runModeConfiguration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
+  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(runModeConfiguration)
 
   private def buildRamlLoaderRewrites(config: Configuration): Map[String, String] = {
 

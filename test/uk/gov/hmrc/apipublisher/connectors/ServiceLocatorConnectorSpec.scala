@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,29 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import akka.actor.ActorSystem
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import com.typesafe.config.Config
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Writes}
 import play.api.test.FakeApplication
 import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
-import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.apipublisher.models.Subscription
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.http.hooks.HttpHook
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.test.UnitSpec
+
+import scala.concurrent.Future
 
 class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
 
@@ -44,11 +50,12 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   val subscription = Subscription("publisherName", "http://publisherUri")
 
   trait Setup {
-    val serviceConfig = mock[DefaultServicesConfig]
+    val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new WSHttp {
+    val http = new HttpClient {
       override val hooks = Seq()
     }
+
     val connector = new ServiceLocatorConnector(serviceConfig, http) {
       override lazy val serviceBaseUrl = s"$serviceLocatorUrl"
     }

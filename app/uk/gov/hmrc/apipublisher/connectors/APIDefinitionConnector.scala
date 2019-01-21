@@ -18,17 +18,16 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import uk.gov.hmrc.apipublisher.config.WSHttp
+import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
-import uk.gov.hmrc.play.bootstrap.config.ControllerConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.http.ws.WSHttp
 
 import scala.concurrent.Future
 
 @Singleton
-class APIDefinitionConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) extends ConnectorRecovery {
+class APIDefinitionConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
 
@@ -43,7 +42,7 @@ class APIDefinitionConnector @Inject()(servicesConfig: DefaultServicesConfig, ht
       .recover {
         case e: BadRequestException =>
           Logger.debug(s"Failed request. POST url=$url: ${e.message}")
-          Some(JsString(e.message))
+          None
       }
   }
 }

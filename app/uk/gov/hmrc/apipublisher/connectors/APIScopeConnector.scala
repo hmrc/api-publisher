@@ -18,16 +18,16 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.{JsString, JsValue}
-import uk.gov.hmrc.apipublisher.config.WSHttp
+import play.api.libs.json.JsValue
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 @Singleton
-class APIScopeConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) extends ConnectorRecovery {
+class APIScopeConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("api-scope")
 
@@ -42,7 +42,7 @@ class APIScopeConnector @Inject()(servicesConfig: DefaultServicesConfig, http: W
       .recover {
         case e: BadRequestException =>
           Logger.debug(s"Failed request. POST url=$url: ${e.message}")
-          Some(JsString(e.message))
+          None
       }
   }
 }

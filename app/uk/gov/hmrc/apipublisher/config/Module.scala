@@ -19,7 +19,6 @@ package uk.gov.hmrc.apipublisher.config
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
-import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
 class Module (environment: Environment, configuration: Configuration) extends AbstractModule {
@@ -27,6 +26,5 @@ class Module (environment: Environment, configuration: Configuration) extends Ab
   override def configure(): Unit = {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
-    bind(classOf[WSHttp]).toInstance(AuditedWSHttp)
   }
 }
