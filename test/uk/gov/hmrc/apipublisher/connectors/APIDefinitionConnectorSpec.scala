@@ -52,7 +52,7 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new HttpClient
+    val http = mock[HttpClient]
 
     val connector = new APIDefinitionConnector(serviceConfig, http) {
       override lazy val serviceBaseUrl = "http://localhost:21112"

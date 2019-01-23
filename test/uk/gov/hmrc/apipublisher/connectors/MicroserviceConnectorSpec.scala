@@ -28,11 +28,10 @@ import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.test.{FakeApplication, Helpers}
-import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
-import uk.gov.hmrc.play.http.ws.WSHttp
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
@@ -55,9 +54,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   trait Setup {
     val mockRamlLoader = mock[RamlLoader]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http = mock[HttpClient]
     val connector = new MicroserviceConnector(mockRamlLoader, http)
   }
 

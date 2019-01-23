@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
+import akka.stream.ActorMaterializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given

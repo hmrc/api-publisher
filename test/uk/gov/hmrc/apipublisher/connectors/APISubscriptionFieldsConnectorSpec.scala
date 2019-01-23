@@ -26,14 +26,12 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.test.Helpers.{CONTENT_TYPE, JSON}
-import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
-import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
@@ -65,9 +63,7 @@ class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http = mock[HttpClient]
     val connector = new APISubscriptionFieldsConnector(serviceConfig, http) {
       override lazy val serviceBaseUrl = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
     }

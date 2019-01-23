@@ -29,8 +29,8 @@ import play.api.test.FakeApplication
 import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.test.UnitSpec
 
 class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
@@ -45,9 +45,7 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http = mock[HttpClient]
     val connector = new APIScopeConnector(serviceConfig, http) {
       override lazy val serviceBaseUrl: String = "http://localhost:21113"
     }
