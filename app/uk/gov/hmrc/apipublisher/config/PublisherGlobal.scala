@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apipublisher.config
 
 import com.typesafe.config.Config
+import play.api.Mode.Mode
 import play.api._
 import uk.gov.hmrc.http.hooks.HttpHooks
 import uk.gov.hmrc.http._
@@ -55,6 +56,8 @@ object PublisherGlobal extends DefaultMicroserviceGlobal with RunMode {
     override val auditConnector = MicroserviceAuditConnector
 
     override def controllerNeedsAuditing(controllerName: String) = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+
+    override protected def appNameConfiguration: Configuration = Play.current.configuration
   }
 
   object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSupport {
@@ -63,6 +66,10 @@ object PublisherGlobal extends DefaultMicroserviceGlobal with RunMode {
 
   object MicroserviceAuditConnector extends AuditConnector with RunMode {
     override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+
+    override protected def mode: Mode = Play.current.mode
+
+    override protected def runModeConfiguration: Configuration = Play.current.configuration
   }
 
   override def onStart(app: play.api.Application) = {
@@ -75,10 +82,18 @@ object PublisherGlobal extends DefaultMicroserviceGlobal with RunMode {
       case e => Logger.error(s"Publisher could not subscribe to the service locator", e)
     }
   }
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 object MicroserviceAuditConnector extends AuditConnector with RunMode {
   override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 trait Hooks extends HttpHooks with HttpAuditing {
@@ -87,4 +102,8 @@ trait Hooks extends HttpHooks with HttpAuditing {
 }
 
 trait WSHttp extends HttpGet with WSGet with HttpPut with WSPut with HttpPost with WSPost with HttpDelete with WSDelete with Hooks with AppName
-object AuditedWSHttp extends WSHttp
+object AuditedWSHttp extends WSHttp {
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+
+  override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+}

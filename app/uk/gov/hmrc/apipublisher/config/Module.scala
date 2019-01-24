@@ -16,12 +16,22 @@
 
 package uk.gov.hmrc.apipublisher.config
 
-import com.google.inject.AbstractModule
-import play.api.{Configuration, Environment}
+import com.google.inject.{AbstractModule, Provides}
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment, Play}
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
+import javax.inject.Singleton
 
 class Module (environment: Environment, configuration: Configuration) extends AbstractModule {
+
+  @Provides
+  @Singleton
+  def servicesConfig: ServicesConfig = new ServicesConfig {
+    override protected def mode: Mode = Play.current.mode
+    override protected def runModeConfiguration: Configuration = Play.current.configuration
+  }
 
   override def configure(): Unit = {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])

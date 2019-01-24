@@ -17,17 +17,18 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
+
 import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.config.WSHttp
 import uk.gov.hmrc.apipublisher.models.Subscription
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 @Singleton
-class ServiceLocatorConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) extends ConnectorRecovery {
+class ServiceLocatorConnector @Inject()(servicesConfig: ServicesConfig, http: WSHttp) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("service-locator")
 

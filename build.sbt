@@ -12,7 +12,7 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "microservice-bootstrap" % "6.18.0",
+  "uk.gov.hmrc" %% "microservice-bootstrap" % "9.1.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
   "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0"
 )
@@ -20,7 +20,7 @@ lazy val compile = Seq(
 lazy val scope: String = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "hmrctest" % "3.0.0" % scope,
+  "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % scope,
   "org.scalaj" %% "scalaj-http" % "2.4.0" % scope,
   "org.scalatest" %% "scalatest" % "3.0.4" % scope,
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
@@ -75,6 +75,6 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   }
 
 // Coverage configuration
-coverageMinimum := 89
+coverageMinimum := 85
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"
