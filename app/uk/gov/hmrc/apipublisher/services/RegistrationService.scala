@@ -17,6 +17,9 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
+
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import uk.gov.hmrc.apipublisher.config.AppContext
 import uk.gov.hmrc.apipublisher.connectors.ServiceLocatorConnector
 import uk.gov.hmrc.apipublisher.models.Subscription
@@ -33,4 +36,8 @@ class RegistrationService @Inject()(val serviceLocatorConnector : ServiceLocator
     implicit val hc: HeaderCarrier = HeaderCarrier()
     serviceLocatorConnector.subscribe(Subscription(appContext.appName, appContext.publisherUrl, Some(Map("third-party-api" -> "true"))))
   }
+
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

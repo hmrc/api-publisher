@@ -27,11 +27,11 @@ import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.test.FakeApplication
 import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
-import uk.gov.hmrc.apipublisher.config.WSHttp
+import uk.gov.hmrc.apipublisher.config.AuditedWSHttp
 import uk.gov.hmrc.apipublisher.models.Subscription
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
 class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
@@ -44,11 +44,9 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   val subscription = Subscription("publisherName", "http://publisherUri")
 
   trait Setup {
-    val serviceConfig = mock[DefaultServicesConfig]
+    val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http = AuditedWSHttp
     val connector = new ServiceLocatorConnector(serviceConfig, http) {
       override lazy val serviceBaseUrl = s"$serviceLocatorUrl"
     }

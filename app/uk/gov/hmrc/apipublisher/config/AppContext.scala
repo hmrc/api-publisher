@@ -18,7 +18,8 @@ package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.Inject
 
-import play.api.Configuration
+import play.api.{Configuration, Play}
+import play.api.Mode.Mode
 import uk.gov.hmrc.play.config.ServicesConfig
 
 class AppContext @Inject()(configuration: Configuration) extends ServicesConfig {
@@ -40,4 +41,7 @@ class AppContext @Inject()(configuration: Configuration) extends ServicesConfig 
     Map(from -> to)
   }
 
+  override protected def mode: Mode = Play.current.mode
+
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
