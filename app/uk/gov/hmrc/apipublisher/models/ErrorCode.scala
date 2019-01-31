@@ -24,5 +24,5 @@ object ErrorCode extends Enumeration {
   val NO_SUCH_SCOPE = Value("API_NO_SUCH_SCOPE")
   val UNEXPECTED_ERROR = Value("API_UNEXPECTED_ERROR")
   val UNKNOWN_ERROR = Value("API_PUBLISHER_UNKNOWN_ERROR")
-
+  val UNAUTHORIZED = Value("UNAUTHORIZED")
 }

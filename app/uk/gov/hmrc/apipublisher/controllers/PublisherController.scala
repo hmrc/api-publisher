@@ -17,10 +17,12 @@
 package uk.gov.hmrc.apipublisher.controllers
 
 import javax.inject.{Inject, Singleton}
+
 import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
@@ -31,7 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService)(implicit val ec: ExecutionContext)
+class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService, appContext: AppContext)(implicit val ec: ExecutionContext)
   extends BaseController {
 
   val FAILED_TO_PUBLISH = "FAILED_TO_PUBLISH_SERVICE"
@@ -86,7 +88,18 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
     } recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
+
+
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+    val authHeader = request.headers.get("Authorization")
+    if (authHeader.isEmpty) {
+      return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "No Authorization header provided")))
+    }
+
+    if (appContext.publishToken != authHeader.get) {
+      return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Invalid Token")))
+    }
+
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
+import java.util.UUID
+
 import akka.stream.Materializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -30,6 +32,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -43,14 +46,18 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
   implicit val mat: Materializer = app.materializer
 
+  private val sharedSecret = UUID.randomUUID().toString
+
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService = mock[PublisherService]
     val mockApprovalService = mock[ApprovalService]
+    val mockAppContext = mock[AppContext]
 
-    val underTest = new PublisherController(mockPublisherService, mockApprovalService)
+    val underTest = new PublisherController(mockPublisherService, mockApprovalService, mockAppContext)
 
     when(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(serviceLocation))(any[HeaderCarrier])).thenReturn(Future.successful(true))
+    when(mockAppContext.publishToken).thenReturn(sharedSecret)
 
     val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
     val marriageAllowanceApproval = APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
@@ -59,7 +66,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
   "publish" should {
 
     "respond with 204 (NO_CONTENT) when service APIs successfully published" in new Setup {
-      val validRequest = request(serviceLocation)
+      val validRequest = request(serviceLocation, sharedSecret)
 
       val result = await(underTest.publish(validRequest))
 
@@ -70,7 +77,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
       when(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(serviceLocation))(any[HeaderCarrier])).thenReturn(Future.successful(false))
 
-      val validRequest = request(serviceLocation)
+      val validRequest = request(serviceLocation, sharedSecret)
 
       val result = await(underTest.publish(validRequest))
 
@@ -82,13 +89,28 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
       given(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(errorServiceLocation))(any[HeaderCarrier])).willReturn(Future.failed(new IllegalArgumentException("Test error")))
 
-      val errorRequest = request(errorServiceLocation)
+      val errorRequest = request(errorServiceLocation, sharedSecret)
 
       val result: Result = await(underTest.publish(errorRequest))
 
       status(result) shouldEqual INTERNAL_SERVER_ERROR
     }
 
+    "return 401 (unauthorized) when Authorization header is not included in request" in new Setup {
+      val requestWithoutAuthHeader = missingAuthHeaderRequest(serviceLocation)
+
+      val result: Result = await(underTest.publish(requestWithoutAuthHeader))
+
+      status(result) shouldEqual UNAUTHORIZED
+    }
+
+    "return 401 (unauthorized) when Authorization header contains incorrect token" in new Setup {
+      val requestWithBadToken = request(serviceLocation, "foo-bar-baz")
+
+      val result: Result = await(underTest.publish(requestWithBadToken))
+
+      status(result) shouldEqual UNAUTHORIZED
+    }
   }
 
   "validate" should {
@@ -100,7 +122,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       val apiAndScopes = ApiAndScopes(api.as[JsObject], scopes.as[JsArray])
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(apiAndScopes))(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
-      val result = await(underTest.validate()(request(apiAndScopes)))
+      val result = await(underTest.validate()(request(apiAndScopes, sharedSecret)))
 
       status(result) shouldEqual NO_CONTENT
     }
@@ -112,7 +134,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(input.as[ApiAndScopes]))(any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(Json.parse(errorString))))
 
-      val result = await(underTest.validate()(FakeRequest().withBody(input)))
+      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", sharedSecret)).withBody(input)))
 
       status(result) shouldEqual BAD_REQUEST
       bodyOf(result) shouldEqual errorString
@@ -125,12 +147,27 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(input.as[ApiAndScopes]))(any[HeaderCarrier]))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 
-      val result = await(underTest.validate()(FakeRequest().withBody(input)))
+      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", sharedSecret)).withBody(input)))
 
       status(result) shouldEqual UNPROCESSABLE_ENTITY
       bodyOf(result) shouldEqual s"""{"code":"API_PUBLISHER_INVALID_REQUEST_PAYLOAD","message":"$errorString"}"""
     }
 
+    "return 401 (unauthorized) when Authorization header is not included in request" in new Setup {
+      val requestWithoutAuthHeader = missingAuthHeaderRequest(serviceLocation)
+
+      val result: Result = await(underTest.validate(requestWithoutAuthHeader))
+
+      status(result) shouldEqual UNAUTHORIZED
+    }
+
+    "return 401 (unauthorized) when Authorization header contains incorrect token" in new Setup {
+      val requestWithBadToken = request(serviceLocation, "foo-bar-baz")
+
+      val result: Result = await(underTest.validate(requestWithBadToken))
+
+      status(result) shouldEqual UNAUTHORIZED
+    }
   }
 
   "fetch unapproved services" should {
@@ -197,7 +234,12 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
   }
 
-  def request[T](data: T)(implicit writes: Writes[T]): Request[JsValue] = {
+  def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
+    FakeRequest().withHeaders(("Authorization", token)).withBody(Json.toJson(data))
+  }
+
+  def missingAuthHeaderRequest[T](data: T)(implicit writes: Writes[T]): Request[JsValue] = {
     FakeRequest().withBody(Json.toJson(data))
   }
+
 }

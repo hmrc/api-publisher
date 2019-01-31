@@ -28,6 +28,7 @@ class AppContext @Inject()(val app: Application) extends ServicesConfig {
   lazy val publisherUrl = s"$appUrl/publish"
   lazy val preventAutoDeploy: Boolean = app.configuration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
   lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(app.configuration)
+  lazy val publishToken = app.configuration.getString("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
 
   private def buildRamlLoaderRewrites(config: Configuration): Map[String, String] = {
 
