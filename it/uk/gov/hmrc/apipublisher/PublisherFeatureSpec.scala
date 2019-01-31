@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.apipublisher
 
+import java.util.UUID
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers.{CONTENT_TYPE, JSON}
+import play.api.test.Helpers.{CONTENT_TYPE, JSON, AUTHORIZATION}
 import play.api.test.TestServer
 
 import scalaj.http.{Http, HttpResponse}
 
 class PublisherFeatureSpec extends BaseFeatureSpec {
+
+  val publishingKey: String = UUID.randomUUID().toString
 
   var server: TestServer = _
 
@@ -48,8 +52,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
 
       When("The service locator triggers the publisher")
-      val publishResponse: HttpResponse[String] = Http(s"$serverUrl/publish").header(CONTENT_TYPE, JSON)
-        .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+      val publishResponse: HttpResponse[String] =
+        Http(s"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, publishingKey)
+          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
 
       Then("The definition is published to the API Definition microservice")
       apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
@@ -81,7 +88,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
     super.beforeEach()
     serviceLocatorMock.register(post(urlEqualTo("/subscription")).willReturn(aResponse()))
 
-    server = new TestServer(port, GuiceApplicationBuilder().build())
+    server = new TestServer(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 
