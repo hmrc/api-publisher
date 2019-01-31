@@ -57,7 +57,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     val underTest = new PublisherController(mockPublisherService, mockApprovalService, mockAppContext)
 
     when(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(serviceLocation))(any[HeaderCarrier])).thenReturn(Future.successful(true))
-    when(mockAppContext.publishToken).thenReturn(sharedSecret)
+    when(mockAppContext.publishingKey).thenReturn(sharedSecret)
 
     val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
     val marriageAllowanceApproval = APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))

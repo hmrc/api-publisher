@@ -90,7 +90,7 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
     val authHeader = request.headers.get("Authorization")
-    if (authHeader.isEmpty || appContext.publishToken != authHeader.get) {
+    if (authHeader.isEmpty || appContext.publishingKey != authHeader.get) {
       return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     }
 
