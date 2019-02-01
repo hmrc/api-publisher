@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import akka.stream.Materializer
 import org.mockito.ArgumentMatchers
@@ -29,10 +30,10 @@ import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.test.FakeRequest
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -134,7 +135,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(input.as[ApiAndScopes]))(any[HeaderCarrier]))
         .thenReturn(Future.successful(Some(Json.parse(errorString))))
 
-      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", sharedSecret)).withBody(input)))
+      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input)))
 
       status(result) shouldEqual BAD_REQUEST
       bodyOf(result) shouldEqual errorString
@@ -147,7 +148,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(input.as[ApiAndScopes]))(any[HeaderCarrier]))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 
-      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", sharedSecret)).withBody(input)))
+      val result = await(underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input)))
 
       status(result) shouldEqual UNPROCESSABLE_ENTITY
       bodyOf(result) shouldEqual s"""{"code":"API_PUBLISHER_INVALID_REQUEST_PAYLOAD","message":"$errorString"}"""
@@ -235,11 +236,15 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
   }
 
   def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
-    FakeRequest().withHeaders(("Authorization", token)).withBody(Json.toJson(data))
+    FakeRequest().withHeaders(("Authorization", base64Encode(token))).withBody(Json.toJson(data))
   }
 
   def missingAuthHeaderRequest[T](data: T)(implicit writes: Writes[T]): Request[JsValue] = {
     FakeRequest().withBody(Json.toJson(data))
+  }
+
+  def base64Encode(stringToEncode: String): String = {
+    new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
   }
 
 }

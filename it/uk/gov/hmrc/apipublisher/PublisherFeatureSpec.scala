@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apipublisher
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers.{CONTENT_TYPE, JSON, AUTHORIZATION}
+import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
 
 import scalaj.http.{Http, HttpResponse}
@@ -28,6 +29,7 @@ import scalaj.http.{Http, HttpResponse}
 class PublisherFeatureSpec extends BaseFeatureSpec {
 
   val publishingKey: String = UUID.randomUUID().toString
+  val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
 
   var server: TestServer = _
 
@@ -55,7 +57,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
-          .header(AUTHORIZATION, publishingKey)
+          .header(AUTHORIZATION, encodedPublishingKey)
           .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
 
       Then("The definition is published to the API Definition microservice")

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.apipublisher
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -31,6 +32,7 @@ import play.api.http.Status.BAD_REQUEST
 class ValidateFeatureSpec extends BaseFeatureSpec {
 
   val publishingKey: String = UUID.randomUUID().toString
+  val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
 
   var server: TestServer = _
 
@@ -68,7 +70,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       val response: http.HttpResponse[String] =
         Http(s"$serverUrl/validate")
           .header(CONTENT_TYPE, JSON)
-          .header(AUTHORIZATION, publishingKey)
+          .header(AUTHORIZATION, encodedPublishingKey)
           .postData(apiAndScope).asString
 
       Then("the controller should return 400 with the API Definition error message")

@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
 
 import play.api.Logger
@@ -90,7 +92,7 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
     val authHeader = request.headers.get("Authorization")
-    if (authHeader.isEmpty || appContext.publishingKey != authHeader.get) {
+    if (authHeader.isEmpty || appContext.publishingKey != base64Decode(authHeader.get)) {
       return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     }
 
@@ -101,6 +103,10 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
         Logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
         Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
     }
+  }
+
+  private def base64Decode(stringToDecode: String): String = {
+    new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
   }
 
   private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {
