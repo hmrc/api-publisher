@@ -12,15 +12,15 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "microservice-bootstrap" % "9.1.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.8.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
-  "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0"
+  "uk.gov.hmrc" %% "play-reactivemongo" % "6.4.0"
 )
 
 lazy val scope: String = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % scope,
+  "uk.gov.hmrc" %% "hmrctest" % "3.4.0-play-25" % scope,
   "org.scalaj" %% "scalaj-http" % "2.4.0" % scope,
   "org.scalatest" %% "scalatest" % "3.0.4" % scope,
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,

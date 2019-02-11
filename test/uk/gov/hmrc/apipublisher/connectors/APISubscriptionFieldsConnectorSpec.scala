@@ -22,15 +22,16 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.test.Helpers.{CONTENT_TYPE, JSON}
-import uk.gov.hmrc.apipublisher.config.AuditedWSHttp
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -38,7 +39,7 @@ import scala.concurrent.Future
 import scala.io.Source.fromURL
 
 class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll with BeforeAndAfterEach
-  with OneAppPerSuite with MockitoSugar {
+  with GuiceOneAppPerSuite with MockitoSugar {
 
   val apiSubscriptionFieldsPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiSubscriptionFieldsHost = "localhost"
@@ -63,9 +64,10 @@ class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = AuditedWSHttp
 
-    val connector = new APISubscriptionFieldsConnector(serviceConfig, http) {
+    val appConfig: Configuration = mock[Configuration]
+
+    val connector = new APISubscriptionFieldsConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
       override lazy val serviceBaseUrl = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
     }
 

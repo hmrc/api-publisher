@@ -23,18 +23,19 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json
-import play.api.test.FakeApplication
-import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
-import uk.gov.hmrc.apipublisher.config.AuditedWSHttp
+import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.apipublisher.models.Subscription
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
-class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
+class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneServerPerSuite {
 
   val serviceLocatorPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val serviceLocatorHost = "localhost"
@@ -46,8 +47,10 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = AuditedWSHttp
-    val connector = new ServiceLocatorConnector(serviceConfig, http) {
+
+    val appConfig: Configuration = mock[Configuration]
+
+    val connector = new ServiceLocatorConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
       override lazy val serviceBaseUrl = s"$serviceLocatorUrl"
     }
   }
@@ -64,31 +67,25 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   "Subscribe" should {
 
     "Post a subscription" in new Setup {
+      stubFor(post(urlEqualTo("/subscription")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
 
-      running(FakeApplication()) {
+      await(connector.subscribe(subscription))
 
-        stubFor(post(urlEqualTo("/subscription")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+      verify(postRequestedFor(urlEqualTo("/subscription"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(Json.toJson(subscription).toString())))
 
-        await(connector.subscribe(subscription))
-
-        verify(postRequestedFor(urlEqualTo("/subscription"))
-          .withHeader(CONTENT_TYPE, containing(JSON))
-          .withRequestBody(equalToJson(Json.toJson(subscription).toString())))
-      }
     }
 
     "Fail when service locator return an error code" in new Setup {
 
-      running(FakeApplication()) {
+      stubFor(post(urlEqualTo("/subscription")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
 
-        stubFor(post(urlEqualTo("/subscription")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
-
-        val caught = intercept[Exception] {
-          await(connector.subscribe(subscription))
-        }
-        assert(caught.isInstanceOf[Upstream5xxResponse])
-        assert(caught.getMessage.contains("/subscription' returned 500"))
+      val caught = intercept[Exception] {
+        await(connector.subscribe(subscription))
       }
+      assert(caught.isInstanceOf[Upstream5xxResponse])
+      assert(caught.getMessage.contains("/subscription' returned 500"))
     }
   }
 }

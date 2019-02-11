@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.config
-
 import com.google.inject.{AbstractModule, Provides}
+import javax.inject.{Inject, Singleton}
 import play.api.Mode.Mode
-import play.api.{Configuration, Environment, Play}
+import play.api.{Application, Configuration}
+import uk.gov.hmrc.apipublisher.config.ApiPublisher
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
+import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
-import javax.inject.Singleton
 
-class Module (environment: Environment, configuration: Configuration) extends AbstractModule {
-
-  @Provides
-  @Singleton
-  def servicesConfig: ServicesConfig = new ServicesConfig {
-    override protected def mode: Mode = Play.current.mode
-    override protected def runModeConfiguration: Configuration = Play.current.configuration
-  }
+class Module extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
-    bind(classOf[WSHttp]).toInstance(AuditedWSHttp)
+    bind(classOf[ApiPublisher]).asEagerSingleton()
+    bind(classOf[HttpClient]).to(classOf[DefaultHttpClient])
+    bind(classOf[ServicesConfig]).to(classOf[DefaultServicesConfig])
   }
+}
+
+@Inject
+class DefaultServicesConfig @Inject()(app: Application) extends ServicesConfig {
+  override protected def mode: Mode = app.mode
+
+  override protected def runModeConfiguration: Configuration = app.configuration
 }

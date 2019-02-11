@@ -24,20 +24,21 @@ import org.mockito.Mockito.{verify => verifyMock}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
-import play.api.test.{FakeApplication, Helpers}
-import uk.gov.hmrc.apipublisher.config.{AuditedWSHttp, WSHttp}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 import scala.io.Source
 
-class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
+class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiProducerPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiProducerHost = "127.0.0.1"
@@ -54,9 +55,10 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   trait Setup {
     val mockRamlLoader = mock[RamlLoader]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = AuditedWSHttp
 
-    val connector = new MicroserviceConnector(mockRamlLoader, http)
+    val appConfig: Configuration = mock[Configuration]
+
+    val connector = new MicroserviceConnector(mockRamlLoader, app.injector.instanceOf[HttpClient])
   }
 
   override def beforeEach() {
@@ -69,56 +71,45 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   }
 
   "getAPIDefinition" should {
-      "Return the api definition" in new Setup {
+    "Return the api definition" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-        Helpers.running(FakeApplication()) {
+      val result = await(connector.getAPIAndScopes(testService))
 
-          stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
-
-          val result = await(connector.getAPIAndScopes(testService))
-
-          result shouldEqual ApiAndScopes(api, scopes)
-        }
+      result shouldEqual ApiAndScopes(api, scopes)
     }
 
     "Fail if the API endpoint returns 404" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NOT_FOUND)))
 
-      Helpers.running(FakeApplication()) {
-
-        stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NOT_FOUND)))
-
-        intercept[NotFoundException] {
-          await(connector.getAPIAndScopes(testService))
-        }
+      intercept[NotFoundException] {
+        await(connector.getAPIAndScopes(testService))
       }
     }
 
     "should not parse nginx response to JSON" in new Setup {
+      val badGatewayResponse =
+        """<html>
+          |<head><title>502 Bad Gateway</title></head>
+          |<body bgcolor="white">
+          |<center><h1>502 Bad Gateway</h1></center>
+          |<hr><center>nginx</center>
+          |</body>
+          |</html>""".stripMargin
 
-      Helpers.running(FakeApplication()) {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.BAD_GATEWAY).withBody(badGatewayResponse)))
 
-        val badGatewayResponse = """<html>
-                                   |<head><title>502 Bad Gateway</title></head>
-                                   |<body bgcolor="white">
-                                   |<center><h1>502 Bad Gateway</h1></center>
-                                   |<hr><center>nginx</center>
-                                   |</body>
-                                   |</html>""".stripMargin
-
-        stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.BAD_GATEWAY).withBody(badGatewayResponse)))
-
-        val badGatewayException = intercept[Upstream5xxResponse]{
-          await(connector.getAPIAndScopes(testService))
-        }
-
-        badGatewayException.getMessage should include ("<head><title>502 Bad Gateway</title></head>")
+      val badGatewayException = intercept[Upstream5xxResponse] {
+        await(connector.getAPIAndScopes(testService))
       }
-    }
 
-    "should call the microservice to get the application.raml" in new Setup {
-      connector.getRaml(testService, "1.0")
-
-      verifyMock(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
+      badGatewayException.getMessage should include("<head><title>502 Bad Gateway</title></head>")
     }
+  }
+
+  "should call the microservice to get the application.raml" in new Setup {
+    connector.getRaml(testService, "1.0")
+
+    verifyMock(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
   }
 }

@@ -17,9 +17,8 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-
-import play.api.{Configuration, Play}
 import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.apipublisher.config.AppContext
 import uk.gov.hmrc.apipublisher.connectors.ServiceLocatorConnector
 import uk.gov.hmrc.apipublisher.models.Subscription

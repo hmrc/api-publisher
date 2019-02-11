@@ -23,17 +23,17 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.libs.json.Json
-import play.api.test.FakeApplication
-import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
-import uk.gov.hmrc.apipublisher.config.AuditedWSHttp
+import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
-class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
+class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiScopePort = sys.env.getOrElse("WIREMOCK", "21113").toInt
   val apiScopeHost = "localhost"
@@ -45,9 +45,8 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = AuditedWSHttp
 
-    val connector = new APIScopeConnector(serviceConfig, http) {
+    val connector = new APIScopeConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
       override lazy val serviceBaseUrl: String = "http://localhost:21113"
     }
   }
@@ -63,30 +62,23 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
 
   "publishScopes" should {
     "Publish the scopes" in new Setup {
+      stubFor(post(urlEqualTo("/scope")).willReturn(aResponse()))
 
-      running(FakeApplication()) {
+      await(connector.publishScopes(scopes))
 
-        stubFor(post(urlEqualTo("/scope")).willReturn(aResponse()))
-
-        await(connector.publishScopes(scopes))
-
-        verify(postRequestedFor(urlEqualTo("/scope"))
-          .withHeader(CONTENT_TYPE, containing(JSON))
-          .withRequestBody(equalTo(scopes.toString())))
-      }
+      verify(postRequestedFor(urlEqualTo("/scope"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalTo(scopes.toString())))
     }
 
     "Fail if the api-scope endpoint returns 500" in new Setup {
-      running(FakeApplication()) {
+      stubFor(post(urlEqualTo("/scope")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
 
-        stubFor(post(urlEqualTo("/scope")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
-
-        val caught = intercept[Exception] {
-          await(connector.publishScopes(scopes))
-        }
-        assert(caught.isInstanceOf[Upstream5xxResponse])
-        assert(caught.getMessage.contains("/scope' returned 500"))
+      val caught = intercept[Exception] {
+        await(connector.publishScopes(scopes))
       }
+      assert(caught.isInstanceOf[Upstream5xxResponse])
+      assert(caught.getMessage.contains("/scope' returned 500"))
     }
   }
 }

@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.connectors
+package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.config.AppContext
-import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
+import play.api._
+import uk.gov.hmrc.apipublisher.services.RegistrationService
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class DocumentationUrlRewriter @Inject()(appContext: AppContext) extends UrlRewriter {
-  lazy val rewrites = appContext.ramlLoaderRewrites
+class ApiPublisher @Inject()(app: Application, registrationService: RegistrationService) {
+
+    Logger.info(s"Starting api-publisher in mode : ${app.mode}")
+    registrationService.registerPublishCallback().map {
+      _ => Logger.info(s"Publisher has subscribed to the service locator")
+    }.recover {
+      case e => Logger.error(s"Publisher could not subscribe to the service locator", e)
+    }
 }
-
-@Singleton
-class DocumentationRamlLoader @Inject()(urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)

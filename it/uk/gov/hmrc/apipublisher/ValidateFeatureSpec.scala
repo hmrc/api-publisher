@@ -23,6 +23,7 @@ import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import play.api.test.TestServer
 import scalaj.http
 import scalaj.http.Http
+import play.api.http.Status.BAD_REQUEST
 
 class ValidateFeatureSpec extends BaseFeatureSpec {
 
@@ -37,10 +38,10 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       When("malformed Json is passed to an endpoint")
       val response: http.HttpResponse[String] = Http(s"$serverUrl/validate").header(CONTENT_TYPE, JSON).postData(malformedJson).asString
       Then("The controller should return 400 with a Malformed Json error message")
-      assert( response.code == 400 )
+      response.code shouldBe BAD_REQUEST
       val body = Json.parse( response.body )
-      assert( (body \ "statusCode").as[Int] == 400 )
-      assert( (body \ "message").as[String].startsWith("Invalid Json"))
+      (body \ "statusCode").as[Int] shouldBe BAD_REQUEST
+      (body \ "message").as[String] should startWith("Invalid Json")
     }
   }
 

@@ -17,9 +17,8 @@
 package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.Inject
-
-import play.api.{Configuration, Play}
 import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.play.config.ServicesConfig
 
 class AppContext @Inject()(configuration: Configuration) extends ServicesConfig {

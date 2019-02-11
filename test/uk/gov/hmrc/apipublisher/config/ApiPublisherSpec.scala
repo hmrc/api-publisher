@@ -19,16 +19,16 @@ package uk.gov.hmrc.apipublisher.config
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.apipublisher.services.RegistrationService
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future.successful
 
-class PublisherGlobalSpec extends UnitSpec with MockitoSugar with ScalaFutures with OneAppPerSuite {
+class ApiPublisherSpec extends UnitSpec with MockitoSugar with ScalaFutures with GuiceOneAppPerSuite {
 
   val mockRegistrationService = mock[RegistrationService]
   when(mockRegistrationService.registerPublishCallback()).thenReturn(successful(()))
