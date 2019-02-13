@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.config
+package uk.gov.hmrc.apipublisher.wiring
 
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures

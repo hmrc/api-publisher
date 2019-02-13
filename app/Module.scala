@@ -18,7 +18,7 @@ import com.google.inject.{AbstractModule, Provides}
 import javax.inject.{Inject, Singleton}
 import play.api.Mode.Mode
 import play.api.{Application, Configuration}
-import uk.gov.hmrc.apipublisher.config.ApiPublisher
+import uk.gov.hmrc.apipublisher.wiring.ApiPublisher
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.play.config.ServicesConfig

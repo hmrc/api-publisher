@@ -20,7 +20,7 @@ import org.mockito.BDDMockito._
 import org.mockito.Mockito.{verify => verifyMock}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.apipublisher.config.AppContext
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository

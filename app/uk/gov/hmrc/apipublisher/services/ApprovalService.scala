@@ -18,7 +18,7 @@ package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import uk.gov.hmrc.apipublisher.config.AppContext
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository

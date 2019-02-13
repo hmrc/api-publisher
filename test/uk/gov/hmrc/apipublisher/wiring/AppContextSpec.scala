@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.config
+package uk.gov.hmrc.apipublisher.wiring
 
 import org.scalatestplus.play.MixedPlaySpec
 import play.api.Mode
@@ -25,19 +25,19 @@ class AppContextSpec extends MixedPlaySpec {
   "AppContext" must {
 
     "Correctly rewrite URLs for the STUB environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Stub").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app.configuration)
+      val appContext = new AppContext(app)
 
       appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
     }
 
     "Correctly rewrite URLs for the DEV environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Dev").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app.configuration)
+      val appContext = new AppContext(app)
 
       appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
     }
 
     "Correctly rewrite URLs for the TEST environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Test").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app.configuration)
+      val appContext = new AppContext(app)
 
       appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
     }
