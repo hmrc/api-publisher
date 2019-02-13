@@ -23,19 +23,20 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.FakeApplication
-import play.api.test.Helpers.{CONTENT_TYPE, JSON, running}
-import uk.gov.hmrc.apipublisher.config.AuditedWSHttp
+import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.io.Source.fromURL
 
-class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar {
+class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiDefinitionPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiDefinitionHost = "localhost"
@@ -47,9 +48,10 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   trait Setup {
     val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val http = AuditedWSHttp
 
-    val connector = new APIDefinitionConnector(serviceConfig, http) {
+    val appConfig: Configuration = mock[Configuration]
+
+    val connector = new APIDefinitionConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
       override lazy val serviceBaseUrl = "http://localhost:21112"
     }
   }
@@ -66,48 +68,34 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   "publishAPI" should {
 
     "Publish the API in api-definition Service" in new Setup {
+      stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
 
-      running(FakeApplication()) {
+      await(connector.publishAPI(api))
 
-        stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
-
-        await(connector.publishAPI(api))
-
-        verify(postRequestedFor(urlEqualTo("/api-definition"))
-          .withHeader(CONTENT_TYPE, containing(JSON))
-          .withRequestBody(equalToJson(definition)))
-      }
+      verify(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(definition)))
 
     }
 
     "Fail if the api-definition endpoint returns 500" in new Setup {
+      stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
 
-      running(FakeApplication()) {
-
-        stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
-
-        intercept[Exception] {
-          await(connector.publishAPI(api))
-        }
-
+      intercept[Exception] {
+        await(connector.publishAPI(api))
       }
-
     }
   }
 
   "Validate api" should {
 
     "add dummy serviceBaseUrl and serviceName" in new Setup {
-      running(FakeApplication()) {
-        stubFor(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+      stubFor(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
 
-        await(connector.validateAPIDefinition(api))
+      await(connector.validateAPIDefinition(api))
 
-        val expected: JsObject = api.as[JsObject] ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy")
-        verify(postRequestedFor(urlPathEqualTo("/api-definition/validate")).withRequestBody(equalToJson(expected.toString())))
-      }
+      val expected: JsObject = api.as[JsObject] ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy")
+      verify(postRequestedFor(urlPathEqualTo("/api-definition/validate")).withRequestBody(equalToJson(expected.toString())))
     }
   }
-
-
 }

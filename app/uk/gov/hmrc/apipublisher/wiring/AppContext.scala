@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.config
+package uk.gov.hmrc.apipublisher.wiring
 
 import javax.inject.Inject
-
-import play.api.{Configuration, Play}
 import play.api.Mode.Mode
+import play.api.{Application, Configuration, Play}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-class AppContext @Inject()(configuration: Configuration) extends ServicesConfig {
+class AppContext @Inject()(val app: Application) extends ServicesConfig {
 
-  lazy val appName = configuration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl = configuration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  lazy val appName = app.configuration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl = app.configuration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl = s"$appUrl/publish"
-  lazy val preventAutoDeploy: Boolean = configuration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(configuration)
+  lazy val preventAutoDeploy: Boolean = app.configuration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
+  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(app.configuration)
 
   private def buildRamlLoaderRewrites(config: Configuration): Map[String, String] = {
 
@@ -41,7 +40,7 @@ class AppContext @Inject()(configuration: Configuration) extends ServicesConfig 
     Map(from -> to)
   }
 
-  override protected def mode: Mode = Play.current.mode
+  override protected def mode: Mode = app.mode
 
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+  override protected def runModeConfiguration: Configuration = app.configuration
 }

@@ -21,9 +21,9 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
-import uk.gov.hmrc.apipublisher.config.AppContext
 import uk.gov.hmrc.apipublisher.connectors.ServiceLocatorConnector
 import uk.gov.hmrc.apipublisher.models.Subscription
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 

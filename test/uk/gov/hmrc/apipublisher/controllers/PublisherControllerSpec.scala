@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
+import akka.stream.Materializer
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc._
@@ -31,17 +32,18 @@ import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocati
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class PublisherControllerSpec extends UnitSpec with MockitoSugar with OneAppPerSuite {
+class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 
   private val serviceLocation = ServiceLocation("TestService", "http://test.example.com")
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
-  trait Setup extends MicroserviceFilterSupport {
+  implicit val mat: Materializer = app.materializer
+
+  trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService = mock[PublisherService]
     val mockApprovalService = mock[ApprovalService]
@@ -93,9 +95,9 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with OneAppPerS
 
     "succeed when given a valid payload" in new Setup {
 
-      val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
-      val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
-      val apiAndScopes = ApiAndScopes(api, scopes)
+      val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json"))
+      val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json"))
+      val apiAndScopes = ApiAndScopes(api.as[JsObject], scopes.as[JsArray])
       when(mockPublisherService.validateAPIDefinitionAndScopes(ArgumentMatchers.eq(apiAndScopes))(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
       val result = await(underTest.validate()(request(apiAndScopes)))

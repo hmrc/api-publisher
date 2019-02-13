@@ -25,7 +25,7 @@ import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
