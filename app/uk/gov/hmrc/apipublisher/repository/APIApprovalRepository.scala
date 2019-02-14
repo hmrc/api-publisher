@@ -29,11 +29,10 @@ import uk.gov.hmrc.apipublisher.models.APIApproval._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)
+class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[APIApproval, BSONObjectID]("apiapproval", mongo.mongoConnector.db,
     apiApprovalFormat, ReactiveMongoFormats.objectIdFormats) {
 

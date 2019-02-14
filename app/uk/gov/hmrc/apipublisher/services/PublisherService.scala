@@ -22,8 +22,7 @@ import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConn
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ApiFieldDefinitions, ServiceLocation}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -31,7 +30,7 @@ class PublisherService @Inject()(definitionService: DefinitionService,
                                  apiDefinitionConnector: APIDefinitionConnector,
                                  apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
                                  apiScopeConnector: APIScopeConnector,
-                                 approvalService: ApprovalService) {
+                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext){
 
   def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Boolean] = {
 

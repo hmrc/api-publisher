@@ -20,10 +20,10 @@ import javax.inject.{Inject, Singleton}
 import play.api._
 import uk.gov.hmrc.apipublisher.services.RegistrationService
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class ApiPublisher @Inject()(app: Application, registrationService: RegistrationService) {
+class ApiPublisher @Inject()(app: Application, registrationService: RegistrationService)(implicit val ec: ExecutionContext) {
 
     Logger.info(s"Starting api-publisher in mode : ${app.mode}")
     registrationService.registerPublishCallback().map {

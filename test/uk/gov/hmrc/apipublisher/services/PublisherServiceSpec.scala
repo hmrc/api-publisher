@@ -28,8 +28,9 @@ import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.test.UnitSpec
-
 import scala.concurrent.Future.{failed, successful}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 

@@ -26,11 +26,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient) extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("api-subscription-fields")
 

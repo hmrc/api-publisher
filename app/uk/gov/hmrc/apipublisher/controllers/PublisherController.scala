@@ -27,12 +27,11 @@ import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService)
+class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService)(implicit val ec: ExecutionContext)
   extends BaseController {
 
   val FAILED_TO_PUBLISH = "FAILED_TO_PUBLISH_SERVICE"

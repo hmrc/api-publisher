@@ -33,8 +33,8 @@ import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.test.UnitSpec
-
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
 

@@ -32,6 +32,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
 
