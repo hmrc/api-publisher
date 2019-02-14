@@ -14,7 +14,7 @@ lazy val compile = Seq(
   ws,
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.8.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
-  "uk.gov.hmrc" %% "play-reactivemongo" % "6.4.0"
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.12.0-play-25"
 )
 
 lazy val scope: String = "test,it"
@@ -27,7 +27,7 @@ lazy val test = Seq(
   "org.mockito" % "mockito-core" % "2.11.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
   "com.github.tomakehurst" % "wiremock" % "2.11.0" % scope,
-  "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % scope
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.7.0-play-25" % scope
 )
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
