@@ -21,6 +21,7 @@ import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.Cursor.FailOnError
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
@@ -28,8 +29,9 @@ import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-
 import scala.concurrent.{ExecutionContext, Future}
+import scala.Option.empty
+
 
 @Singleton
 class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
@@ -68,6 +70,8 @@ class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = {
     val query = or(equals("approved", value = false), notExists("approved"))
-    collection.find(query).cursor[APIApproval]().collect[Seq]()
+    collection.find[JsObject, JsObject](query, empty)
+      .cursor[APIApproval]()
+      .collect[Seq](-1, FailOnError[Seq[APIApproval]]())
   }
 }
