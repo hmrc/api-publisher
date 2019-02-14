@@ -26,8 +26,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.ramltools.loaders.ClasspathRamlLoader
-
 import scala.concurrent.Future.successful
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))

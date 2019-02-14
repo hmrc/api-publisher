@@ -20,15 +20,14 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 @Singleton
-class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient) extends ConnectorRecovery {
+class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
   def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[ApiAndScopes] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"

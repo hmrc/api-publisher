@@ -25,6 +25,7 @@ import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.play.test.UnitSpec
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ApprovalServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 

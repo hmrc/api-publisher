@@ -22,12 +22,11 @@ import play.api.libs.json.{JsString, JsValue}
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIScopeConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient) extends ConnectorRecovery {
+class APIScopeConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = servicesConfig.baseUrl("api-scope")
 

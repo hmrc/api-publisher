@@ -24,12 +24,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.domain.Endpoints
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector) {
+class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit val ec: ExecutionContext) {
 
   def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[ApiAndScopes] = {
     microserviceConnector.getAPIAndScopes(serviceLocation).flatMap { apiAndScopes =>

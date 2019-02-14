@@ -33,8 +33,8 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
-
 import scala.io.Source.fromURL
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
 

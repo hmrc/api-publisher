@@ -35,6 +35,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.io.Source
 
