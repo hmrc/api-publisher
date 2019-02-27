@@ -16,11 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.controllers
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
+
 import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
@@ -31,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService)(implicit val ec: ExecutionContext)
+class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService, appContext: AppContext)(implicit val ec: ExecutionContext)
   extends BaseController {
 
   val FAILED_TO_PUBLISH = "FAILED_TO_PUBLISH_SERVICE"
@@ -87,6 +91,11 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
   }
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+    val authHeader = request.headers.get("Authorization")
+    if (authHeader.isEmpty || appContext.publishingKey != base64Decode(authHeader.get)) {
+      return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
+    }
+
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
@@ -94,6 +103,10 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
         Logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
         Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
     }
+  }
+
+  private def base64Decode(stringToDecode: String): String = {
+    new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
   }
 
   private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {

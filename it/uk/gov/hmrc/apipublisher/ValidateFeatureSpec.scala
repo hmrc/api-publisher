@@ -16,16 +16,23 @@
 
 package uk.gov.hmrc.apipublisher
 
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.Helpers.{CONTENT_TYPE, JSON}
+import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
+
 import scalaj.http
 import scalaj.http.Http
 import play.api.http.Status.BAD_REQUEST
 
 class ValidateFeatureSpec extends BaseFeatureSpec {
+
+  val publishingKey: String = UUID.randomUUID().toString
+  val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
 
   var server: TestServer = _
 
@@ -60,7 +67,11 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
         .willReturn(aResponse().withStatus(204)))
 
       When("a Json payload is passed to the validate endpoint")
-      val response: http.HttpResponse[String] = Http(s"$serverUrl/validate").header(CONTENT_TYPE, JSON).postData(apiAndScope).asString
+      val response: http.HttpResponse[String] =
+        Http(s"$serverUrl/validate")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .postData(apiAndScope).asString
 
       Then("the controller should return 400 with the API Definition error message")
       assert(response.code == 400)
@@ -75,7 +86,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
   }
 
   private def startServer(): Unit = {
-    server = new TestServer(port, GuiceApplicationBuilder().build())
+    server = new TestServer(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 
