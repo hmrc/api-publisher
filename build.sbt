@@ -12,7 +12,7 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.8.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.9.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.12.0-play-25"
 )

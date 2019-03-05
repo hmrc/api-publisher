@@ -1,0 +1,46 @@
+@(apiContext: String)#%RAML 1.0
+---
+
+title: API Publisher
+version: 1.0
+protocols: [ HTTPS ]
+baseUri: https://api.service.hmrc.gov.uk/
+
+mediaType: [ application/json ]
+
+uses:
+  sec: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/securitySchemes.raml
+  headers: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/headers.raml
+  annotations: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/annotations.raml
+  types: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/types.raml
+
+/@apiContext:
+  /publish:
+    post:
+      is: [headers.acceptHeader]
+      securedBy: [ sec.x-application ]
+
+  /validate:
+    post:
+      is: [headers.acceptHeader]
+      securedBy: [ sec.x-application ]
+
+  /services:
+    /unapproved:
+      get:
+        is: [headers.acceptHeader]
+        securedBy: [ sec.x-application ]
+
+  /service:
+    /{serviceName}:
+      uriParameters:
+        serviceName:
+          type: string
+      /summary:
+        get:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /approve:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
