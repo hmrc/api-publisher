@@ -21,17 +21,18 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.Subscription
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ServiceLocatorConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class ServiceLocatorConnector @Inject()(config: ServiceLocatorConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
-  lazy val serviceBaseUrl = servicesConfig.baseUrl("service-locator")
+  lazy val serviceBaseUrl = config.baseUrl
 
   def subscribe(subscription: Subscription)(implicit hc: HeaderCarrier): Future[Unit] = {
     val url = s"$serviceBaseUrl/subscription"
     http.POST(url, Json.toJson(subscription)).map(_ => ()) recover unprocessableRecovery
   }
 }
+
+case class ServiceLocatorConfig(baseUrl: String)

@@ -24,14 +24,14 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+  extends ConnectorRecovery {
 
-  lazy val serviceBaseUrl = servicesConfig.baseUrl("api-subscription-fields")
+  lazy val serviceBaseUrl = config.baseUrl
 
   def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(implicit hc: HeaderCarrier): Future[Unit] = {
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
@@ -45,3 +45,5 @@ class APISubscriptionFieldsConnector @Inject()(servicesConfig: ServicesConfig, h
   }
 
 }
+
+case class ApiSSubscriptionFieldsConfig(baseUrl: String)

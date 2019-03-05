@@ -21,14 +21,13 @@ import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIScopeConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
-  lazy val serviceBaseUrl = servicesConfig.baseUrl("api-scope")
+  lazy val serviceBaseUrl = config.baseUrl
 
   def publishScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.POST(s"$serviceBaseUrl/scope", scopes).map(_ => ()) recover unprocessableRecovery
@@ -45,3 +44,5 @@ class APIScopeConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClie
       }
   }
 }
+
+case class ApiScopeConfig(baseUrl: String)

@@ -21,14 +21,13 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIDefinitionConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class APIDefinitionConnector @Inject()(config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
 
-  lazy val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
+  lazy val serviceBaseUrl = config.baseUrl
 
   def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.POST(s"$serviceBaseUrl/api-definition", api).map(_ => ()) recover unprocessableRecovery
@@ -45,3 +44,5 @@ class APIDefinitionConnector @Inject()(servicesConfig: ServicesConfig, http: Htt
       }
   }
 }
+
+case class ApiDefinitionConfig(baseUrl: String)

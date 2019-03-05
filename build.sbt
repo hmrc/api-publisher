@@ -47,8 +47,7 @@ lazy val microservice = (project in file("."))
     libraryDependencies ++= appDependencies,
     parallelExecution in Test := false,
     fork in Test := false,
-    retrieveManaged := true,
-    routesGenerator := StaticRoutesGenerator
+    retrieveManaged := true
   )
    .settings(
       testOptions in Test := Seq(Tests.Filter(_ => true)),// this removes duplicated lines in HTML reports

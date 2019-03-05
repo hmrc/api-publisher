@@ -19,13 +19,19 @@ package uk.gov.hmrc.apipublisher.config
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apipublisher.connectors.{ApiDefinitionConfig, ApiSSubscriptionFieldsConfig, ApiScopeConfig, ServiceLocatorConfig}
 import uk.gov.hmrc.apipublisher.controllers.DocumentationConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider]
+      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
+      bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
+      bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
+      bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
+      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider]
     )
   }
 }
@@ -46,5 +52,45 @@ class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configurat
     val apiContext = runModeConfiguration.getString("api.context").getOrElse("api-publisher")
     val access = runModeConfiguration.getConfig(s"api.access")
     DocumentationConfig(publishApiDefinition, apiContext, access)
+  }
+}
+
+@Singleton
+class ApiDefinitionConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+  extends Provider[ApiDefinitionConfig] {
+
+  override def get() = {
+    val baseUrl = servicesConfig.baseUrl("api-definition")
+    ApiDefinitionConfig(baseUrl)
+  }
+}
+
+@Singleton
+class ApiScopeConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+  extends Provider[ApiScopeConfig] {
+
+  override def get() = {
+    val baseUrl = servicesConfig.baseUrl("api-scope")
+    ApiScopeConfig(baseUrl)
+  }
+}
+
+@Singleton
+class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+  extends Provider[ApiSSubscriptionFieldsConfig] {
+
+  override def get() = {
+    val baseUrl = servicesConfig.baseUrl("api-subscription-fields")
+    ApiSSubscriptionFieldsConfig(baseUrl)
+  }
+}
+
+@Singleton
+class ServiceLocatorConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+  extends Provider[ServiceLocatorConfig] {
+
+  override def get() = {
+    val baseUrl = servicesConfig.baseUrl("service-locator")
+    ServiceLocatorConfig(baseUrl)
   }
 }
