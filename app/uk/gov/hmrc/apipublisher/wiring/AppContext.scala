@@ -18,31 +18,29 @@ package uk.gov.hmrc.apipublisher.wiring
 
 import javax.inject.Inject
 import play.api.Mode.Mode
-import play.api.{Application, Configuration, Play}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-class AppContext @Inject()(val app: Application) extends ServicesConfig {
+class AppContext @Inject()(val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
 
-  lazy val appName = app.configuration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl = app.configuration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  lazy val appName = runModeConfiguration.getString("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl = runModeConfiguration.getString("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl = s"$appUrl/publish"
-  lazy val preventAutoDeploy: Boolean = app.configuration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(app.configuration)
-  lazy val publishToken = app.configuration.getString("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
-  lazy val publishingKey = app.configuration.getString("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
+  lazy val preventAutoDeploy: Boolean = runModeConfiguration.getBoolean(s"$env.features.preventAutoDeploy").getOrElse(false)
+  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(runModeConfiguration)
+  lazy val publishToken = runModeConfiguration.getString("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
+  lazy val publishingKey = runModeConfiguration.getString("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 
-  private def buildRamlLoaderRewrites(config: Configuration): Map[String, String] = {
+  private def buildRamlLoaderRewrites(runModeConfiguration: Configuration): Map[String, String] = {
 
-    val from = config.getString(s"$env.ramlLoaderUrlRewrite.from")
+    val from = runModeConfiguration.getString(s"$env.ramlLoaderUrlRewrite.from")
       .getOrElse(throw new RuntimeException("ramlLoaderRewrite.from is not configured"))
 
-    val to = config.getString(s"$env.ramlLoaderUrlRewrite.to")
+    val to = runModeConfiguration.getString(s"$env.ramlLoaderUrlRewrite.to")
       .getOrElse(throw new RuntimeException("ramlLoaderRewrite.to is not configured"))
 
     Map(from -> to)
   }
 
-  override protected def mode: Mode = app.mode
-
-  override protected def runModeConfiguration: Configuration = app.configuration
+  override protected def mode: Mode = environment.mode
 }

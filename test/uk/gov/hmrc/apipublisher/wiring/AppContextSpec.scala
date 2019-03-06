@@ -16,32 +16,27 @@
 
 package uk.gov.hmrc.apipublisher.wiring
 
-import org.scalatestplus.play.MixedPlaySpec
-import play.api.Mode
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.mockito.Mockito.when
+import org.scalatest.mockito.MockitoSugar
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment, Mode}
+import uk.gov.hmrc.play.test.UnitSpec
 
-class AppContextSpec extends MixedPlaySpec {
+class AppContextSpec extends UnitSpec with MockitoSugar {
 
   "AppContext" must {
+    "Correctly rewrite URLs for an environment" in {
+      val mockConfiguration = mock[Configuration]
+      val mockEnvironment = mock[Environment]
 
-    "Correctly rewrite URLs for the STUB environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Stub").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app)
+      when(mockConfiguration.getString(s"Test.ramlLoaderUrlRewrite.from")).thenReturn(Option("mockFrom"))
+      when(mockConfiguration.getString(s"Test.ramlLoaderUrlRewrite.to")).thenReturn(Option("moTo"))
 
-      appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
+      val appContext = new AppContext(mockConfiguration, mockEnvironment) {
+        override protected def mode: Mode = Mode.Test
+      }
+
+      appContext.ramlLoaderRewrites("mockFrom") shouldBe "moTo"
     }
-
-    "Correctly rewrite URLs for the DEV environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Dev").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app)
-
-      appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
-    }
-
-    "Correctly rewrite URLs for the TEST environment" in new App(GuiceApplicationBuilder().configure("run.mode" -> "Test").in(Mode.Prod).build()) {
-      val appContext = new AppContext(app)
-
-      appContext.ramlLoaderRewrites("https://developer.service.hmrc.gov.uk") mustBe "http://localhost:9680"
-    }
-
   }
-
 }

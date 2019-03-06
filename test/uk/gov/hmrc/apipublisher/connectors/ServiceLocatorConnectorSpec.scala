@@ -46,14 +46,12 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   val subscription = Subscription("publisherName", "http://publisherUri")
 
   trait Setup {
-    val serviceConfig = mock[ServicesConfig]
+    val serviceLocatorConfig = ServiceLocatorConfig(s"$serviceLocatorUrl")
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new ServiceLocatorConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
-      override lazy val serviceBaseUrl = s"$serviceLocatorUrl"
-    }
+    val connector = new ServiceLocatorConnector(serviceLocatorConfig, app.injector.instanceOf[HttpClient])
   }
 
   override def beforeEach() {

@@ -62,14 +62,12 @@ class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll
   val error500ResponseBody = """{"code":"INTERNAL_ERROR","message":"Something went really wrong"}"""
 
   trait Setup {
-    val serviceConfig = mock[ServicesConfig]
+    val apiSubscriptionFieldsConfig = ApiSSubscriptionFieldsConfig(s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort")
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new APISubscriptionFieldsConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
-      override lazy val serviceBaseUrl = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
-    }
+    val connector = new APISubscriptionFieldsConnector(apiSubscriptionFieldsConfig, app.injector.instanceOf[HttpClient])
 
     def publishFieldDefinitions(definitions: Seq[ApiFieldDefinitions] = apiFieldDefinitions): Future[Unit] =
       connector.publishFieldDefinitions(definitions)

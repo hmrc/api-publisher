@@ -46,14 +46,13 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   val api = Json.parse(definition).as[JsObject]
 
   trait Setup {
-    val serviceConfig = mock[ServicesConfig]
+    val apiDefinitionConfig = ApiDefinitionConfig("http://localhost:21112")
+
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new APIDefinitionConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
-      override lazy val serviceBaseUrl = "http://localhost:21112"
-    }
+    val connector = new APIDefinitionConnector(apiDefinitionConfig, app.injector.instanceOf[HttpClient])
   }
 
   override def beforeEach() {
