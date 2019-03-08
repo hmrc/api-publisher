@@ -1,5 +1,4 @@
 import _root_.play.core.PlayVersion
-import _root_.play.sbt.PlayImport._
 import _root_.play.sbt.PlayScala
 import sbt.Tests.{Group, SubProcess}
 import uk.gov.hmrc.DefaultBuildSettings._
@@ -46,17 +45,19 @@ lazy val microservice = (project in file("."))
     fork in Test := false,
     retrieveManaged := true
   )
-   .settings(
-      testOptions in Test := Seq(Tests.Filter(_ => true)),// this removes duplicated lines in HTML reports
-      addTestReportOption(Test, "test-reports")
-    )
+  .settings(
+    testOptions in Test := Seq(Tests.Filter(_ => true)), // this removes duplicated lines in HTML reports
+    //testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    addTestReportOption(Test, "test-reports")
+  )
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
   .settings(
     Keys.fork in IntegrationTest := false,
-    unmanagedSourceDirectories in IntegrationTest := Seq((baseDirectory in IntegrationTest).value / "it" ),
+    unmanagedSourceDirectories in IntegrationTest := Seq((baseDirectory in IntegrationTest).value / "it"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
@@ -71,6 +72,6 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   }
 
 // Coverage configuration
-coverageMinimum := 86
+coverageMinimum := 85
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

@@ -30,6 +30,7 @@ class AppContext @Inject()(val runModeConfiguration: Configuration, environment:
   lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(runModeConfiguration)
   lazy val publishToken = runModeConfiguration.getString("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
   lazy val publishingKey = runModeConfiguration.getString("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
+  lazy val registrationEnabled = getConfBool("service-locator.enabled", defBool = false)
 
   private def buildRamlLoaderRewrites(runModeConfiguration: Configuration): Map[String, String] = {
 

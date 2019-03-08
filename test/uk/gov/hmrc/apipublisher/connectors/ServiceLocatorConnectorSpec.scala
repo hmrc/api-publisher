@@ -28,12 +28,12 @@ import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json
 import play.api.test.Helpers.{CONTENT_TYPE, JSON}
-import uk.gov.hmrc.apipublisher.models.Subscription
+import uk.gov.hmrc.apipublisher.models.{Registration, Subscription}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneServerPerSuite {
@@ -43,7 +43,8 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
   val serviceLocatorUrl = s"http://$serviceLocatorHost:$serviceLocatorPort"
   val wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(serviceLocatorPort))
 
-  val subscription = Subscription("publisherName", "http://publisherUri")
+  val subscription = Subscription("subPublisherName", "http://subPublisherUri")
+  val registration = Registration("regPublisherName", "http://regPublisherUri")
 
   trait Setup {
     val serviceLocatorConfig = ServiceLocatorConfig(s"$serviceLocatorUrl")
@@ -76,15 +77,31 @@ class ServiceLocatorConnectorSpec extends UnitSpec with ScalaFutures with Before
 
     }
 
-    "Fail when service locator return an error code" in new Setup {
-
+    "Ignore when service locator return an error code" in new Setup {
       stubFor(post(urlEqualTo("/subscription")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
 
-      val caught = intercept[Exception] {
-        await(connector.subscribe(subscription))
-      }
-      assert(caught.isInstanceOf[Upstream5xxResponse])
-      assert(caught.getMessage.contains("/subscription' returned 500"))
+      connector.subscribe(subscription)
     }
   }
+
+  "Register" should {
+
+    "Post a registration" in new Setup {
+      stubFor(post(urlEqualTo("/registration")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+
+      await(connector.register(registration))
+
+      verify(postRequestedFor(urlEqualTo("/registration"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(Json.toJson(registration).toString())))
+
+    }
+
+    "Ignore when service locator return an error code" in new Setup {
+      stubFor(post(urlEqualTo("/registration")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
+
+      connector.subscribe(subscription)
+    }
+  }
+
 }

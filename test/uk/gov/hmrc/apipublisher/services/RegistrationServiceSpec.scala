@@ -48,7 +48,7 @@ class RegistrationServiceSpec extends UnitSpec with MockitoSugar with ScalaFutur
     "register to the publish callback with the service locator" in new Setup {
       givenConnectorReturns(service.serviceLocatorConnector, successful(()))
 
-      val future = service.registerPublishCallback()
+      val future = service.subscribeToPublishCallback()
 
       whenReady(future) { _ =>
         verify(service.serviceLocatorConnector)
@@ -60,7 +60,7 @@ class RegistrationServiceSpec extends UnitSpec with MockitoSugar with ScalaFutur
       val connectorResult = new RuntimeException("Error occurred")
       givenConnectorReturns(service.serviceLocatorConnector, failed(connectorResult))
 
-      val future = service.registerPublishCallback()
+      val future = service.subscribeToPublishCallback()
 
       whenReady(future.failed) { ex =>
         ex shouldEqual connectorResult

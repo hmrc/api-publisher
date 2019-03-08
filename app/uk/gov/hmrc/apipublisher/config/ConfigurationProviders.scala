@@ -37,13 +37,6 @@ class ConfigurationModule extends Module {
   }
 }
 
-object ConfigHelper {
-
-  def getConfig[T](key: String, f: String => Option[T]): T = {
-    f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
-  }
-}
-
 @Singleton
 class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
   extends Provider[DocumentationConfig] with ServicesConfig {
