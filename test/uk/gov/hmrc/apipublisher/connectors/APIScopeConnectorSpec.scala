@@ -44,12 +44,11 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
   val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json"))
 
   trait Setup {
-    val serviceConfig = mock[ServicesConfig]
+    val apiScopeConfig = ApiScopeConfig("http://localhost:21113")
+
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val connector = new APIScopeConnector(serviceConfig, app.injector.instanceOf[HttpClient]) {
-      override lazy val serviceBaseUrl: String = "http://localhost:21113"
-    }
+    val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClient])
   }
 
   override def beforeEach() {

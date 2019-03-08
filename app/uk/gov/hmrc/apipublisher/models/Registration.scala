@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.wiring
+package uk.gov.hmrc.apipublisher.models
 
-import javax.inject.{Inject, Singleton}
-import play.api._
-import uk.gov.hmrc.apipublisher.services.RegistrationService
+import play.api.libs.json.Json
 
-import scala.concurrent.ExecutionContext
+case class Registration(serviceName: String,
+                        serviceUrl: String,
+                        metadata: Option[Map[String, String]] = None)
 
-@Singleton
-class ApiPublisher @Inject()(app: Application, registrationService: RegistrationService)(implicit val ec: ExecutionContext) {
-
-  Logger.info(s"Starting api-publisher in mode : ${app.mode}")
-
-  registrationService.register()
-
-  registrationService.subscribeToPublishCallback()
+object Registration {
+  implicit val format = Json.format[Registration]
 }
+

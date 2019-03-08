@@ -20,7 +20,7 @@ import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
+import play.api.{Application, Configuration}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apipublisher.services.RegistrationService
@@ -31,14 +31,22 @@ import scala.concurrent.Future.successful
 class ApiPublisherSpec extends UnitSpec with MockitoSugar with ScalaFutures with GuiceOneAppPerSuite {
 
   val mockRegistrationService = mock[RegistrationService]
-  when(mockRegistrationService.registerPublishCallback()).thenReturn(successful(()))
+  when(mockRegistrationService.subscribeToPublishCallback()).thenReturn(successful(()))
+  when(mockRegistrationService.register()).thenReturn(successful(()))
 
   override implicit lazy val app: Application = GuiceApplicationBuilder()
-      .overrides(bind[RegistrationService].toInstance(mockRegistrationService)).build()
+    .configure("Test.microservice.services.service-locator.enabled" -> true)
+    .overrides(bind[RegistrationService].toInstance(mockRegistrationService))
+    .build()
 
   "Publisher" should {
-    "Register the publish callback with the service locator on startup" in {
-      verify(mockRegistrationService).registerPublishCallback()
+
+    "Register the API with the service locator on startup" in {
+      verify(mockRegistrationService).register()
+    }
+
+    "Subscribe to the publish callback with the service locator on startup" in {
+      verify(mockRegistrationService).subscribeToPublishCallback()
     }
   }
 }

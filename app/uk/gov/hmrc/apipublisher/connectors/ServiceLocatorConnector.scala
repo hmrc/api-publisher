@@ -17,21 +17,37 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.Json
-import uk.gov.hmrc.apipublisher.models.Subscription
+import uk.gov.hmrc.apipublisher.models.{Registration, Subscription}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ServiceLocatorConnector @Inject()(servicesConfig: ServicesConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class ServiceLocatorConnector @Inject()(config: ServiceLocatorConfig, http: HttpClient)(implicit val ec: ExecutionContext) {
 
-  lazy val serviceBaseUrl = servicesConfig.baseUrl("service-locator")
+  lazy val serviceBaseUrl = config.baseUrl
+
+  def register(registration: Registration)(implicit hc: HeaderCarrier): Future[Unit] = {
+
+    http.POST(s"$serviceBaseUrl/registration", registration) map { _ =>
+      Logger.info("Service is registered on the service locator")
+    } recover {
+      case e => Logger.error("Service could not register on the service locator", e)
+    }
+  }
 
   def subscribe(subscription: Subscription)(implicit hc: HeaderCarrier): Future[Unit] = {
     val url = s"$serviceBaseUrl/subscription"
-    http.POST(url, Json.toJson(subscription)).map(_ => ()) recover unprocessableRecovery
+
+    http.POST(url, Json.toJson(subscription)) map { _ =>
+      Logger.info(s"Publisher has subscribed to the service locator")
+    } recover {
+      case e => Logger.error(s"Publisher could not subscribe to the service locator", e)
+    }
   }
 }
+
+case class ServiceLocatorConfig(baseUrl: String)

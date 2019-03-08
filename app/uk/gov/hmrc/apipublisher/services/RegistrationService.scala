@@ -18,18 +18,27 @@ package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apipublisher.connectors.ServiceLocatorConnector
-import uk.gov.hmrc.apipublisher.models.Subscription
+import uk.gov.hmrc.apipublisher.models.{Registration, Subscription}
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
 @Singleton
-class RegistrationService @Inject()(val serviceLocatorConnector : ServiceLocatorConnector,
+class RegistrationService @Inject()(val serviceLocatorConnector: ServiceLocatorConnector,
                                     val appContext: AppContext) {
 
-  def registerPublishCallback(): Future[Unit] = {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
+  def register() = {
+    if (appContext.registrationEnabled) {
+      serviceLocatorConnector.register(Registration(appContext.appName, appContext.appUrl, Some(Map("third-party-api" -> "true"))))
+    } else {
+      Future.successful()
+    }
+  }
+
+  def subscribeToPublishCallback() = {
     serviceLocatorConnector.subscribe(Subscription(appContext.appName, appContext.publisherUrl, Some(Map("third-party-api" -> "true"))))
   }
 }
