@@ -47,7 +47,7 @@ lazy val microservice = (project in file("."))
   )
   .settings(
     testOptions in Test := Seq(Tests.Filter(_ => true)), // this removes duplicated lines in HTML reports
-    //testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     addTestReportOption(Test, "test-reports")
   )
   .configs(IntegrationTest)
