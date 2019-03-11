@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.wiring
 
+import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.{Application, Configuration}
+import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apipublisher.services.RegistrationService
@@ -41,12 +42,13 @@ class ApiPublisherSpec extends UnitSpec with MockitoSugar with ScalaFutures with
 
   "Publisher" should {
 
-    "Register the API with the service locator on startup" in {
-      verify(mockRegistrationService).register()
-    }
-
-    "Subscribe to the publish callback with the service locator on startup" in {
+    "Subscribe to the publish callback then afterwards register the API with the service locator on startup" in {
+      val orderedVerifier = Mockito.inOrder(mockRegistrationService)
+      val millisecondsToWaitForSecondCall = 5000
       verify(mockRegistrationService).subscribeToPublishCallback()
+      verify(mockRegistrationService, Mockito.timeout(millisecondsToWaitForSecondCall)).register()
+      orderedVerifier.verify(mockRegistrationService).subscribeToPublishCallback()
+      orderedVerifier.verify(mockRegistrationService).register()
     }
   }
 }

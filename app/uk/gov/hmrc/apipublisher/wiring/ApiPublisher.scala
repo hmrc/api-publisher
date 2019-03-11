@@ -27,7 +27,8 @@ class ApiPublisher @Inject()(app: Application, registrationService: Registration
 
   Logger.info(s"Starting api-publisher in mode : ${app.mode}")
 
-  registrationService.register()
+  registrationService.subscribeToPublishCallback() map {
+    _ => registrationService.register()
+  }
 
-  registrationService.subscribeToPublishCallback()
 }
