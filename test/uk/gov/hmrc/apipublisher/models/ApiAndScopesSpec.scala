@@ -42,6 +42,10 @@ class ApiAndScopesSpec extends UnitSpec {
     apiAndScope("/input/api-definition-with-endpoints.json").description.get shouldEqual "Test API"
   }
 
+  "API version numbers should be extracted from the JSON definition" in {
+    apiAndScope("/input/api-definition-with-endpoints.json").versionNumbers should contain only("1.0", "2.0", "3.0")
+  }
+
   "Field definitions should be extracted from the JSON definition" in {
     val apiAndScopes = ApiAndScopes(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject], scopes = JsArray())
     val apiContext = apiAndScopes.apiContext

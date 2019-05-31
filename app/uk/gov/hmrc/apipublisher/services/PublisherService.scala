@@ -18,8 +18,8 @@ package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ApiFieldDefinitions, ServiceLocation}
+import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIDocumentationConnector, APIScopeConnector, APISubscriptionFieldsConnector}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +30,8 @@ class PublisherService @Inject()(definitionService: DefinitionService,
                                  apiDefinitionConnector: APIDefinitionConnector,
                                  apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
                                  apiScopeConnector: APIScopeConnector,
-                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext){
+                                 apiDocumentationConnector: APIDocumentationConnector,
+                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
 
   def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Boolean] = {
 
@@ -45,6 +46,8 @@ class PublisherService @Inject()(definitionService: DefinitionService,
         _ <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
         _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation(apiAndScopes))
         _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
+        _ <- apiDocumentationConnector
+          .registerService(RegistrationRequest(serviceLocation.serviceName, serviceLocation.serviceUrl, apiAndScopes.versionNumbers))
       } yield true
     }
 
