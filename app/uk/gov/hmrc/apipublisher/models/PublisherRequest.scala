@@ -62,6 +62,8 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     (api \ "context").as[String]
   }
 
+  lazy val versionNumbers: Seq[String] = versions.value.map(v => (v \ "version").as[String])
+
   lazy val fieldDefinitions: Seq[ApiFieldDefinitions] = {
     versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs))
   }
