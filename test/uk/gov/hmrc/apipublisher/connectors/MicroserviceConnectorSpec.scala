@@ -77,7 +77,15 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
 
       val result = await(connector.getAPIAndScopes(testService))
 
-      result shouldEqual ApiAndScopes(api, scopes)
+      result shouldEqual Some(ApiAndScopes(api, scopes))
+    }
+
+    "Return none if the API endpoint returns 204" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result shouldEqual None
     }
 
     "Fail if the API endpoint returns 404" in new Setup {

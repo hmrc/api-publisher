@@ -17,8 +17,9 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
+import play.api.http.Status.NO_CONTENT
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, OptionHttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
@@ -27,11 +28,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 @Singleton
-class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient)
+                                     (implicit val ec: ExecutionContext) extends ConnectorRecovery with OptionHttpReads {
 
-  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[ApiAndScopes] = {
+  // Overridden so we can map only 204 to None, rather than also including 404
+  implicit override def readOptionOf[P](implicit rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
+    def read(method: String, url: String, response: HttpResponse): Option[P] = response.status match {
+      case NO_CONTENT => None
+      case _ => Some(rds.read(method, url, response))
+    }
+  }
+
+  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"
-    http.GET[ApiAndScopes](url) recover unprocessableRecovery
+    http.GET[Option[ApiAndScopes]](url) recover unprocessableRecovery
   }
 
   def getRaml(serviceLocation: ServiceLocation, version: String): Try[RAML] = {

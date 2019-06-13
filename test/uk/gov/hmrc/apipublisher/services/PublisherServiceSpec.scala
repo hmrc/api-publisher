@@ -61,14 +61,14 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     val mockApiDocumentationConnector = mock[APIDocumentationConnector]
     val mockApprovalService = mock[ApprovalService]
     
-    val publisherService = new PublisherService(mockDefinitionService, 
-      mockApiDefinitionConnector, 
-      mockApiSubscriptionFieldsConnector, 
+    val publisherService = new PublisherService(mockDefinitionService,
+      mockApiDefinitionConnector,
+      mockApiSubscriptionFieldsConnector,
       mockApiScopeConnector,
       mockApiDocumentationConnector,
       mockApprovalService)
     
-    given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(apiAndScopes)
+    given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(Some(apiAndScopes))
     given(mockApprovalService.createOrUpdateServiceApproval(any[APIApproval])).willReturn(true)
     given(mockApiDefinitionConnector.publishAPI(any[JsObject])(any[HeaderCarrier])).willReturn(())
     given(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(any[Seq[ApiFieldDefinitions]])(any[HeaderCarrier])).willReturn(())
@@ -78,9 +78,21 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
   "publishAPIDefinitionAndScopes" should {
 
+    "Return none and not do any publishing if the definition service returns none" in new Setup {
+      given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(None)
+
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe None
+
+      verify(mockDefinitionService).getDefinition(testServiceLocation)
+      verifyZeroInteractions(mockApiDefinitionConnector)
+      verifyZeroInteractions(mockApiScopeConnector)
+      verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
+      verifyZeroInteractions(mockApiDocumentationConnector)
+    }
+
     "Retrieve the api from the microservice and Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is allowed" in new Setup {
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe true
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe Some(true)
 
       verify(mockDefinitionService).getDefinition(testServiceLocation)
       verify(mockApiDefinitionConnector).publishAPI(any[JsObject])(any[HeaderCarrier])
@@ -93,7 +105,7 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
       given(mockApprovalService.createOrUpdateServiceApproval(any[APIApproval])).willReturn(false)
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe false
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe Some(false)
 
       verify(mockDefinitionService).getDefinition(testServiceLocation)
       verifyZeroInteractions(mockApiDefinitionConnector)
@@ -103,9 +115,9 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     }
 
     "When publication allowed and api does not have subscription fields, publish API to api-definition, api-scope and api-documentation only" in new Setup {
-      given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(apiAndScopesWithoutFieldDefinitions)
+      given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(Some(apiAndScopesWithoutFieldDefinitions))
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe true
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation)) shouldBe Some(true)
 
       verify(mockDefinitionService).getDefinition(testServiceLocation)
       verify(mockApiDefinitionConnector).publishAPI(any[JsObject])(any[HeaderCarrier])

@@ -19,9 +19,10 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIDocumentationConnector, APIScopeConnector, APISubscriptionFieldsConnector}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -33,7 +34,7 @@ class PublisherService @Inject()(definitionService: DefinitionService,
                                  apiDocumentationConnector: APIDocumentationConnector,
                                  approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
 
-  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[Boolean]] = {
 
     def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
@@ -59,12 +60,18 @@ class PublisherService @Inject()(definitionService: DefinitionService,
       }
     }
 
-    for {
-      apiAndScopes <- definitionService.getDefinition(serviceLocation)
-      _ = apiAndScopes.validateAPIScopesAreDefined()
-      isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-      result <- if (isApproved) publish(apiAndScopes) else Future.successful(false)
-    } yield result
+    def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Option[Boolean]] = {
+      apiAndScopes.validateAPIScopesAreDefined()
+      for {
+        isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
+        result <- if (isApproved) publish(apiAndScopes) else Future.successful(false)
+      } yield Some(result)
+    }
+
+    definitionService.getDefinition(serviceLocation) flatMap {
+      case Some(apiAndScopes) => validateAndPublish(apiAndScopes)
+      case None => successful(None)
+    }
   }
 
   def validateAPIDefinitionAndScopes(apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
