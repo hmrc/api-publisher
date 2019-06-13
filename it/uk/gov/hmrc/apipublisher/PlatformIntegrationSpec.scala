@@ -1,12 +1,6 @@
 package uk.gov.hmrc.apipublisher
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, TestData}
+import org.scalatest.TestData
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.http.Status._
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -29,54 +23,56 @@ import uk.gov.hmrc.play.test.UnitSpec
   *
   * See: https://confluence.tools.tax.service.gov.uk/display/ApiPlatform/API+Platform+Architecture+with+Flows
   */
-class PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach with GuiceOneAppPerTest {
+trait PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerTest {
 
-  val stubHost = "localhost"
-
-  val stubPort = sys.env.getOrElse("WIREMOCK_SERVICE_LOCATOR_PORT", "21113").toInt
-
-  val wireMockServer = new WireMockServer(wireMockConfig()
-    .port(stubPort))
+  val publishApiDefinition: Boolean
 
   override def newAppForTest(testData: TestData): Application = GuiceApplicationBuilder()
     .configure("run.mode" -> "Stub")
     .configure(Map(
-      "appName" -> "application-name",
-      "appUrl" -> "http://microservice-name.protected.mdtp",
-      "publishApiDefinition" -> "true"))
+      "publishApiDefinition" -> publishApiDefinition,
+      "api.context" -> "test-api-context"))
     .in(Mode.Test).build()
-
-  override def beforeEach(): Unit = {
-    wireMockServer.start()
-    WireMock.configureFor(stubHost, stubPort)
-    stubFor(post(urlMatching("/subscription")).willReturn(aResponse().withStatus(NO_CONTENT)))
-  }
 
   trait Setup {
     implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
-    val documentationController = app.injector.instanceOf[DocumentationController]
+    val documentationController: DocumentationController = app.injector.instanceOf[DocumentationController]
     val request = FakeRequest()
   }
+}
+
+class PublishApiDefinitionEnabledSpec extends PlatformIntegrationSpec {
+  val publishApiDefinition = true
 
   "microservice" should {
-    "provide definition endpoint and documentation endpoint for each api" in new Setup {
-      def normalizeEndpointName(endpointName: String): String = endpointName.replaceAll(" ", "-")
-
-      val result = documentationController.definition()(request)
+    "return the JSON definition" in new Setup {
+      val result = await(documentationController.definition()(request))
       status(result) shouldBe OK
-      bodyOf(result).futureValue should include("\"context\": \"api-publisher\"")
+      bodyOf(result) should include(""""context": "test-api-context"""")
     }
 
-    "provide raml documentation for v1.0" in new Setup {
-      val result = documentationController.raml("1.0", "application.raml")(request)
+    "return the RAML" in new Setup {
+      val result = await(documentationController.raml("1.0", "application.raml")(request))
       status(result) shouldBe OK
-      bodyOf(result).futureValue should startWith("#%RAML 1.0")
+      bodyOf(result) should include("/test-api-context")
     }
   }
+}
 
-  override protected def afterEach(): Unit = {
-    wireMockServer.stop()
-    wireMockServer.resetMappings()
+class PublishApiDefinitionDisabledSpec extends PlatformIntegrationSpec {
+  val publishApiDefinition = false
+
+  "microservice" should {
+
+    "return a 204 from the definition endpoint" in new Setup {
+      val result = await(documentationController.definition()(request))
+      status(result) shouldBe NO_CONTENT
+    }
+
+    "return a 204 from the RAML endpoint" in new Setup {
+      val result = await(documentationController.raml("1.0", "application.raml")(request))
+      status(result) shouldBe NO_CONTENT
+    }
   }
 }

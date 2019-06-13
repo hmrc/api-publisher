@@ -35,8 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService, appContext: AppContext)(implicit val ec: ExecutionContext)
-  extends BaseController {
+class PublisherController @Inject()(publisherService: PublisherService, approvalService: ApprovalService, appContext: AppContext)
+                                   (implicit val ec: ExecutionContext) extends BaseController {
 
   val FAILED_TO_PUBLISH = "FAILED_TO_PUBLISH_SERVICE"
   val FAILED_TO_VALIDATE = "FAILED_TO_VALIDATE"
@@ -52,12 +52,15 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
   private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
     Logger.info(s"Publishing service $serviceLocation")
     publisherService.publishAPIDefinitionAndScopes(serviceLocation).map {
-      case true =>
+      case Some(true) =>
         Logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
         NoContent
-      case _ =>
+      case Some(false) =>
         Logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
         Accepted
+      case None =>
+        Logger.info(s"API publishing disabled for ${serviceLocation.serviceName}")
+        NoContent
     } recover recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}")
   }
 

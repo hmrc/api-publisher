@@ -24,18 +24,20 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.domain.Endpoints
 
+import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit val ec: ExecutionContext) {
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[ApiAndScopes] = {
-    microserviceConnector.getAPIAndScopes(serviceLocation).flatMap { apiAndScopes =>
-      addDetailFromRaml(serviceLocation, apiAndScopes) match {
-        case Success(data) => Future.successful(data)
-        case Failure(ex) => Future.failed(ex)
+  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+    microserviceConnector.getAPIAndScopes(serviceLocation).flatMap {
+      case Some(apiAndScopes) => addDetailFromRaml(serviceLocation, apiAndScopes) match {
+        case Success(data) => successful(Some(data))
+        case Failure(ex) => failed(ex)
       }
+      case None => successful(None)
     }
   }
 

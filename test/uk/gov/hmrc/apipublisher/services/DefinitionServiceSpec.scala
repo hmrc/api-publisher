@@ -25,9 +25,12 @@ import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.ClasspathRamlLoader
-import scala.concurrent.Future.successful
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
+import scala.util.Try
 
 class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
@@ -38,10 +41,29 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val definitionService = new DefinitionService(mockMicroserviceConnector)
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
-    def raml(path: String) = new ClasspathRamlLoader().load(path)
+    def raml(path: String): Try[RAML] = new ClasspathRamlLoader().load(path)
   }
 
   "The DefinitionService" should {
+    "Return none if the microservice connector returns none" in new Setup {
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(None))
+
+      val definition: Option[ApiAndScopes] = await(definitionService.getDefinition(testService))
+
+      definition shouldBe None
+    }
+
+    "Fail if the microservice connector fails" in new Setup {
+      val errorMessage = "something went wrong"
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(failed(new RuntimeException(errorMessage)))
+
+      val exception: Exception = intercept[Exception] {
+        await(definitionService.getDefinition(testService))
+      }
+
+      exception.getMessage shouldBe errorMessage
+    }
+
     "Create a ApiAndScopes object from a definition.json with no endpoints and a single raml version" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
@@ -49,10 +71,10 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-simple.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -65,10 +87,10 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-simple-no-context.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -81,10 +103,10 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-simple-dodgy-context.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -97,10 +119,10 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-simple-throttling.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -113,10 +135,10 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-simple.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -131,12 +153,12 @@ class DefinitionServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val api_exp = json[JsObject]("/expected/api-multi-version.json")
 
-      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(ApiAndScopes(api, scopes)))
+      given(mockMicroserviceConnector.getAPIAndScopes(testService)).willReturn(successful(Some(ApiAndScopes(api, scopes))))
       given(mockMicroserviceConnector.getRaml(testService, "1.0")).willReturn(testRaml_1)
       given(mockMicroserviceConnector.getRaml(testService, "2.0")).willReturn(testRaml_2)
       given(mockMicroserviceConnector.getRaml(testService, "3.0")).willReturn(testRaml_3)
 
-      val expectedApiAndScopes = ApiAndScopes(api_exp, scopes)
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
