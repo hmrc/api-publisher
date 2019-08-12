@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "API definition",
+  "type": "object",
+  "properties": {
+    "scopes": {
+      "description": "The OAuth scopes used by this API",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The key used to refer to this scope",
+            "type": "string"
+          },
+          "name": {
+            "description": "The name for this scope shown to users in the OAuth journey",
+            "type": "string"
+          },
+          "description": {
+            "description": "The description for this scope",
+            "type": "string"
+          },
+          "confidenceLevel": {
+            "description": "The confidence level required to use this scope. Value can be 50, 100, 200 or 300",
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 300
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "description"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The name for the API",
+          "type": "string"
+        },
+        "description": {
+          "description": "The description for the API",
+          "type": "string"
+        },
+        "context": {
+          "description": "The unique context for the API. This should be consistent with the HMRC Domain Model",
+          "type": "string"
+        },
+        "isTestSupport": {
+          "description": "Categorises the API as being a Test Support API",
+          "type": "boolean",
+          "default": false
+        },
+        "requiresTrust": {
+          "description": "DEPRECATED. This has been superseded by Private APIs",
+          "type": "boolean",
+          "default": false
+        },
+        "categories": {
+          "description": "The list of service groups the API will appear under.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "EXAMPLE",
+              "AGENTS",
+              "BUSINESS_RATES",
+              "CHARITIES",
+              "CONSTRUCTION_INDUSTRY_SCHEME",
+              "CORPORATION_TAX",
+              "CUSTOMS",
+              "ESTATES",
+              "HELP_TO_SAVE",
+              "INCOME_TAX_MTD",
+              "LIFETIME_ISA",
+              "MARRIAGE_ALLOWANCE",
+              "NATIONAL_INSURANCE",
+              "PAYE",
+              "PENSIONS",
+              "PRIVATE_GOVERNMENT",
+              "RELIEF_AT_SOURCE",
+              "SELF_ASSESSMENT",
+              "STAMP_DUTY",
+              "TRUSTS",
+              "VAT",
+              "VAT_MTD",
+              "OTHER"
+            ]
+          }
+        },
+        "versions": {
+          "description": "The versions that the API supports",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "description": "The version number of the API",
+                "type": "string"
+              },
+              "status": {
+                "description": "The current lifecycle status for this API version. PROTOTYPED and PUBLISHED should not be used",
+                "type": "string",
+                "enum": [
+                  "PROTOTYPED",
+                  "PUBLISHED",
+                  "ALPHA",
+                  "BETA",
+                  "STABLE",
+                  "DEPRECATED",
+                  "RETIRED"
+                ]
+              },
+              "endpointsEnabled": {
+                "description": "Whether the endpoints for this API version are available to call",
+                "type": "boolean",
+                "default": true
+              },
+              "access": {
+                "description": "Used to indicate whether this API version is public or private. If absent, the API defaults to public",
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "description": "The access type for this API version.",
+                    "type": "string",
+                    "enum": [
+                      "PUBLIC",
+                      "PRIVATE"
+                    ]
+                  },
+                  "whitelistedApplicationIds": {
+                    "description": "IDs of the applications that are whitelisted to access this API version",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "isTrial": {
+                    "description": "Whether this API version is a private trial",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              },
+              "fieldDefinitions": {
+                "description": "List of subscription fields for this API version",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "The internal identifier for this field",
+                      "type": "string"
+                    },
+                    "description": {
+                      "description": "The description that will be shown to users for this field",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "The type of value expected for this field",
+                      "type": "string"
+                    },
+                    "hint": {
+                      "description": "Hint text to display to users to help them provide a correct value for this field",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "description",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "version",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "context",
+        "versions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "api"
+  ],
+  "additionalProperties": false
+}
