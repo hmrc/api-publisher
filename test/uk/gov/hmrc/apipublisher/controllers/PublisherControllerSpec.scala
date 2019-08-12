@@ -30,16 +30,16 @@ import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.test.FakeRequest
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite {
@@ -63,7 +63,8 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
 
     val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
-    val marriageAllowanceApproval = APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
+    val marriageAllowanceApproval =
+      APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
   }
 
   "publish" should {
@@ -99,14 +100,18 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     }
 
     "return 500 (internal server error) when publisher service fails with an unexpected exception" in new Setup {
+      val errorMessage = "Test error"
+      val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
-      given(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(errorServiceLocation))(any[HeaderCarrier])).willReturn(Future.failed(new IllegalArgumentException("Test error")))
+      given(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(errorServiceLocation))(any[HeaderCarrier]))
+        .willReturn(Future.failed(new IllegalArgumentException(errorMessage)))
 
       val errorRequest = request(errorServiceLocation, sharedSecret)
 
       val result: Result = await(underTest.publish(errorRequest))
 
       status(result) shouldEqual INTERNAL_SERVER_ERROR
+      bodyOf(result) shouldEqual expectedResponseBody
     }
 
     "return 401 (unauthorized) when Authorization header is not included in request" in new Setup {
@@ -123,6 +128,15 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       val result: Result = await(underTest.publish(requestWithBadToken))
 
       status(result) shouldEqual UNAUTHORIZED
+    }
+
+    "return 422 when publishing fails" in new Setup {
+      when(mockPublisherService.publishAPIDefinitionAndScopes(ArgumentMatchers.eq(serviceLocation))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new UnprocessableEntityException("")))
+
+      val result = await(underTest.publish(request(serviceLocation, sharedSecret)))
+
+      status(result) shouldEqual UNPROCESSABLE_ENTITY
     }
   }
 
@@ -214,7 +228,8 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     }
 
     "generate an error when an unknown service is requested" in new Setup {
-      when(mockApprovalService.fetchServiceApproval("unknown-service")).thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
+      when(mockApprovalService.fetchServiceApproval("unknown-service"))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
       val result = await(underTest.fetchServiceSummary("unknown-service")(FakeRequest()))
 
       status(result) shouldBe NOT_FOUND
@@ -237,7 +252,8 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
     "raise an error when attempting to approve an unknown service" in new Setup {
 
-      when(mockApprovalService.approveService("unknown-service")).thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
+      when(mockApprovalService.approveService("unknown-service"))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 
       val result = await(underTest.approve("unknown-service")(FakeRequest()))
 
