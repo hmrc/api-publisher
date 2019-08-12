@@ -128,7 +128,7 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
       NotFound
     case e =>
       Logger.error(s"$prefix - An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.UNKNOWN_ERROR, "An unexpected error occurred"))
+      InternalServerError(error(ErrorCode.UNKNOWN_ERROR, s"An unexpected error occurred: ${e.getMessage}"))
   }
 
 }
