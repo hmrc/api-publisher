@@ -39,7 +39,7 @@ response:
 200 OK
 ```
 
-# Running the tests
+## Running the tests
 Mongo version 3.2 must be running to execute the tests.
 Can start the correct version using docker with the following command:
 ```
@@ -51,5 +51,18 @@ Execute tests via sbt:
 sbt clean test it:test
 ```
 
-# License
+## API Definition schema
+
+This repo contains the [JSON schema for the API definition JSON](app/resources/api-definition-schema.json).
+
+Documentation for this schema is generated:
+
+```bash
+./generate-api-definition-docs.py app/resources/api-definition-schema.json > docs/api-definition.md
+```
+
+**This needs to be run whenever the schema is updated and the generated file should be committed. Confluence links to the generated documentation.**
+
+
+## License
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")

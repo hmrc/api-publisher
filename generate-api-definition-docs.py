@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json
 import argparse
 #
@@ -16,64 +18,73 @@ def output(text):
     print(text)
 
 
-def output_row(name, definition, is_required, **kwargs):
+def output_row(name, definition, is_required):
     """
     Output a table row markdown detailing information about JSON key
     :param name: Name of the JSON key
     :param definition: dict, the JSON schema definition for the key
     :param is_required: Is the key Optional or Required
-    :param kwargs: name_link=boolean, if True outputs the name as an anchor link
     :return: None
     """
+    data_type = definition.get('type')
     enum = definition.get('enum')
-    type = definition.get('type')
-    if type == 'array':
-        type = definition.get('items').get('type') + '[]'
+    default = definition.get('default', '')
+    values = ''
+
+    if data_type == 'array':
+        data_type = definition.get('items').get('type') + '[]'
         if definition.get('items').get('type') == 'string':
             enum = definition.get('items').get('enum')
-    enum = '' if not isinstance(enum, list) else '<br>'.join(enum)
+
+    if data_type == 'object' or data_type == 'object[]':
+        values = '[{}](#{})'.format(name.lower(), name)
+
+    if isinstance(enum, list):
+        values = '<br>'.join(enum)
+
     output(
-        '| {} | {} | {} | {} | {}'.format(
-            '[{0}](#{0})'.format(name.lower()) if kwargs['name_link'] is True else name,
-            type,
+        '| `{}` | `{}` | {} | {} | {} | {}'.format(
+            name,
+            data_type,
             is_required,
-            definition.get('description', ''),
-            enum
+            values,
+            default,
+            definition.get('description', '')
         )
     )
 
 
-def output_object(name, schema_object):
+def output_object(name, schema_object, **kwargs):
     """
     Output the markdown for a JSON schema object
     :param name: Name of the object/key
-    :param object: JSON schema definition
+    :param schema_object: JSON schema definition
     :return: None
     """
     required = schema_object.get('required', [])
     children = []
 
-    output('## {}'.format(name))
+    output('{} {}'.format('#' * kwargs.get('level', 2), name))
     output(schema_object.get('description', ''))
     output('')
-    output('| {} | {} | {} | {} | {}'.format('key', 'type', 'required', 'description', 'values'))
-    output('| --- | --- | --- | --- | --- |')
+    output(
+        '| {} | {} | {} | {} | {} | {}'.format('key', 'type', 'required', 'values', 'default', 'description')
+    )
+    output('| --- | --- | --- | --- | --- | --- |')
     for name, definition in schema_object['properties'].items():
         is_required = 'Required' if name in required else 'Optional'
-        name_link = False
         if definition.get('type') == 'object':
             children.append({'name': name, 'definition': definition})
-            name_link = True
         if definition.get('type') == 'array' and definition.get('items').get('type') == 'object':
             children.append({'name': name, 'definition': definition.get('items')})
-            name_link = True
-        output_row(name, definition, is_required, name_link=name_link)
+        output_row(name, definition, is_required)
 
     for child in children:
-        output_object(child['name'], child['definition'])
+        output_object(child['name'], child['definition'], level=3)
 
 
 with open(args.schema_file) as file:
     schema = json.load(file)
 
+output('Generated from [JSON schema]({})'.format(args.schema_file))
 output_object('Root', schema)
