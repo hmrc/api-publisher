@@ -4,21 +4,21 @@
   "type": "object",
   "properties": {
     "scopes": {
-      "description": "The OAuth scopes used by this API",
+      "description": "List of OAuth scopes used by this API",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "key": {
-            "description": "The key used to refer to this scope",
+            "description": "The key/identifier used to refer to this scope",
             "type": "string"
           },
           "name": {
-            "description": "The name for this scope shown to users in the OAuth journey",
+            "description": "The human friendly name for this scope shown to users in the OAuth journey and in documentation",
             "type": "string"
           },
           "description": {
-            "description": "The description for this scope",
+            "description": "The description for this scope (recommendation set this to the same value as the name)",
             "type": "string"
           },
           "confidenceLevel": {
@@ -37,6 +37,7 @@
       }
     },
     "api": {
+      "description": "Definition of the API",
       "type": "object",
       "properties": {
         "name": {
@@ -94,7 +95,7 @@
           }
         },
         "versions": {
-          "description": "The versions that the API supports",
+          "description": "List of versions that the API supports",
           "type": "array",
           "items": {
             "type": "object",
@@ -200,6 +201,7 @@
     }
   },
   "required": [
+    "scopes",
     "api"
   ],
   "additionalProperties": false
