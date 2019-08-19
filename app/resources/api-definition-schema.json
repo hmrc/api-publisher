@@ -1,10 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "API definition",
+  "description": "HMRC API definition",
   "type": "object",
   "properties": {
     "scopes": {
-      "description": "List of OAuth scopes used by this API",
+      "description": "A list of OAuth scopes used by this API",
       "type": "array",
       "items": {
         "type": "object",
@@ -22,7 +22,7 @@
             "type": "string"
           },
           "confidenceLevel": {
-            "description": "The confidence level required to use this scope. Value can be 50, 100, 200 or 300",
+            "description": "The Identity Verification confidence level required to use this scope. Value can be 50, 100, 200 or 300",
             "type": "integer",
             "minimum": 50,
             "maximum": 300
@@ -37,7 +37,7 @@
       }
     },
     "api": {
-      "description": "Definition of the API",
+      "description": "The definition of the API",
       "type": "object",
       "properties": {
         "name": {
@@ -95,17 +95,17 @@
           }
         },
         "versions": {
-          "description": "List of versions that the API supports",
+          "description": "A list of the different versions of the API",
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
               "version": {
-                "description": "The version number of the API",
+                "description": "The version number",
                 "type": "string"
               },
               "status": {
-                "description": "The current lifecycle status for this API version. PROTOTYPED and PUBLISHED should not be used",
+                "description": "The current lifecycle status. PROTOTYPED and PUBLISHED should not be used",
                 "type": "string",
                 "enum": [
                   "PROTOTYPED",
@@ -118,7 +118,7 @@
                 ]
               },
               "endpointsEnabled": {
-                "description": "Whether the endpoints for this API version are available to call",
+                "description": "Whether the endpoints are enabled.",
                 "type": "boolean",
                 "default": true
               },
@@ -127,7 +127,7 @@
                 "type": "object",
                 "properties": {
                   "type": {
-                    "description": "The access type for this API version.",
+                    "description": "Whether the API version is publicly available or only for private use.",
                     "type": "string",
                     "enum": [
                       "PUBLIC",
@@ -135,7 +135,7 @@
                     ]
                   },
                   "whitelistedApplicationIds": {
-                    "description": "IDs of the applications that are whitelisted to access this API version",
+                    "description": "Application IDs that are whitelisted to access this PRIVATE API version",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -152,7 +152,7 @@
                 "additionalProperties": false
               },
               "fieldDefinitions": {
-                "description": "List of subscription fields for this API version",
+                "description": "A list of subscription fields for this API version",
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -167,7 +167,12 @@
                     },
                     "type": {
                       "description": "The type of value expected for this field",
-                      "type": "string"
+                      "type": "string",
+                      "enum": [
+                          "URL",
+                          "SecureToken",
+                          "STRING"
+                      ]
                     },
                     "hint": {
                       "description": "Hint text to display to users to help them provide a correct value for this field",
