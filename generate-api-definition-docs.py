@@ -64,7 +64,7 @@ def output_object(name, schema_object, **kwargs):
     required = schema_object.get('required', [])
     children = []
 
-    output('{} {}'.format('#' * kwargs.get('level', 2), name))
+    output('{} `{}`'.format('#' * kwargs.get('level', 2), name))
     output(schema_object.get('description', ''))
     output('')
     output(
@@ -87,4 +87,4 @@ with open(args.schema_file) as file:
     schema = json.load(file)
 
 output('Generated from [JSON schema]({})'.format(args.schema_file))
-output_object('Root', schema)
+output_object('root', schema)
