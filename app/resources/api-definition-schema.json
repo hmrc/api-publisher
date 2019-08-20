@@ -146,6 +146,14 @@
                     "type": "boolean"
                   }
                 },
+                "if": {
+                  "properties": { "type": { "const": "PRIVATE" } }
+                },
+                "then": {
+                  "required": [
+                    "whitelistedApplicationIds"
+                  ]
+                },
                 "required": [
                   "type"
                 ],
