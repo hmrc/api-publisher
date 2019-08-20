@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "HMRC API definition",
   "type": "object",
   "properties": {
@@ -118,7 +118,7 @@
                 ]
               },
               "endpointsEnabled": {
-                "description": "Whether the endpoints are enabled.",
+                "description": "Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA",
                 "type": "boolean",
                 "default": true
               },
@@ -187,6 +187,15 @@
                   "additionalProperties": false
                 }
               }
+            },
+            "if": {
+              "properties": { "status": { "const": "ALPHA" } }
+            },
+            "then": {
+              "properties": { "endpointsEnabled": { "const": false } },
+              "required": [
+                "endpointsEnabled"
+              ]
             },
             "required": [
               "version",

@@ -33,7 +33,7 @@ The definition of the API
 | key | type | required | values | default | description
 | --- | --- | --- | --- | --- | --- |
 | `status` | `string` | Required | PROTOTYPED<br>PUBLISHED<br>ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED |  | The current lifecycle status. PROTOTYPED and PUBLISHED should not be used
-| `endpointsEnabled` | `boolean` | Optional |  | True | Whether the endpoints are enabled.
+| `endpointsEnabled` | `boolean` | Optional |  | True | Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA
 | `version` | `string` | Required |  |  | The version number
 | `fieldDefinitions` | `object[]` | Optional | [fielddefinitions](#fieldDefinitions) |  | A list of subscription fields for this API version
 | `access` | `object` | Optional | [access](#access) |  | Used to indicate whether this API version is public or private. If absent, the API defaults to public
@@ -51,6 +51,6 @@ Used to indicate whether this API version is public or private. If absent, the A
 
 | key | type | required | values | default | description
 | --- | --- | --- | --- | --- | --- |
-| `whitelistedApplicationIds` | `string[]` | Optional |  |  | IDs of the applications that are whitelisted to access this API version
+| `whitelistedApplicationIds` | `string[]` | Optional |  |  | Application IDs that are whitelisted to access this PRIVATE API version
 | `isTrial` | `boolean` | Optional |  |  | Whether this API version is a private trial
 | `type` | `string` | Required | PUBLIC<br>PRIVATE |  | Whether the API version is publicly available or only for private use.
