@@ -1,20 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "HMRC API definition",
+  "description": "HMRC API definition. See [JSON definition]",
   "type": "object",
   "properties": {
     "scopes": {
-      "description": "A list of OAuth scopes used by this API",
+      "description": "A list of all OAuth scopes used by this API",
       "type": "array",
       "items": {
+        "description": "Details of an OAuth scope",
         "type": "object",
         "properties": {
           "key": {
-            "description": "The key/identifier used to refer to this scope",
-            "type": "string"
+            "description": "The key/identifier used to refer to this scope (lowercase, separate words with a colon(:)).",
+            "type": "string",
+            "pattern": "^[a-z:\\-0-9]+$",
+            "maxLength": 60
           },
           "name": {
-            "description": "The human friendly name for this scope shown to users in the OAuth journey and in documentation",
+            "description": "The human friendly name for this scope (sentence case). This is shown to users in the OAuth journey and in documentation,",
             "type": "string"
           },
           "description": {
@@ -22,7 +25,7 @@
             "type": "string"
           },
           "confidenceLevel": {
-            "description": "The Identity Verification confidence level required to use this scope. Value can be 50, 100, 200 or 300",
+            "description": "The Identity Verification confidence level required to use this scope. Value can be 50, 100, 200 or 300. See [Identity Verification on the API Platform](https://confluence.tools.tax.service.gov.uk/display/DTRG/Identity+Verification+on+the+API+Platform)",
             "type": "integer",
             "minimum": 50,
             "maximum": 300
@@ -37,20 +40,23 @@
       }
     },
     "api": {
-      "description": "The definition of the API",
+      "description": "Details of the API",
       "type": "object",
       "properties": {
         "name": {
-          "description": "The name for the API",
-          "type": "string"
+          "description": "The name for the API (title case i.e. Individual Benefits, not Individual benefits).",
+          "type": "string",
+          "pattern": "^[A-Z]{1}.*$",
+          "maxLength": 50
         },
         "description": {
           "description": "The description for the API",
           "type": "string"
         },
         "context": {
-          "description": "The unique context for the API. This should be consistent with the HMRC Domain Model",
-          "type": "string"
+          "description": "The unique context for the API. This should be consistent with the HMRC Domain Model. See [API Domain Model](https://confluence.tools.tax.service.gov.uk/display/ApiPlatform/HMRC%27s+API+Domain+Model)",
+          "type": "string",
+          "pattern": "^[a-z]+[a-z/\\-]{4,}$"
         },
         "isTestSupport": {
           "description": "Categorises the API as being a Test Support API",
@@ -58,12 +64,12 @@
           "default": false
         },
         "requiresTrust": {
-          "description": "DEPRECATED. This has been superseded by Private APIs",
+          "description": "DEPRECATED. This has been superseded by Private API access",
           "type": "boolean",
           "default": false
         },
         "categories": {
-          "description": "The list of service groups the API will appear under.",
+          "description": "The list of service groups the API will be categorised by.",
           "type": "array",
           "items": {
             "type": "string",
@@ -98,14 +104,16 @@
           "description": "A list of the different versions of the API",
           "type": "array",
           "items": {
+            "description": "Details of an API version",
             "type": "object",
             "properties": {
               "version": {
-                "description": "The version number",
-                "type": "string"
+                "description": "The version number. Eg 1.0",
+                "type": "string",
+                "pattern": "^[0-9\\.P]+$"
               },
               "status": {
-                "description": "The current lifecycle status. PROTOTYPED and PUBLISHED should not be used",
+                "description": "The current lifecycle status. PROTOTYPED and PUBLISHED should not be used. See [Lifecycle]",
                 "type": "string",
                 "enum": [
                   "PROTOTYPED",
@@ -123,7 +131,7 @@
                 "default": true
               },
               "access": {
-                "description": "Used to indicate whether this API version is public or private. If absent, the API defaults to public",
+                "description": "Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access]",
                 "type": "object",
                 "properties": {
                   "type": {
@@ -135,7 +143,7 @@
                     ]
                   },
                   "whitelistedApplicationIds": {
-                    "description": "Application IDs that are whitelisted to access this PRIVATE API version",
+                    "description": "A list of Developer Hub Application IDs that are whitelisted to access this Private API version",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -160,14 +168,16 @@
                 "additionalProperties": false
               },
               "fieldDefinitions": {
-                "description": "A list of subscription fields for this API version",
+                "description": "A list of subscription fields for this API version, If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup ",
                 "type": "array",
                 "items": {
+                  "description": "Details a subscription field used by this API.",
                   "type": "object",
                   "properties": {
                     "name": {
                       "description": "The internal identifier for this field",
-                      "type": "string"
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]*$"
                     },
                     "description": {
                       "description": "The description that will be shown to users for this field",

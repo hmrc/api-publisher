@@ -16,6 +16,7 @@ args = parser.parse_args()
 
 def output(text):
     print(text)
+    pass
 
 
 def output_row(name, definition, is_required):
@@ -31,24 +32,33 @@ def output_row(name, definition, is_required):
     default = definition.get('default', '')
     values = ''
 
+    # If the data type is an array get details of the type within the array
     if data_type == 'array':
         data_type = definition.get('items').get('type') + '[]'
         if definition.get('items').get('type') == 'string':
             enum = definition.get('items').get('enum')
 
+    # if the data type is an object then make it into a link
     if data_type == 'object' or data_type == 'object[]':
         values = '[{}](#{})'.format(name.lower(), name)
 
+    # if the data type is a string with a pattern then use the regex pattern as the value
+    if data_type == 'string' and definition.get('pattern'):
+        values = definition.get('pattern')
+
+    if definition.get('default') is not None:
+        values = '{} (default)'.format(definition.get('default'))
+
+    # Separate lists with a <br>
     if isinstance(enum, list):
         values = '<br>'.join(enum)
 
     output(
-        '| `{}` | `{}` | {} | {} | {} | {}'.format(
+        '| `{}` | _{}_ | {} | {} | {} |'.format(
             name,
             data_type,
             is_required,
             values,
-            default,
             definition.get('description', '')
         )
     )
@@ -68,9 +78,9 @@ def output_object(name, schema_object, **kwargs):
     output(schema_object.get('description', ''))
     output('')
     output(
-        '| {} | {} | {} | {} | {} | {}'.format('key', 'type', 'required', 'values', 'default', 'description')
+        '| {} | {} | {} | {} | {} |'.format('Name', 'Type', 'Required', 'Values', 'Description')
     )
-    output('| --- | --- | --- | --- | --- | --- |')
+    output('| --- | --- | --- | --- | --- |')
     for name, definition in schema_object['properties'].items():
         is_required = 'Required' if name in required else 'Optional'
         if definition.get('type') == 'object':
@@ -86,5 +96,6 @@ def output_object(name, schema_object, **kwargs):
 with open(args.schema_file) as file:
     schema = json.load(file)
 
+output('# {}'.format(schema.get('description')))
 output('Generated from [JSON schema]({})'.format(args.schema_file))
 output_object('root', schema)
