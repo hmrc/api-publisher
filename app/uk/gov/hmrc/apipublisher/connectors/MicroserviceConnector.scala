@@ -16,8 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import java.io.InputStream
+import java.nio.charset.StandardCharsets.UTF_8
+
 import javax.inject.{Inject, Singleton}
+import org.apache.commons.io.IOUtils
+import org.everit.json.schema.Schema
+import org.everit.json.schema.loader.SchemaLoader
+import org.json.JSONObject
+import play.api.Environment
 import play.api.http.Status.NO_CONTENT
+import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, OptionHttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -28,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 @Singleton
-class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient)
+class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, env: Environment)
                                      (implicit val ec: ExecutionContext) extends ConnectorRecovery with OptionHttpReads {
 
   // Overridden so we can map only 204 to None, rather than also including 404
@@ -41,7 +50,17 @@ class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient)
 
   def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"
-    http.GET[Option[ApiAndScopes]](url) recover unprocessableRecovery
+    http.GET[Option[ApiAndScopes]](url).map(validateApiAndScopesAgainstSchema) recover unprocessableRecovery
+  }
+
+  private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
+    apiAndScopes map { definition =>
+      val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
+      val schema: Schema = SchemaLoader.load(new JSONObject(IOUtils.toString(inputStream, UTF_8)))
+      IOUtils.closeQuietly(inputStream)
+      schema.validate(new JSONObject(Json.toJson(definition).toString))
+      definition
+    }
   }
 
   def getRaml(serviceLocation: ServiceLocation, version: String): Try[RAML] = {

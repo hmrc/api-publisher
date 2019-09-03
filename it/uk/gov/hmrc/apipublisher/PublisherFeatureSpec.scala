@@ -20,11 +20,13 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.http.Status.UNPROCESSABLE_ENTITY
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
-
 import scalaj.http.{Http, HttpResponse}
+import uk.gov.hmrc.apipublisher.models.ErrorCode.INVALID_API_DEFINITION
 
 class PublisherFeatureSpec extends BaseFeatureSpec {
 
@@ -92,6 +94,31 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The api-publisher responded with status 2xx")
       publishResponse.is2xx shouldBe true
     }
+
+    scenario("Validation of API definition failed") {
+
+      Given("A microservice is running with an invalid API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
+
+      When("The service locator triggers the publisher")
+      val publishResponse: HttpResponse[String] =
+        Http(s"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe UNPROCESSABLE_ENTITY
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body)
+      (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
+      val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String])
+      errorMessages should contain only (
+        """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
+        """string [c] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
+      )
+    }
   }
 
   override def beforeEach() {
@@ -113,6 +140,30 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
   val apiSubscriptionFieldsUrlVersion_2_0 = s"/definition/context/$urlEncodedApiContext/version/2.0"
   val apiSubscriptionFieldsUrlVersion_3_0 = s"/definition/context/$urlEncodedApiContext/version/3.0"
 
+  val invalidDefinitionJson =
+    s"""
+       |{
+       |  "scopes": [
+       |    {
+       |      "key": "read:HELLO",
+       |      "name": "Say Hello",
+       |      "description": "Ability to Say Hello"
+       |    }
+       |  ],
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "c",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED"
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
   val definitionJson =
     s"""
       |{
@@ -133,7 +184,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       |        "status": "PUBLISHED",
       |        "fieldDefinitions": [
       |          {
-      |            "name": "callback-url",
+      |            "name": "callbackUrl",
       |            "description": "Callback URL",
       |            "hint": "Just a hint",
       |            "type": "URL"
@@ -155,7 +206,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       |        "status": "PUBLISHED",
       |        "fieldDefinitions": [
       |          {
-      |            "name": "callback-url-only",
+      |            "name": "callbackUrlOnly",
       |            "description": "Only a callback URL",
       |            "hint": "Just a hint",
       |            "type": "URL"
@@ -172,7 +223,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       |{
       |  "fieldDefinitions": [
       |    {
-      |      "name": "callback-url",
+      |      "name": "callbackUrl",
       |      "description": "Callback URL",
       |      "hint": "Just a hint",
       |      "type": "URL"
@@ -192,7 +243,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
      |{
      |  "fieldDefinitions": [
      |    {
-     |      "name": "callback-url-only",
+     |      "name": "callbackUrlOnly",
      |      "description": "Only a callback URL",
      |      "hint": "Just a hint",
      |      "type": "URL"

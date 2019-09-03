@@ -5,26 +5,37 @@ import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 lazy val appName = "api-publisher"
-lazy val appDependencies: Seq[ModuleID] = compile ++ test
+lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.9.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.16.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.14.0-play-25"
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.20.0-play-25",
+  "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.11.1"
 )
 
 lazy val scope: String = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "hmrctest" % "3.6.0-play-25" % scope,
+  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % scope,
   "org.scalaj" %% "scalaj-http" % "2.4.0" % scope,
   "org.scalatest" %% "scalatest" % "3.0.4" % scope,
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
   "org.mockito" % "mockito-core" % "2.11.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
   "com.github.tomakehurst" % "wiremock" % "2.11.0" % scope,
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.9.0-play-25" % scope
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % scope
 )
+
+// Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
+// See Jira story GG-3666 for further information
+def tmpMacWorkaround: Seq[ModuleID] = {
+  if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))) {
+    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
+  } else {
+    Seq()
+  }
+}
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
@@ -43,7 +54,8 @@ lazy val microservice = (project in file("."))
     libraryDependencies ++= appDependencies,
     parallelExecution in Test := false,
     fork in Test := false,
-    retrieveManaged := true
+    retrieveManaged := true,
+    unmanagedResourceDirectories in Compile += baseDirectory.value / "app/resources"
   )
   .settings(
     testOptions in Test := Seq(Tests.Filter(_ => true)), // this removes duplicated lines in HTML reports
@@ -61,7 +73,9 @@ lazy val microservice = (project in file("."))
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
-    resolvers += Resolver.jcenterRepo)
+    resolvers += Resolver.jcenterRepo,
+    resolvers += "jitpack" at "https://jitpack.io"
+  )
   .settings(ivyScala := ivyScala.value map {
     _.copy(overrideScalaVersion = true)
   })
