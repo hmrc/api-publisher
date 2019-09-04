@@ -20,23 +20,24 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import org.everit.json.schema.ValidationException
 import org.mockito.Mockito.{verify => verifyMock}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
 class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
@@ -49,6 +50,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
   val apiAndScopeDefinition = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints.json")).mkString
+  val invalidDefinition = Source.fromURL(getClass.getResource("/input/invalid-api-definition.json")).mkString
 
   val api = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
@@ -59,7 +61,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new MicroserviceConnector(mockRamlLoader, app.injector.instanceOf[HttpClient])
+    val connector = new MicroserviceConnector(mockRamlLoader, app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
   }
 
   override def beforeEach() {
@@ -92,6 +94,14 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NOT_FOUND)))
 
       intercept[NotFoundException] {
+        await(connector.getAPIAndScopes(testService))
+      }
+    }
+
+    "Fail if the API definition is invalid" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
+
+      intercept[ValidationException] {
         await(connector.getAPIAndScopes(testService))
       }
     }

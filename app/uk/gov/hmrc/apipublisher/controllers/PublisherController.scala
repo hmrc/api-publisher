@@ -18,16 +18,17 @@ package uk.gov.hmrc.apipublisher.controllers
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
+import org.everit.json.schema.ValidationException
 import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
@@ -120,6 +121,9 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
   }
 
   private def recovery(prefix: String): PartialFunction[Throwable, Result] = {
+    case e: ValidationException =>
+      Logger.error(s"$prefix - Validation of API definition failed: ${e.toJSON.toString(2)}", e)
+      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.parse(e.toJSON.toString)))
     case e: UnprocessableEntityException =>
       Logger.error(s"$prefix - Unprocessable request received: ${e.getMessage}", e)
       UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
