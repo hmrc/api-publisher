@@ -40,6 +40,13 @@ import scala.util.Try
 class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, env: Environment)
                                      (implicit val ec: ExecutionContext) extends ConnectorRecovery with OptionHttpReads {
 
+  val apiDefinitionSchema: Schema = {
+    val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
+    val schema: Schema = SchemaLoader.load(new JSONObject(IOUtils.toString(inputStream, UTF_8)))
+    IOUtils.closeQuietly(inputStream)
+    schema
+  }
+
   // Overridden so we can map only 204 to None, rather than also including 404
   implicit override def readOptionOf[P](implicit rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
     def read(method: String, url: String, response: HttpResponse): Option[P] = response.status match {
@@ -55,10 +62,7 @@ class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, 
 
   private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
     apiAndScopes map { definition =>
-      val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
-      val schema: Schema = SchemaLoader.load(new JSONObject(IOUtils.toString(inputStream, UTF_8)))
-      IOUtils.closeQuietly(inputStream)
-      schema.validate(new JSONObject(Json.toJson(definition).toString))
+      apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
       definition
     }
   }
