@@ -37,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 @Singleton
-class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, env: Environment)
+class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: RamlLoader, http: HttpClient, env: Environment)
                                      (implicit val ec: ExecutionContext) extends ConnectorRecovery with OptionHttpReads {
 
   val apiDefinitionSchema: Schema = {
@@ -62,7 +62,9 @@ class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, 
 
   private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
     apiAndScopes map { definition =>
-      apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
+      if (config.validateApiDefinition) {
+        apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
+      }
       definition
     }
   }
@@ -71,3 +73,5 @@ class MicroserviceConnector @Inject()(ramlLoader: RamlLoader, http: HttpClient, 
     ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
   }
 }
+
+case class MicroserviceConfig(validateApiDefinition: Boolean)

@@ -33,7 +33,8 @@ class ConfigurationModule extends Module {
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
-      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider]
+      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider],
+      bind[MicroserviceConfig].toProvider[MicroserviceConfigProvider]
     )
   }
 }
@@ -109,5 +110,17 @@ class ServiceLocatorConfigProvider @Inject()(val runModeConfiguration: Configura
   override def get() = {
     val serviceBaseUrl = baseUrl("service-locator")
     ServiceLocatorConfig(serviceBaseUrl)
+  }
+}
+
+@Singleton
+class MicroserviceConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[MicroserviceConfig] with ServicesConfig {
+
+  override protected def mode: Mode = environment.mode
+
+  override def get(): MicroserviceConfig = {
+    val validateApiDefinition = runModeConfiguration.getBoolean("validateApiDefinition").getOrElse(true)
+    MicroserviceConfig(validateApiDefinition)
   }
 }
