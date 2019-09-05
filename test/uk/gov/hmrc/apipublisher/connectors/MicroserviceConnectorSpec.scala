@@ -61,7 +61,13 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new MicroserviceConnector(mockRamlLoader, app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
+    val connector = new MicroserviceConnector(MicroserviceConfig(validateApiDefinition = true), mockRamlLoader,
+      app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
+  }
+
+  trait SetupWithNoApiDefinitionValidation extends Setup {
+    override val connector = new MicroserviceConnector(MicroserviceConfig(validateApiDefinition = false), mockRamlLoader,
+      app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
   }
 
   override def beforeEach() {
@@ -104,6 +110,14 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       intercept[ValidationException] {
         await(connector.getAPIAndScopes(testService))
       }
+    }
+
+    "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
+
+      val result: Option[ApiAndScopes] = await(connector.getAPIAndScopes(testService))
+
+      result shouldBe defined
     }
 
     "should not parse nginx response to JSON" in new Setup {
