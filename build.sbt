@@ -11,7 +11,8 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.16.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.20.0-play-25",
-  "com.github.everit-org.json-schema" % "org.everit.json.schema" % "1.11.1"
+  "org.json" % "json" % "20180130",
+  "com.damnhandy" % "handy-uri-templates" % "2.1.6"
 )
 
 lazy val scope: String = "test,it"
@@ -73,8 +74,7 @@ lazy val microservice = (project in file("."))
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
-    resolvers += Resolver.jcenterRepo,
-    resolvers += "jitpack" at "https://jitpack.io"
+    resolvers += Resolver.jcenterRepo
   )
   .settings(ivyScala := ivyScala.value map {
     _.copy(overrideScalaVersion = true)

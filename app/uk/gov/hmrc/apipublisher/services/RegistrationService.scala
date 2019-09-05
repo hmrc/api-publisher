@@ -34,7 +34,7 @@ class RegistrationService @Inject()(val serviceLocatorConnector: ServiceLocatorC
     if (appContext.registrationEnabled) {
       serviceLocatorConnector.register(Registration(appContext.appName, appContext.appUrl, Some(Map("third-party-api" -> "true"))))
     } else {
-      Future.successful()
+      Future.successful(())
     }
   }
 
