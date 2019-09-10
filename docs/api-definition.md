@@ -34,12 +34,13 @@ Details of an API version
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
 | `status` | _string_ | Required | PROTOTYPED<br>PUBLISHED<br>ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. PROTOTYPED and PUBLISHED should not be used. See [Lifecycle] |
+| `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version. |
+| `access` | _object_ | Optional | [access](#access) | Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access] |
 | `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA |
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
-| `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version, If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup  |
-| `access` | _object_ | Optional | [access](#access) | Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access] |
+| `endpoints` | _None_ | Optional |  | DEPRECATED |
 ### `fieldDefinitions`
-Details a subscription field used by this API.
+Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
