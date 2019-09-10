@@ -107,6 +107,9 @@
             "description": "Details of an API version",
             "type": "object",
             "properties": {
+              "endpoints": {
+                "description": "DEPRECATED"
+              },
               "version": {
                 "description": "The version number. Eg 1.0",
                 "type": "string",
@@ -168,10 +171,10 @@
                 "additionalProperties": false
               },
               "fieldDefinitions": {
-                "description": "A list of subscription fields for this API version, If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup ",
+                "description": "A list of subscription fields for this API version.",
                 "type": "array",
                 "items": {
-                  "description": "Details a subscription field used by this API.",
+                  "description": "Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.",
                   "type": "object",
                   "properties": {
                     "name": {
