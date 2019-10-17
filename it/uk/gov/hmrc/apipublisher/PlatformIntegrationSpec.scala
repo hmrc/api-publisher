@@ -11,13 +11,8 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 /**
   * Testcase to verify the capability of integration with the API platform.
-  *
-  * 1, To integrate with API platform the service needs to register itself to the service locator by calling the /registration endpoint and providing
-  * - application name
-  * - application url
-  *
-  * 2a, To expose API's to Third Party Developers, the service needs to make the API definition available under api/definition GET endpoint
-  * 2b, The endpoints need to be defined in an application.raml file for all versions  For all of the endpoints defined documentation will be provided and be
+  * 1a, To expose API's to Third Party Developers, the service needs to make the API definition available under api/definition GET endpoint
+  * 1b, The endpoints need to be defined in an application.raml file for all versions  For all of the endpoints defined documentation will be provided and be
   * available under api/documentation/[version]/[endpoint name] GET endpoint
   * Example: api/documentation/1.0/Fetch-Some-Data
   *
