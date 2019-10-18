@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.everit.json.schema.ValidationException
 import org.mockito.Mockito.{verify => verifyMock}
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -40,7 +40,7 @@ import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
-class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
+class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiProducerPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiProducerHost = "127.0.0.1"
@@ -56,6 +56,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
   trait Setup {
+    WireMock.reset()
     val mockRamlLoader = mock[RamlLoader]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
@@ -70,12 +71,12 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
   }
 
-  override def beforeEach() {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(apiProducerHost, apiProducerPort)
   }
 
-  override def afterEach() {
+  override def afterAll() {
     wireMockServer.stop()
   }
 

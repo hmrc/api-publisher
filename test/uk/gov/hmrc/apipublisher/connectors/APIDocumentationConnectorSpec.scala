@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -34,7 +34,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class APIDocumentationConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
+class APIDocumentationConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiDocumentationPort: Int = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiDocumentationHost = "localhost"
@@ -43,17 +43,18 @@ class APIDocumentationConnectorSpec extends UnitSpec with ScalaFutures with Befo
   val registrationRequest = RegistrationRequest("api-example-microservice", "http://localhost", Seq("1.0", "2.0"))
 
   trait Setup {
+    WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier()
     val apiDocumentationConfig = ApiDocumentationConfig("http://localhost:21112")
     val connector = new APIDocumentationConnector(apiDocumentationConfig, app.injector.instanceOf[HttpClient])
   }
 
-  override def beforeEach() {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(apiDocumentationHost, apiDocumentationPort)
   }
 
-  override def afterEach() {
+  override def afterAll() {
     wireMockServer.stop()
   }
 

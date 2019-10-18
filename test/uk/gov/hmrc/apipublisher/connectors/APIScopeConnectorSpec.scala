@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -30,11 +30,11 @@ import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
+class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiScopePort = sys.env.getOrElse("WIREMOCK", "21113").toInt
   val apiScopeHost = "localhost"
@@ -44,6 +44,7 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
   val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json"))
 
   trait Setup {
+    WireMock.reset()
     val apiScopeConfig = ApiScopeConfig("http://localhost:21113")
 
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
@@ -51,12 +52,12 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
     val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClient])
   }
 
-  override def beforeEach() {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(apiScopeHost, apiScopePort)
   }
 
-  override def afterEach() {
+  override def afterAll() {
     wireMockServer.stop()
   }
 

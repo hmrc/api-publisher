@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -31,12 +31,12 @@ import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
-import scala.io.Source.fromURL
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterEach with MockitoSugar with GuiceOneAppPerSuite {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source.fromURL
+
+class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
 
   val apiDefinitionPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiDefinitionHost = "localhost"
@@ -46,6 +46,7 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   val api = Json.parse(definition).as[JsObject]
 
   trait Setup {
+    WireMock.reset()
     val apiDefinitionConfig = ApiDefinitionConfig("http://localhost:21112")
 
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
@@ -55,12 +56,12 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
     val connector = new APIDefinitionConnector(apiDefinitionConfig, app.injector.instanceOf[HttpClient])
   }
 
-  override def beforeEach() {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(apiDefinitionHost, apiDefinitionPort)
   }
 
-  override def afterEach() {
+  override def afterAll() {
     wireMockServer.stop()
   }
 

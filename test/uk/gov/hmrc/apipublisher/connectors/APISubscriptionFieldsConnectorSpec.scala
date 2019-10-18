@@ -20,8 +20,8 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.http.Status
@@ -32,14 +32,13 @@ import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source.fromURL
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll with BeforeAndAfterEach
-  with GuiceOneAppPerSuite with MockitoSugar {
+class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll with GuiceOneAppPerSuite with MockitoSugar {
 
   val apiSubscriptionFieldsPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiSubscriptionFieldsHost = "localhost"
@@ -62,6 +61,7 @@ class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll
   val error500ResponseBody = """{"code":"INTERNAL_ERROR","message":"Something went really wrong"}"""
 
   trait Setup {
+    WireMock.reset()
     val apiSubscriptionFieldsConfig = ApiSSubscriptionFieldsConfig(s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort")
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
@@ -76,11 +76,6 @@ class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll
   override protected def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
-  }
-
-  override protected def beforeEach() {
-    WireMock.reset()
-    WireMock.resetAllRequests()
   }
 
   override protected def afterAll() {
