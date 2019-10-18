@@ -33,7 +33,6 @@ class ConfigurationModule extends Module {
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
-      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider],
       bind[MicroserviceConfig].toProvider[MicroserviceConfigProvider]
     )
   }
@@ -98,18 +97,6 @@ class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: C
   override def get() = {
     val serviceBaseUrl = baseUrl("api-subscription-fields")
     ApiSSubscriptionFieldsConfig(serviceBaseUrl)
-  }
-}
-
-@Singleton
-class ServiceLocatorConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ServiceLocatorConfig] with ServicesConfig {
-
-  override protected def mode: Mode = environment.mode
-
-  override def get() = {
-    val serviceBaseUrl = baseUrl("service-locator")
-    ServiceLocatorConfig(serviceBaseUrl)
   }
 }
 

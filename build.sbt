@@ -8,7 +8,7 @@ lazy val appName = "api-publisher"
 lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.16.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "5.1.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.20.0-play-25",
   "org.json" % "json" % "20180130",

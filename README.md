@@ -1,23 +1,20 @@
 # API Publisher
-API Publisher registers on startup to the Service Locator to get notified when a microservice has APIs to publish.
-
-When the service locator notifies the API Publisher about a new service coming up,
+When an API is published through the publish-api Jenkins job,
 the API Publisher retrieves its API definition and RAML specification, 
 then publish its definition to the API Definition service and its scope to the API Scope service.
 
 ## What uses this service?
-* [Service Locator](https://github.com/HMRC/service-locator)
+* The publish-api Jenkins job
 * [API Gatekeeper Frontend](https://github.com/hmrc/api-gatekeeper-frontend) (SDST allowing API to be published)
 
 ## What does this service use?
 * [API Definition](https://github.com/HMRC/api-definition)
 * [API Scope](https://github.com/HMRC/api-scope)
-* [Service Locator](https://github.com/HMRC/service-locator)
 * Metrics/Grafana/Kibana
 * Additionally this calls every configured API microservice (asks for API definition and RAML files)
 
 ### Notification of a new microservice
-Service locator uses this endpoint to notify of a new microservice
+Jenkins uses this endpoint to notify of a new microservice
 
 request: 
 ```

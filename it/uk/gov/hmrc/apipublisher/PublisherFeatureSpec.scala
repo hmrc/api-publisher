@@ -58,7 +58,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The api documentation is running")
       apiDocumentationMock.register(post(urlEqualTo("/apis/register")).willReturn(aResponse()))
 
-      When("The service locator triggers the publisher")
+      When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
@@ -100,7 +100,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       Given("A microservice is running with an invalid API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
 
-      When("The service locator triggers the publisher")
+      When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
@@ -123,8 +123,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   override def beforeEach() {
     super.beforeEach()
-    serviceLocatorMock.register(post(urlEqualTo("/subscription")).willReturn(aResponse()))
-
     server = new TestServer(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
