@@ -29,7 +29,6 @@ class ConfigurationModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
       bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
-      bind[ApiDocumentationConfig].toProvider[ApiDocumentationConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
@@ -44,23 +43,11 @@ class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configurat
 
   override protected def mode: Mode = environment.mode
 
-  override def get() = {
+  override def get(): DocumentationConfig = {
     val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
     val apiContext = runModeConfiguration.getString("api.context").getOrElse("api-publisher")
     val access = runModeConfiguration.getConfig(s"api.access")
     DocumentationConfig(publishApiDefinition, apiContext, access)
-  }
-}
-
-@Singleton
-class ApiDocumentationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ApiDocumentationConfig] with ServicesConfig {
-
-  override protected def mode: Mode = environment.mode
-
-  override def get() = {
-    val serviceBaseUrl = baseUrl("api-documentation")
-    ApiDocumentationConfig(serviceBaseUrl)
   }
 }
 
@@ -70,7 +57,7 @@ class ApiDefinitionConfigProvider @Inject()(val runModeConfiguration: Configurat
 
   override protected def mode: Mode = environment.mode
 
-  override def get() = {
+  override def get(): ApiDefinitionConfig = {
     val serviceBaseUrl = baseUrl("api-definition")
     ApiDefinitionConfig(serviceBaseUrl)
   }
@@ -82,7 +69,7 @@ class ApiScopeConfigProvider @Inject()(val runModeConfiguration: Configuration, 
 
   override protected def mode: Mode = environment.mode
 
-  override def get() = {
+  override def get(): ApiScopeConfig = {
     val serviceBaseUrl = baseUrl("api-scope")
     ApiScopeConfig(serviceBaseUrl)
   }
@@ -94,7 +81,7 @@ class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: C
 
   override protected def mode: Mode = environment.mode
 
-  override def get() = {
+  override def get(): ApiSSubscriptionFieldsConfig = {
     val serviceBaseUrl = baseUrl("api-subscription-fields")
     ApiSSubscriptionFieldsConfig(serviceBaseUrl)
   }

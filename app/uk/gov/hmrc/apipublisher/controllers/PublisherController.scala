@@ -100,14 +100,14 @@ class PublisherController @Inject()(publisherService: PublisherService, approval
       return Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     }
 
-    Try(request.body.validate[T]) match {
-      case Success(JsSuccess(payload, _)) => f(payload)
-      case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
-      case Failure(e) =>
+      Try(request.body.validate[T]) match {
+        case Success(JsSuccess(payload, _)) => f(payload)
+        case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
+        case Failure(e) =>
         Logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
         Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
+      }
     }
-  }
 
   private def base64Decode(stringToDecode: String): String = {
     new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)

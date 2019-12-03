@@ -22,7 +22,7 @@ import org.mockito.Mockito.{verify, verifyZeroInteractions}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIDocumentationConnector, APIScopeConnector, APISubscriptionFieldsConnector}
+import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.http.HeaderCarrier
@@ -58,14 +58,12 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     val mockApiDefinitionConnector = mock[APIDefinitionConnector]
     val mockApiSubscriptionFieldsConnector = mock[APISubscriptionFieldsConnector]
     val mockApiScopeConnector = mock[APIScopeConnector]
-    val mockApiDocumentationConnector = mock[APIDocumentationConnector]
     val mockApprovalService = mock[ApprovalService]
     
     val publisherService = new PublisherService(mockDefinitionService,
       mockApiDefinitionConnector,
       mockApiSubscriptionFieldsConnector,
       mockApiScopeConnector,
-      mockApiDocumentationConnector,
       mockApprovalService)
     
     given(mockDefinitionService.getDefinition(testServiceLocation)).willReturn(Some(apiAndScopes))
@@ -73,7 +71,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     given(mockApiDefinitionConnector.publishAPI(any[JsObject])(any[HeaderCarrier])).willReturn(())
     given(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(any[Seq[ApiFieldDefinitions]])(any[HeaderCarrier])).willReturn(())
     given(mockApiScopeConnector.publishScopes(any[JsValue])(any[HeaderCarrier])).willReturn(())
-    given(mockApiDocumentationConnector.registerService(any[RegistrationRequest])(any[HeaderCarrier])).willReturn(())
   }
 
   "publishAPIDefinitionAndScopes" should {
@@ -87,7 +84,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       verifyZeroInteractions(mockApiDefinitionConnector)
       verifyZeroInteractions(mockApiScopeConnector)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
-      verifyZeroInteractions(mockApiDocumentationConnector)
     }
 
     "Retrieve the api from the microservice and Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is allowed" in new Setup {
@@ -98,7 +94,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       verify(mockApiDefinitionConnector).publishAPI(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).publishScopes(scopes)
       verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(expectedApiFieldDefinitions)
-      verify(mockApiDocumentationConnector).registerService(expectedApiDocumentationRegistration)
     }
 
     "Retrieve the api from the microservice but don't Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is not allowed" in new Setup {
@@ -111,7 +106,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       verifyZeroInteractions(mockApiDefinitionConnector)
       verifyZeroInteractions(mockApiScopeConnector)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
-      verifyZeroInteractions(mockApiDocumentationConnector)
     }
 
     "When publication allowed and api does not have subscription fields, publish API to api-definition, api-scope and api-documentation only" in new Setup {
@@ -122,7 +116,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       verify(mockDefinitionService).getDefinition(testServiceLocation)
       verify(mockApiDefinitionConnector).publishAPI(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).publishScopes(scopes)
-      verify(mockApiDocumentationConnector).registerService(expectedApiDocumentationRegistration)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
     }
 
@@ -163,17 +156,6 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     "Fail, propagating an error, when the apiSubscriptionFieldsConnector fails" in new Setup {
 
       given(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(any[Seq[ApiFieldDefinitions]])(any[HeaderCarrier]))
-        .willReturn(failed(emulatedServiceError))
-
-      val future = publisherService.publishAPIDefinitionAndScopes(testServiceLocation)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe emulatedServiceError
-      }
-    }
-
-    "Fail, propagating an error, when the apiDocumentationConnector fails" in new Setup {
-      given(mockApiDocumentationConnector.registerService(any[RegistrationRequest])(any[HeaderCarrier]))
         .willReturn(failed(emulatedServiceError))
 
       val future = publisherService.publishAPIDefinitionAndScopes(testServiceLocation)
