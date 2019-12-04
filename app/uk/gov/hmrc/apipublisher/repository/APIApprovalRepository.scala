@@ -44,15 +44,15 @@ class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   indexes.map(collection.indexesManager.ensure)
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
-    collection.find(Json.obj("serviceName" -> apiApproval.serviceName)).one[BSONDocument].flatMap {
-      case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiApproval)
-      case None => collection.insert(apiApproval)
+    collection.find[JsObject, JsObject](selector = Json.obj("serviceName" -> apiApproval.serviceName)).one[BSONDocument].flatMap {
+      case Some(document) => collection.update(ordered=false).one(q = BSONDocument("_id" -> document.get("_id")), u = apiApproval)
+      case None => collection.insert(ordered=false).one(apiApproval)
     }.map(_ => apiApproval)
   }
 
   def fetch(serviceName: String): Future[Option[APIApproval]] = {
     Logger.info(s"Fetching API $serviceName in mongo")
-    collection.find(Json.obj("serviceName" -> serviceName)).one[APIApproval].map { apiApproval =>
+    collection.find[JsObject, JsObject](selector = Json.obj("serviceName" -> serviceName)).one[APIApproval].map { apiApproval =>
       Logger.debug(s"Retrieved apiApproval $serviceName in mongo: $apiApproval")
       apiApproval
     }

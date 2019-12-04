@@ -54,12 +54,6 @@ abstract class BaseFeatureSpec extends FeatureSpec
   val apiSubscriptionFieldsServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
   var apiSubscriptionFieldsMock : WireMock = _
 
-  val apiDocumentationPort = sys.env.getOrElse("WIREMOCK", "21116").toInt
-  val apiDocumentationHost = "localhost"
-  var apiDocumentationUrl = s"http://$apiDocumentationHost:$apiDocumentationPort"
-  val apiDocumentationServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDocumentationPort))
-  var apiDocumentationMock : WireMock = _
-
   override def beforeEach(): Unit = {
     apiSubscriptionFieldsServer.start()
     apiSubscriptionFieldsMock = new WireMock(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
@@ -73,8 +67,6 @@ abstract class BaseFeatureSpec extends FeatureSpec
     apiDefinitionServer.start()
     apiDefinitionMock = new WireMock(apiDefinitionHost, apiDefinitionPort)
 
-    apiDocumentationServer.start()
-    apiDocumentationMock = new WireMock(apiDocumentationHost, apiDocumentationPort)
   }
 
   override def afterEach(): Unit = {
@@ -82,7 +74,6 @@ abstract class BaseFeatureSpec extends FeatureSpec
     apiScopeServer.stop()
     apiProducerServer.stop()
     apiDefinitionServer.stop()
-    apiDocumentationServer.stop()
   }
 
 }

@@ -55,9 +55,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The api scope is running")
       apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
 
-      And("The api documentation is running")
-      apiDocumentationMock.register(post(urlEqualTo("/apis/register")).willReturn(aResponse()))
-
       When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
@@ -74,11 +71,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalToJson(scopes)))
-
-      And("The API is registered in the API Documentation microservice")
-      apiDocumentationMock.verifyThat(postRequestedFor(urlEqualTo("/apis/register"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(apiDocumentationRegistration)))
 
       Then("The field definitions are published to the API Subscription Fields microservice")
       apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
