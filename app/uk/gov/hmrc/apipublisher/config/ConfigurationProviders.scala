@@ -21,33 +21,17 @@ import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apipublisher.connectors._
-import uk.gov.hmrc.apipublisher.controllers.DocumentationConfig
 import uk.gov.hmrc.play.config.ServicesConfig
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
       bind[MicroserviceConfig].toProvider[MicroserviceConfigProvider]
     )
-  }
-}
-
-@Singleton
-class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[DocumentationConfig] with ServicesConfig {
-
-  override protected def mode: Mode = environment.mode
-
-  override def get(): DocumentationConfig = {
-    val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
-    val apiContext = runModeConfiguration.getString("api.context").getOrElse("api-publisher")
-    val access = runModeConfiguration.getConfig(s"api.access")
-    DocumentationConfig(publishApiDefinition, apiContext, access)
   }
 }
 
