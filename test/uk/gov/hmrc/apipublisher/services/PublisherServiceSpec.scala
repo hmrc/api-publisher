@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.Matchers.any
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.{verify, verifyZeroInteractions}
 import org.scalatest.concurrent.ScalaFutures
@@ -45,8 +45,10 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
   val apiContext = "test"
   val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
-    models.ApiFieldDefinitions(apiContext, "1.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-    models.ApiFieldDefinitions(apiContext, "2.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]))
+    models.ApiFieldDefinitions(apiContext, "1.0",
+      (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
+    models.ApiFieldDefinitions(apiContext, "2.0",
+      (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]))
 
   val expectedApiDocumentationRegistration = RegistrationRequest("test", "http://example.com", Seq("1.0", "2.0", "3.0"))
 

@@ -15,12 +15,8 @@
  */
 
 import com.google.inject.AbstractModule
-import javax.inject.Inject
-import play.api.Mode.Mode
-import play.api.{Application, Configuration}
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
 class Module extends AbstractModule {
@@ -29,13 +25,6 @@ class Module extends AbstractModule {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
     bind(classOf[HttpClient]).to(classOf[DefaultHttpClient])
-    bind(classOf[ServicesConfig]).to(classOf[DefaultServicesConfig])
   }
 }
 
-@Inject
-class DefaultServicesConfig @Inject()(app: Application) extends ServicesConfig {
-  override protected def mode: Mode = app.mode
-
-  override protected def runModeConfiguration: Configuration = app.configuration
-}

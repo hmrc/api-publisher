@@ -115,7 +115,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   override def beforeEach() {
     super.beforeEach()
-    server = new TestServer(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
+    server = TestServer.apply( port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 

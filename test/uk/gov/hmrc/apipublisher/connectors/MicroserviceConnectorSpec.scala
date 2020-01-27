@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -35,13 +36,14 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.ramltools.loaders.RamlLoader
+import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
 class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
 
+  SharedMetricRegistries.clear()
   val apiProducerPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiProducerHost = "127.0.0.1"
   val apiProducerUrl = s"http://$apiProducerHost:$apiProducerPort"
@@ -57,7 +59,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
 
   trait Setup {
     WireMock.reset()
-    val mockRamlLoader = mock[RamlLoader]
+    val mockRamlLoader = mock[DocumentationRamlLoader]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
