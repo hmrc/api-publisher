@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -46,6 +47,7 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   val api = Json.parse(definition).as[JsObject]
 
   trait Setup {
+    SharedMetricRegistries.clear()
     WireMock.reset()
     val apiDefinitionConfig = ApiDefinitionConfig("http://localhost:21112")
 

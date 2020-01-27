@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -35,6 +36,8 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
+  SharedMetricRegistries.clear()
+
 
   val apiScopePort = sys.env.getOrElse("WIREMOCK", "21113").toInt
   val apiScopeHost = "localhost"

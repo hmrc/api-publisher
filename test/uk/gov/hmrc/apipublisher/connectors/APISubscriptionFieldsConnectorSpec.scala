@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -39,6 +40,7 @@ import scala.concurrent.Future
 import scala.io.Source.fromURL
 
 class APISubscriptionFieldsConnectorSpec extends UnitSpec with BeforeAndAfterAll with GuiceOneAppPerSuite with MockitoSugar {
+  SharedMetricRegistries.clear()
 
   val apiSubscriptionFieldsPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiSubscriptionFieldsHost = "localhost"

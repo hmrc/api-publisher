@@ -86,7 +86,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
   }
 
   private def startServer(): Unit = {
-    server = new TestServer(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
+    server = TestServer.apply(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 
@@ -94,7 +94,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
     server.stop()
   }
 
-  val apiAndScope =
+  val apiAndScope: String =
     """
       |{
       |  "scopes": [
