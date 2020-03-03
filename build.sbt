@@ -20,7 +20,7 @@ lazy val wireMockVersion = "2.21.0"
 
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-26" % hmrcBootstrapPlay26Version,
-  "uk.gov.hmrc" %% "raml-tools" % "1.11.0",
+  "uk.gov.hmrc" %% "raml-tools" % "1.18.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % hmrcSimpleReactivemongoVersion,
   "org.json" % "json" % "20180130",
   "com.damnhandy" % "handy-uri-templates" % "2.1.6"
@@ -45,7 +45,7 @@ val jettyVersion = "9.2.24.v20180105"
 lazy val akkaVersion = "2.5.23"
 lazy val akkaHttpVersion = "10.0.15"
 
-val jettyOverrides: Set[ModuleID] = Set(
+val jettyOverrides: Seq[ModuleID] = Seq(
   "org.eclipse.jetty" % "jetty-server" % jettyVersion % IntegrationTest,
   "org.eclipse.jetty" % "jetty-servlet" % jettyVersion % IntegrationTest,
   "org.eclipse.jetty" % "jetty-security" % jettyVersion % IntegrationTest,
@@ -89,7 +89,7 @@ lazy val microservice = (project in file("."))
   .settings(
     name := appName,
     majorVersion := 0,
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.12.10",
     targetJvm := "jvm-1.8",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= jettyOverrides,
@@ -109,21 +109,13 @@ lazy val microservice = (project in file("."))
     Keys.fork in IntegrationTest := false,
     unmanagedSourceDirectories in IntegrationTest := Seq((baseDirectory in IntegrationTest).value / "it"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
-    resolvers += Resolver.jcenterRepo
+    resolvers += Resolver.jcenterRepo,
+    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
   )
-  .settings(ivyScala := ivyScala.value map {
-    _.copy(overrideScalaVersion = true)
-  })
-
-def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
-  tests map {
-    test => Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
-  }
 
 // Coverage configuration
 coverageMinimum := 85
