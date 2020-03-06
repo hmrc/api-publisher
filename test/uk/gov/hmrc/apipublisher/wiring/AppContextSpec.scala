@@ -18,8 +18,7 @@ package uk.gov.hmrc.apipublisher.wiring
 
 import org.mockito.Mockito.when
 import org.scalatest.mockito.MockitoSugar
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment, Mode}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -31,12 +30,10 @@ class AppContextSpec extends UnitSpec with MockitoSugar {
       val mockEnvironment = mock[Environment]
       val mockServicesConfig =mock[ServicesConfig]
 
-      when(mockConfiguration.getOptional[String](s"Test.ramlLoaderUrlRewrite.from")).thenReturn(Option("mockFrom"))
-      when(mockConfiguration.getOptional[String](s"Test.ramlLoaderUrlRewrite.to")).thenReturn(Option("moTo"))
+      when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.from")).thenReturn(Option("mockFrom"))
+      when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.to")).thenReturn(Option("moTo"))
 
-      val appContext = new AppContext(mockConfiguration, mockEnvironment, mockServicesConfig) {
-        override protected def mode: Mode = Mode.Test
-      }
+      val appContext = new AppContext(mockConfiguration, mockEnvironment, mockServicesConfig)
 
       appContext.ramlLoaderRewrites("mockFrom") shouldBe "moTo"
     }
