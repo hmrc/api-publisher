@@ -198,6 +198,10 @@
                     "hint": {
                       "description": "Hint text to display to users to help them provide a correct value for this field",
                       "type": "string"
+                    },
+                    "shortDescription": {
+                      "description": "A short description that is displayed on the API metadata page",
+                      "type": "string"
                     }
                   },
                   "required": [

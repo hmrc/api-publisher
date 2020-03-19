@@ -23,7 +23,7 @@ case class ApiFieldDefinitions(apiContext: String,
                                apiVersion: String,
                                fieldDefinitions: Seq[FieldDefinition])
 
-case class FieldDefinition(name: String, description: String, hint: Option[String], `type`: FieldDefinitionType)
+case class FieldDefinition(name: String, description: String, hint: Option[String], `type`: FieldDefinitionType, shortDescription: Option[String] = None)
 
 object FieldDefinition {
   implicit val format = {

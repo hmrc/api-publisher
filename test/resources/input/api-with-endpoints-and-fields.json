@@ -24,7 +24,8 @@
           "name": "callback-url",
           "description": "Callback URL",
           "hint": "Just a hint",
-          "type": "URL"
+          "type": "URL",
+          "shortDescription": "short description"
         },
         {
           "name": "token",
