@@ -44,6 +44,7 @@ Details a subscription field used by this API. If you would like to use subscrip
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
+| `shortDescription` | _string_ | Optional |  | A short description that is displayed on the API metadata page |
 | `hint` | _string_ | Optional |  | Hint text to display to users to help them provide a correct value for this field |
 | `type` | _string_ | Required | URL<br>SecureToken<br>STRING | The type of value expected for this field |
 | `name` | _string_ | Required | ^[a-zA-Z]*$ | The internal identifier for this field |
