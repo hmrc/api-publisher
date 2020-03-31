@@ -22,7 +22,10 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "raml-tools" % "1.18.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % hmrcSimpleReactivemongoVersion,
   "org.json" % "json" % "20180130",
-  "com.damnhandy" % "handy-uri-templates" % "2.1.6"
+  "com.damnhandy" % "handy-uri-templates" % "2.1.6",
+  "org.julienrf" %% "play-json-derived-codecs" % "6.0.0",
+  "com.typesafe.play" %% "play-json" % "2.7.1",
+  "org.typelevel" %% "cats-core" % "2.0.0"
 )
 
 lazy val scope: String = "test,it"
@@ -114,8 +117,11 @@ lazy val microservice = (project in file("."))
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
     resolvers += Resolver.jcenterRepo,
-    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
+    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/",
+    resolvers +=  Resolver.sonatypeRepo("releases"),
+    resolvers +=  Resolver.sonatypeRepo("snapshots")
   )
+  .settings(scalacOptions ++= Seq("-Ypartial-unification"))
 
 // Coverage configuration
 coverageMinimum := 85

@@ -190,9 +190,9 @@
                       "description": "The type of value expected for this field",
                       "type": "string",
                       "enum": [
-                          "URL",
-                          "SecureToken",
-                          "STRING"
+                        "URL",
+                        "SecureToken",
+                        "STRING"
                       ]
                     },
                     "hint": {
@@ -202,6 +202,36 @@
                     "shortDescription": {
                       "description": "A short description that is displayed on the API metadata page",
                       "type": "string"
+                    },
+                    "validation": {
+                      "description": "Contains Rules to validate the value of the Field Definition.",
+                      "type": "object",
+                      "properties": {
+                        "errorMessage": {
+                          "description": "The error message that will be shown to users if this field is invalid.",
+                          "type": "string"
+                        },
+                        "rules": {
+                          "description": "An array of Validation Rules to validate the field's value.",
+                          "type": "array",
+                          "items": {
+                            "description": "A Validation Rule to validate the field value.",
+                            "type": "object",
+                            "properties": {
+                              "RegexValidationRule": {
+                                "description": "A Regex Rule to validate the field value.",
+                                "type": "object",
+                                "properties": {
+                                  "regex": {
+                                    "description": "Regex to validate the field value.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   },
                   "required": [
