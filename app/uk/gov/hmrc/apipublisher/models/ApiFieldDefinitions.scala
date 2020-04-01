@@ -16,14 +16,55 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json.{Format, Json, Reads, Writes}
+import cats.data.{NonEmptyList => NEL}
+import cats.implicits._
+import julienrf.json.derived
+import julienrf.json.derived.TypeTagSetting
+import play.api.libs.json.{Format, Json, JsonValidationError, OFormat, Reads, Writes}
+import play.api.libs.functional.syntax._
 import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
+
+
+object NonEmptyListOps {
+  def reads[T: Reads]: Reads[NEL[T]] =
+    Reads
+      .of[List[T]]
+      .collect(
+        JsonValidationError("expected a NonEmptyList but got an empty list")
+      ) {
+        case head :: tail => NEL(head, tail)
+      }
+
+  def writes[T: Writes]: Writes[NEL[T]] =
+    Writes
+      .of[List[T]]
+      .contramap(_.toList)
+
+  def format[T: Format]: Format[NEL[T]] =
+    Format(reads, writes)
+}
+
+sealed trait ValidationRule
+
+case class RegexValidationRule(regex: String) extends ValidationRule
+
+case class Validation(errorMessage: String, rules: NEL[ValidationRule])
+
+object Validation {
+
+  implicit val validationRuleFormat: OFormat[ValidationRule] = derived.withTypeTag.oformat(TypeTagSetting.ShortClassName)
+
+  implicit val nelValidationRuleFormat: Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
+
+  implicit val ValidationJF = Json.format[Validation]
+}
 
 case class ApiFieldDefinitions(apiContext: String,
                                apiVersion: String,
                                fieldDefinitions: Seq[FieldDefinition])
 
-case class FieldDefinition(name: String, description: String, hint: Option[String], `type`: FieldDefinitionType, shortDescription: Option[String] = None)
+case class FieldDefinition(name: String, description: String, hint: Option[String],
+                           `type`: FieldDefinitionType, shortDescription: Option[String] = None, validation: Option[Validation] = None)
 
 object FieldDefinition {
   implicit val format = {

@@ -45,6 +45,7 @@ Details a subscription field used by this API. If you would like to use subscrip
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
 | `shortDescription` | _string_ | Optional |  | A short description that is displayed on the API metadata page |
+| `validation` | _object_ | Optional | [validation](#validation) | Rules to validate the value of the Field Definition |
 | `hint` | _string_ | Optional |  | Hint text to display to users to help them provide a correct value for this field |
 | `type` | _string_ | Required | URL<br>SecureToken<br>STRING | The type of value expected for this field |
 | `name` | _string_ | Required | ^[a-zA-Z]*$ | The internal identifier for this field |
@@ -57,3 +58,25 @@ Used to indicate whether this API version is public or private. If absent, the A
 | `whitelistedApplicationIds` | _string[]_ | Optional |  | A list of Developer Hub Application IDs that are whitelisted to access this Private API version |
 | `isTrial` | _boolean_ | Optional |  | Whether this API version is a private trial |
 | `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
+
+### `validation`
+Contains Rules to validate the value of the Field Definition. See [Validation]
+
+| Name | Type | Required | Values | Description |
+| --- | --- | --- | --- | --- |
+| `errorMessage` | _string_ | Required |  | The error message that will be shown to users if this field is invalid. |
+| `rules` | _object[]_ | Required | [rules](#rules) | An array of Validation Rules to validate the field's value. |
+
+### `rules`
+Details of a Validation Rule. This currently only supports Regular Expression Rules. See [Rules]
+
+| Name | Type | Required | Values | Description |
+| --- | --- | --- | --- | --- |
+| `RegexValidationRule` | _object_ | Required | [RegexValidationRule](#RegexValidationRule) | A Regular Expression Rule |
+
+### `RegexValidationRule`
+The Regular Expression to validate the field value. See [RegexValidationRule]
+
+| Name | Type | Required | Values | Description |
+| --- | --- | --- | --- | --- |
+| `regex` | _string_ | Required |  | A Regular Expression |

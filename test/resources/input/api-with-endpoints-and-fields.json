@@ -31,7 +31,17 @@
           "name": "token",
           "description": "Secure Token",
           "hint": "Just a hint",
-          "type": "SecureToken"
+          "type": "SecureToken",
+          "validation": {
+            "errorMessage": "error message",
+            "rules": [
+              {
+                "RegexValidationRule": {
+                  "regex": "regex for token"
+                }
+              }
+            ]
+          }
         }
       ]
     },
