@@ -117,9 +117,7 @@ lazy val microservice = (project in file("."))
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
     resolvers += Resolver.jcenterRepo,
-    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/",
-    resolvers +=  Resolver.sonatypeRepo("releases"),
-    resolvers +=  Resolver.sonatypeRepo("snapshots")
+    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
   )
   .settings(scalacOptions ++= Seq("-Ypartial-unification"))
 
