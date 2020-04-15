@@ -72,7 +72,8 @@ Details of a Validation Rule. This currently only supports Regular Expression Ru
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `RegexValidationRule` | _object_ | Required | [RegexValidationRule](#RegexValidationRule) | A Regular Expression Rule |
+| `RegexValidationRule` | _object_ | Optional | [RegexValidationRule](#RegexValidationRule) | A Regular Expression Rule |
+| `UrlValidationRule` | _object_ | Optional | [UrlValidationRule](#UrlValidationRule) | A URL Validation Rule |
 
 ### `RegexValidationRule`
 The Regular Expression to validate the field value. See [RegexValidationRule]
@@ -80,3 +81,6 @@ The Regular Expression to validate the field value. See [RegexValidationRule]
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
 | `regex` | _string_ | Required |  | A Regular Expression |
+
+### `UrlValidationRule`
+This is an empty object to specify that URL Validation applies to the field's value. See [UrlValidationRule]
