@@ -48,6 +48,8 @@ sealed trait ValidationRule
 
 case class RegexValidationRule(regex: String) extends ValidationRule
 
+case object UrlValidationRule extends ValidationRule
+
 case class Validation(errorMessage: String, rules: NEL[ValidationRule])
 
 object Validation {

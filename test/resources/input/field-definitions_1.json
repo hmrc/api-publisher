@@ -5,7 +5,15 @@
       "description": "Callback URL",
       "hint": "Just a hint",
       "type": "URL",
-      "shortDescription": "short description"
+      "shortDescription": "short description",
+      "validation": {
+        "errorMessage": "error message",
+        "rules": [
+          {
+            "UrlValidationRule": {}
+          }
+        ]
+      }
     },
     {
       "name": "token",
