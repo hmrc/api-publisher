@@ -174,11 +174,31 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
       given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
       given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
+      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
 
-      val future = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+
+    }
+
+    "Fail when Field Definition is invalid" in new Setup {
+      
+      val errorString = """{"error":"blah"}"""
+      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
+      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
+      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(errorString))))
+
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
+      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+      
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"fieldDefinitionErrors":$errorString}""" 
 
     }
 
@@ -187,11 +207,15 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       val errorString = """{"error":"blah"}"""
       given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
       given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(errorString))))
+      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
+
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$errorString}"""
@@ -203,11 +227,13 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier]))
         .willReturn(successful(Some(Json.parse( """{"error":"blah"}"""))))
       given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
+      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"apiDefinitionErrors":$errorString}"""
@@ -220,11 +246,13 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier]))
         .willReturn(successful(Some(Json.parse(apiDefinitionErrorString))))
       given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(scopeErrorString))))
+      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
       verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$scopeErrorString,"apiDefinitionErrors":$apiDefinitionErrorString}"""

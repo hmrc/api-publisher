@@ -25,7 +25,7 @@ lazy val compile = Seq(
   "com.damnhandy" % "handy-uri-templates" % "2.1.6",
   "org.julienrf" %% "play-json-derived-codecs" % "6.0.0",
   "com.typesafe.play" %% "play-json" % "2.7.1",
-  "org.typelevel" %% "cats-core" % "2.0.0"
+  "org.typelevel" %% "cats-core" % "2.1.0"
 )
 
 lazy val scope: String = "test,it"
