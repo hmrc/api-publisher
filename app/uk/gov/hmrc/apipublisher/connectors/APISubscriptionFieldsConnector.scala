@@ -26,6 +26,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apipublisher.models.FieldDefinition
+import play.api.libs.json.JsString
+import play.api.libs.json.JsValue
 
 @Singleton
 class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
@@ -44,6 +47,23 @@ class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsCon
     Future.sequence(putFutures).map(_ => ())
   }
 
+  def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    import uk.gov.hmrc.http.Upstream4xxResponse
+    import play.api.http.Status.{UNPROCESSABLE_ENTITY, BAD_REQUEST}
+
+    if(fieldDefinitions.isEmpty)
+      Future.successful(None)
+    else {
+      val jsonRequestBody = Json.toJson(ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions))
+      val putUrl = s"$serviceBaseUrl/validate"
+
+      http.POST(putUrl, jsonRequestBody)
+      .map(_ => None)
+      .recover {
+        case Upstream4xxResponse(_, UNPROCESSABLE_ENTITY, _, _) | Upstream4xxResponse(_, BAD_REQUEST, _, _) => Some(JsString("Field definitions are invalid"))
+      }
+    }
+  }
 }
 
 case class ApiSSubscriptionFieldsConfig(baseUrl: String)

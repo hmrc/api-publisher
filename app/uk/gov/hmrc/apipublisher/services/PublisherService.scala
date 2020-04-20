@@ -77,13 +77,20 @@ class PublisherService @Inject()(definitionService: DefinitionService,
         for {
           scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
           apiErrors <- apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
+          fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
         } yield {
-          if (scopeErrors.isEmpty && apiErrors.isEmpty) {
+          
+          if (scopeErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
             None
           } else {
-            Some(JsObject(Seq.empty[(String, JsValue)] ++
-              scopeErrors.map("scopeErrors" -> _) ++
-              apiErrors.map("apiDefinitionErrors" -> _)))
+            Some(
+              JsObject(
+                Seq.empty[(String, JsValue)] ++
+                  scopeErrors.map("scopeErrors" -> _) ++
+                  apiErrors.map("apiDefinitionErrors" -> _) ++
+                  fieldDefnErrors.map("fieldDefinitionErrors" -> _)
+              )
+            )
           }
         }
 
