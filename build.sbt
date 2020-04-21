@@ -92,7 +92,7 @@ lazy val microservice = (project in file("."))
   .settings(
     name := appName,
     majorVersion := 0,
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.11",
     targetJvm := "jvm-1.8",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= jettyOverrides,

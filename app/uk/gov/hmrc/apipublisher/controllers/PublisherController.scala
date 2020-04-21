@@ -59,7 +59,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
 
     import cats.data.{OptionT, EitherT}
     import cats.implicits._
-    
+
     type Over[A] = EitherT[Future,Result, A]
 
     def getDefinition: Over[ApiAndScopes] = {
@@ -68,7 +68,10 @@ class PublisherController @Inject()(definitionService: DefinitionService,
 
     def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
       EitherT.fromOptionF(
-        OptionT(publisherService.validateAPIDefinitionAndScopes(apiAndScopes)).map(BadRequest(_)).value
+        OptionT(publisherService.validateAPIDefinitionAndScopes(apiAndScopes)).map { e =>
+          Console.println("***** "+e)
+          BadRequest(e)
+        }.value
         , ()
       ).swap
     }
@@ -86,18 +89,13 @@ class PublisherController @Inject()(definitionService: DefinitionService,
           NoContent
       }
     }
-    
-    val a = for {
-      apiAndScopes   <- getDefinition 
-      _              <- validate(apiAndScopes)
-      publishResult  = publish(apiScopes)
-    } yield publishResult
 
-    a
-
-    // } recover recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}")
+    getDefinition.flatMap(apiAndScopes => {
+      validate(apiAndScopes).semiflatMap(_ =>
+        publish(apiAndScopes)
+      )
+    }).merge.recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
   }
-
 
   def validate: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
     handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
