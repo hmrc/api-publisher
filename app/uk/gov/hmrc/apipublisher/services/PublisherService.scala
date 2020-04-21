@@ -31,7 +31,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
                                  apiScopeConnector: APIScopeConnector,
                                  approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
 
-  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Option[Boolean]] = {
+  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Boolean] = {
 
     def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
@@ -55,11 +55,11 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
       }
     }
 
-    def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Option[Boolean]] = {
+    def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
         result <- if (isApproved) publish(apiAndScopes) else Future.successful(false)
-      } yield Some(result)
+      } yield result
     }
 
     validateAndPublish(apiAndScopes)
