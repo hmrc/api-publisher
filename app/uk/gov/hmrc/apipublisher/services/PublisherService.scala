@@ -33,7 +33,7 @@ class PublisherService @Inject()(definitionService: DefinitionService,
                                  apiScopeConnector: APIScopeConnector,
                                  approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
 
-  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[Boolean]] = {
+  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Option[Boolean]] = {
 
     def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
@@ -65,10 +65,8 @@ class PublisherService @Inject()(definitionService: DefinitionService,
       } yield Some(result)
     }
 
-    definitionService.getDefinition(serviceLocation) flatMap {
-      case Some(apiAndScopes) => validateAndPublish(apiAndScopes)
-      case None => successful(None)
-    }
+    validateAndPublish(apiAndScopes)
+
   }
 
   def validateAPIDefinitionAndScopes(apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
