@@ -83,7 +83,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       )
 
       And("The scope is published to the API Scope microservice")
-      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
+      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalToJson(scopes)))
 
