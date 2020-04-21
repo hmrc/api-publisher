@@ -29,7 +29,7 @@ import play.api.mvc._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
+import uk.gov.hmrc.apipublisher.services._
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
@@ -43,30 +43,58 @@ import org.mockito.Matchers.{eq => eqTo, any}
 
 class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite with StubControllerComponentsFactory{
 
-  private val serviceLocation = ServiceLocation("TestService", "http://test.example.com")
+  val serviceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
   implicit val mat: Materializer = app.materializer
 
   private val sharedSecret = UUID.randomUUID().toString
 
-  trait Setup {
+  private val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  private val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
+  private val apiAndScopes = ApiAndScopes(api, scopes)
+
+  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
+  private val marriageAllowanceApproval =
+      APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
+
+  trait BaseSetup {
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService = mock[PublisherService]
     val mockApprovalService = mock[ApprovalService]
     val mockAppContext = mock[AppContext]
+    val mockDefinitionService = mock[DefinitionService]
 
-    val underTest = new PublisherController(mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
+    val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
+  }
 
-    when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])).thenReturn(successful(Some(true)))
+  trait Setup extends BaseSetup {
+    when(mockDefinitionService.getDefinition(any())(any())).thenReturn(successful(Some(apiAndScopes)))
+    when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(any[HeaderCarrier])).thenReturn(successful(None))
+    when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier])).thenReturn(successful(true))
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
-
-    val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
-    val marriageAllowanceApproval =
-      APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
   }
 
   "publish" should {
+    val validRequest = request(serviceLocation, sharedSecret)
+
+    "respond with BAD_REQUEST when no definition is found" in new Setup {
+      when(mockDefinitionService.getDefinition(any())(any())).thenReturn(successful(None))
+
+      val result = await(underTest.publish(validRequest))
+
+      status(result) shouldEqual BAD_REQUEST
+    }
+
+    "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
+      when(mockDefinitionService.getDefinition(any())(any())).thenReturn(successful(Some(apiAndScopes)))
+      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(any[HeaderCarrier])).thenReturn(successful(Some(JsString("Bang"))))
+
+      val result = await(underTest.publish(validRequest))
+
+      status(result) shouldEqual BAD_REQUEST
+      bodyOf(result).contains("Bang") shouldBe true
+    }
 
     "respond with 204 (NO_CONTENT) when service APIs successfully published" in new Setup {
       val validRequest = request(serviceLocation, sharedSecret)
@@ -74,35 +102,25 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       val result = await(underTest.publish(validRequest))
 
       status(result) shouldEqual NO_CONTENT
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])
-    }
-
-    "respond with 204 (NO_CONTENT) when publisher service returns none" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])).thenReturn(successful(None))
-      val validRequest = request(serviceLocation, sharedSecret)
-
-      val result = await(underTest.publish(validRequest))
-
-      status(result) shouldEqual NO_CONTENT
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])
+      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier])
     }
 
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])).thenReturn(successful(Some(false)))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier])).thenReturn(successful(false))
 
       val validRequest = request(serviceLocation, sharedSecret)
 
       val result = await(underTest.publish(validRequest))
 
       status(result) shouldEqual ACCEPTED
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier])
+      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier])
     }
 
     "return 500 (internal server error) when publisher service fails with an unexpected exception" in new Setup {
       val errorMessage = "Test error"
       val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
-      given(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(errorServiceLocation))(any[HeaderCarrier]))
+      given(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(errorServiceLocation), any())(any[HeaderCarrier]))
         .willReturn(Future.failed(new IllegalArgumentException(errorMessage)))
 
       val errorRequest = request(errorServiceLocation, sharedSecret)
@@ -130,7 +148,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
     }
 
     "return 422 when publishing fails" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation))(any[HeaderCarrier]))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier]))
         .thenReturn(Future.failed(new UnprocessableEntityException("")))
 
       val result = await(underTest.publish(request(serviceLocation, sharedSecret)))
@@ -143,9 +161,6 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
     "succeed when given a valid payload" in new Setup {
 
-      val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json"))
-      val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json"))
-      val apiAndScopes = ApiAndScopes(api.as[JsObject], scopes.as[JsArray])
       when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(any[HeaderCarrier])).thenReturn(successful(None))
 
       val result = await(underTest.validate()(request(apiAndScopes, sharedSecret)))
@@ -241,12 +256,12 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
       private val testServiceLocation = ServiceLocation("employee-paye", "http://localhost/employee-paye")
       when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(testServiceLocation))
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(testServiceLocation))(any[HeaderCarrier])).thenReturn(successful(Some(true)))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(testServiceLocation), any())(any[HeaderCarrier])).thenReturn(successful(true))
 
       val result = await(underTest.approve("employee-paye")(FakeRequest()))
 
       status(result) shouldBe NO_CONTENT
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(testServiceLocation))(any[HeaderCarrier])
+      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(testServiceLocation), any())(any[HeaderCarrier])
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
@@ -257,7 +272,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
       val result = await(underTest.approve("unknown-service")(FakeRequest()))
 
       status(result) shouldBe NOT_FOUND
-      verify(mockPublisherService, never()).publishAPIDefinitionAndScopes(any[ServiceLocation])(any[HeaderCarrier])
+      verify(mockPublisherService, never()).publishAPIDefinitionAndScopes(any[ServiceLocation], any())(any[HeaderCarrier])
     }
 
   }

@@ -27,7 +27,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService}
+import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService, DefinitionService}
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -36,7 +36,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(publisherService: PublisherService,
+class PublisherController @Inject()(definitionService: DefinitionService,
+                                    publisherService: PublisherService,
                                     approvalService: ApprovalService,
                                     appContext: AppContext,
                                     cc: ControllerComponents)
@@ -55,17 +56,39 @@ class PublisherController @Inject()(publisherService: PublisherService,
 
   private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
     Logger.info(s"Publishing service $serviceLocation")
-    publisherService.publishAPIDefinitionAndScopes(serviceLocation).map {
-      case Some(true) =>
-        Logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
-        NoContent
-      case Some(false) =>
-        Logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
-        Accepted
-      case None =>
-        Logger.info(s"API publishing disabled for ${serviceLocation.serviceName}")
-        NoContent
-    } recover recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}")
+
+    import cats.data.{OptionT, EitherT}
+    import cats.implicits._
+
+    type Over[A] = EitherT[Future,Result, A]
+
+    def getDefinition: Over[ApiAndScopes] = {
+      EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
+    }
+
+    def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
+      EitherT.fromOptionF(
+        OptionT(publisherService.validateAPIDefinitionAndScopes(apiAndScopes)).map(BadRequest(_)).value
+        , ()
+      ).swap
+    }
+
+    def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
+      publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
+        case true =>
+          Logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
+          NoContent
+        case false =>
+          Logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
+          Accepted
+      }
+    }
+
+    getDefinition.flatMap(apiAndScopes => {
+      validate(apiAndScopes).semiflatMap(_ =>
+        publish(apiAndScopes)
+      )
+    }).merge.recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
   }
 
   def validate: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>

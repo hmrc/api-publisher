@@ -46,14 +46,18 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
 
       And("The api definition is running")
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
       apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
 
       And("The api subscription fields is running")
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
 
       And("The api scope is running")
       apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
+      apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
 
       When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =
@@ -62,15 +66,31 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
           .header(AUTHORIZATION, encodedPublishingKey)
           .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
 
-      Then("The definition is published to the API Definition microservice")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+
+      Then("The scope is validated")
+      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
         .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(api)))
+      )
+
+      Then("The api defintion is validated")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+      )
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+      )
 
       And("The scope is published to the API Scope microservice")
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalToJson(scopes)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+      )
 
       Then("The field definitions are published to the API Subscription Fields microservice")
       apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
