@@ -68,10 +68,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
 
     def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
       EitherT.fromOptionF(
-        OptionT(publisherService.validateAPIDefinitionAndScopes(apiAndScopes)).map { e =>
-          Console.println("***** "+e)
-          BadRequest(e)
-        }.value
+        OptionT(publisherService.validateAPIDefinitionAndScopes(apiAndScopes)).map(BadRequest(_)).value
         , ()
       ).swap
     }
