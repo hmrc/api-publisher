@@ -23,7 +23,8 @@ import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future.successful
+import scala.util.{Success,Failure, Try}
 
 @Singleton
 class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
@@ -51,14 +52,14 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
       if (fieldDefinitions.nonEmpty) {
         apiSubscriptionFieldsConnector.publishFieldDefinitions(fieldDefinitions)
       } else {
-        Future.successful(())
+        successful(())
       }
     }
 
     def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        result <- if (isApproved) publish(apiAndScopes) else Future.successful(false)
+        result <- if (isApproved) publish(apiAndScopes) else successful(false)
       } yield result
     }
 
@@ -67,11 +68,23 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
   }
 
   def validateAPIDefinitionAndScopes(apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    validation(apiAndScopes)
+  }
+
+
+  def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean = true)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
+      if(validateApiDefinition)
+        apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
+      else
+        successful(None)
+    }
+
     Try(apiAndScopes.validateAPIScopesAreDefined()) match {
       case Success(_) =>
         for {
-          scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
-          apiErrors <- apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
+          scopeErrors     <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+          apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
           fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
         } yield {
 
@@ -91,7 +104,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
 
       case Failure(e) =>
         val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> e.getMessage))))
-        Future.successful(Some(undefinedScopesErrorJson))
+        successful(Some(undefinedScopesErrorJson))
     }
   }
 
