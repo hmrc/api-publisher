@@ -46,7 +46,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
 
       And("The api definition is running")
-      apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
+      // TOOD - restore when api definition no longer rejects updated api
+      // apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
       apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
 
 
@@ -72,10 +73,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .withHeader(CONTENT_TYPE, containing(JSON))
       )
 
-      Then("The api defintion is validated")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-      )
+      // TOOD - restore when api definition no longer rejects updated api
+      // Then("The api defintion is validated")
+      // apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition/validate"))
+      //   .withHeader(CONTENT_TYPE, containing(JSON))
+      // )
 
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))

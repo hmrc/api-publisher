@@ -70,7 +70,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
   trait Setup extends BaseSetup {
     when(mockDefinitionService.getDefinition(any())(any())).thenReturn(successful(Some(apiAndScopes)))
-    when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(any[HeaderCarrier])).thenReturn(successful(None))
+    when(mockPublisherService.validation(eqTo(apiAndScopes),eqTo(false))(any[HeaderCarrier])).thenReturn(successful(None))
     when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), any())(any[HeaderCarrier])).thenReturn(successful(true))
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
   }
@@ -88,7 +88,7 @@ class PublisherControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAp
 
     "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
       when(mockDefinitionService.getDefinition(any())(any())).thenReturn(successful(Some(apiAndScopes)))
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(any[HeaderCarrier])).thenReturn(successful(Some(JsString("Bang"))))
+      when(mockPublisherService.validation(eqTo(apiAndScopes),eqTo(false))(any[HeaderCarrier])).thenReturn(successful(Some(JsString("Bang"))))
 
       val result = await(underTest.publish(validRequest))
 
