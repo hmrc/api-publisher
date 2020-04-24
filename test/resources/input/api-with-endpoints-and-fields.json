@@ -49,6 +49,12 @@
                 }
               }
             ]
+          },
+          "access": {
+            "devhub": {
+                  "read": "anyone",
+                  "write":"noOne"
+             }
           }
         }
       ]

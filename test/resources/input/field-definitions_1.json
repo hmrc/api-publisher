@@ -29,6 +29,11 @@
             }
           }
         ]
+      },
+      "access": {
+        "devhub": {
+              "write":"noOne"
+         }
       }
     }
   ]
