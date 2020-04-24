@@ -7,6 +7,8 @@ lib_managed
 tmp
 .history
 dist
+.DS_Store
+**/*.DS_Store
 /.idea
 /*.iml
 /*.ipr
@@ -25,4 +27,4 @@ yarn-error.log
 .bloop
 .metals
 project/metals.sbt
-    
+.DS_Store
