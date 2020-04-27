@@ -71,8 +71,7 @@ object FieldDefinitionType extends Enumeration {
   val SECURE_TOKEN = Value("SecureToken")
   val STRING = Value("STRING")
 
-  // implicit val FieldDefinitionTypeReads = Reads.enumNameReads(FieldDefinitionType)
-implicit val FieldDefitionTypeFormat: Format[FieldDefinitionType] = 
+implicit val FieldDefitionTypeFormat: Format[FieldDefinitionType] =
     Format(
       Reads.enumNameReads(FieldDefinitionType),
       Writes.enumNameWrites[FieldDefinitionType.type]
