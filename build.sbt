@@ -6,7 +6,7 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 lazy val appName = "api-publisher"
 lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
-lazy val hmrcBootstrapPlay26Version = "1.3.0"
+lazy val hmrcBootstrapPlay26Version = "1.4.0"
 lazy val hmrcSimpleReactivemongoVersion = "7.22.0-play-26"
 lazy val hmrcHttpMetricsVersion = "1.6.0-play-26"
 lazy val hmrcReactiveMongoTestVersion = "4.16.0-play-26"

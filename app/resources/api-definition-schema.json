@@ -236,6 +236,36 @@
                           }
                         }
                       }
+                    },
+                    "access": {
+                      "description": "Access control for the value of this Subscription Field",
+                      "type": "object",
+                      "properties": {
+                        "devhub": {
+                          "description": "Access control within Developer Hub for the value of this Subscription Field",
+                          "type": "object",
+                          "properties": {
+                            "read": {
+                              "description": "Who going to have Read Access to the value of this Subscription Field",
+                              "type": "string",
+                              "enum": [
+                                "anyone",
+                                "adminOnly",
+                                "noOne"
+                              ]
+                            },
+                            "write": {
+                              "description": "Who going to have Write Access to the value of this Subscription Field",
+                              "type": "string",
+                              "enum": [
+                                "anyone",
+                                "adminOnly",
+                                "noOne"
+                              ]
+                            }
+                          }
+                        }
+                      }
                     }
                   },
                   "required": [
