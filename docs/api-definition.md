@@ -39,6 +39,15 @@ Details of an API version
 | `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA |
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
 | `endpoints` | _None_ | Optional |  | DEPRECATED |
+### `access`
+Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access]
+
+| Name | Type | Required | Values | Description |
+| --- | --- | --- | --- | --- |
+| `whitelistedApplicationIds` | _string[]_ | Optional |  | A list of Developer Hub Application IDs that are whitelisted to access this Private API version |
+| `isTrial` | _boolean_ | Optional |  | Whether this API version is a private trial |
+| `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
+
 ### `fieldDefinitions`
 Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.
 
@@ -50,14 +59,24 @@ Details a subscription field used by this API. If you would like to use subscrip
 | `type` | _string_ | Required | URL<br>SecureToken<br>STRING | The type of value expected for this field |
 | `name` | _string_ | Required | ^[a-zA-Z]*$ | The internal identifier for this field |
 | `description` | _string_ | Required |  | The description that will be shown to users for this field |
-### `access`
-Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access]
+| `access` | _object_ | Optional | [access](#fieldaccess) | Access control for the value of this Subscription Field |
+
+<a name="fieldaccess"></a>
+
+### `access` 
+Access control for the value of this Subscription Field. See [Access](#fieldaccess)
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `whitelistedApplicationIds` | _string[]_ | Optional |  | A list of Developer Hub Application IDs that are whitelisted to access this Private API version |
-| `isTrial` | _boolean_ | Optional |  | Whether this API version is a private trial |
-| `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
+| `devhub` | _object_ | Optional | [devhub](#devhub)  | Read / Write Access control within Developer Hub for the Subscription Field. |
+
+### `devhub`
+The Regular Expression to validate the field value. See [DevHub]
+
+| Name | Type | Required | Values | Description |
+| --- | --- | --- | --- | --- |
+| `read` | _string_ | Optional | anyone<br>adminOnly<br>noOne | The required Read Access level for the Subscription Field. This defaults to anyone Access level |
+| `write` | _string_ | Optional | anyone<br>adminOnly<br>noOne | The required Write Access level for the Subscription Field. This defaults to anyone Access level |
 
 ### `validation`
 Contains Rules to validate the value of the Field Definition. See [Validation]
