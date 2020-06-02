@@ -1,0 +1,16 @@
+{
+  "fieldDefinitions": [
+    {
+      "name": "callback-url-only",
+      "description": "Only a callback URL",
+      "hint": "Just a hint",
+      "type": "URL"
+    },
+    {
+      "name": "ppns-field",
+      "description": "ppns test field",
+      "hint": "Just a hint",
+      "type": "PPNSTopic"
+    }
+  ]
+}

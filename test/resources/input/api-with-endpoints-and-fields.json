@@ -85,6 +85,37 @@
       ]
     },
     {
+      "version": "2.1",
+      "access": {
+        "type" : "PUBLIC"
+      },
+      "status" : "PUBLSHED",
+      "endpoints" : [
+        {
+          "uriPatter" : "/hello",
+          "endpointName": "Say Hello",
+          "method" : "GET",
+          "authType" : "NONE",
+          "throttlingTier" : "UNLIMITED",
+          "scope": "read:hello"
+        }
+      ],
+      "fieldDefinitions": [
+        {
+          "name": "callback-url-only",
+          "description": "Only a callback URL",
+          "hint": "Just a hint",
+          "type": "URL"
+        },
+        {
+          "name": "ppns-field",
+          "description": "ppns test field",
+          "hint": "Just a hint",
+          "type": "PPNSTopic"
+        }
+      ]
+    },
+    { 
       "version" : "3.0",
       "status" : "PROTOTYPED",
       "endpoints" : [

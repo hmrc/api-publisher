@@ -48,7 +48,9 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     models.ApiFieldDefinitions(apiContext, "1.0",
       (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
     models.ApiFieldDefinitions(apiContext, "2.0",
-      (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]))
+      (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
+    models.ApiFieldDefinitions(apiContext, "2.1",
+      (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]))
 
   val expectedApiDocumentationRegistration = RegistrationRequest("test", "http://example.com", Seq("1.0", "2.0", "3.0"))
 

@@ -52,7 +52,8 @@ class ApiAndScopesSpec extends UnitSpec {
     val expectedApiWithoutFieldDefinitions = json("/input/api-with-endpoints.json").as[JsObject]
     val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
       models.ApiFieldDefinitions(apiContext, "1.0", (json("/input/field-definitions_1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-      models.ApiFieldDefinitions(apiContext, "2.0", (json("/input/field-definitions_2.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]))
+      models.ApiFieldDefinitions(apiContext, "2.0", (json("/input/field-definitions_2.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]),
+      models.ApiFieldDefinitions(apiContext, "2.1", (json("/input/field-definitions_2.1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]))
 
     apiAndScopes.fieldDefinitions shouldBe expectedApiFieldDefinitions
     apiAndScopes.apiWithoutFieldDefinitions shouldBe expectedApiWithoutFieldDefinitions
