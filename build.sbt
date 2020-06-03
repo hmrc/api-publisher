@@ -96,24 +96,26 @@ lazy val microservice = (project in file("."))
     targetJvm := "jvm-1.8",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= jettyOverrides,
-    parallelExecution in Test := false,
-    fork in Test := false,
     retrieveManaged := true,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "app/resources"
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "app/resources"
   )
   .settings(
-    testOptions in Test := Seq(Tests.Filter(_ => true)), // this removes duplicated lines in HTML reports
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    // testOptions in Test := Seq(Tests.Filter(_ => true)), // this removes duplicated lines in HTML reports
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    Test / fork := false,
+    Test / parallelExecution := false,
+    Test / unmanagedSourceDirectories += baseDirectory.value / "test",
     addTestReportOption(Test, "test-reports")
   )
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
   .settings(
-    Keys.fork in IntegrationTest := false,
-    unmanagedSourceDirectories in IntegrationTest := Seq((baseDirectory in IntegrationTest).value / "it"),
+    IntegrationTest / fork := false,
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    parallelExecution in IntegrationTest := false)
+    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    IntegrationTest / parallelExecution:= false
+  )
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
     resolvers += Resolver.jcenterRepo,
