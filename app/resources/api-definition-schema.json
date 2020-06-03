@@ -192,7 +192,8 @@
                       "enum": [
                         "URL",
                         "SecureToken",
-                        "STRING"
+                        "STRING",
+                        "PPNSTopic"
                       ]
                     },
                     "hint": {
