@@ -124,6 +124,6 @@ lazy val microservice = (project in file("."))
   .settings(scalacOptions ++= Seq("-Ypartial-unification"))
 
 // Coverage configuration
-coverageMinimum := 85
+coverageMinimum := 90
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

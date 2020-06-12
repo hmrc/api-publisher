@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json._
+import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
@@ -60,6 +61,10 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
 
   lazy val apiContext: String = {
     (api \ "context").as[String]
+  }
+
+  lazy val categories: Seq[APICategory] = {
+    (api \ "categories").asOpt[Seq[APICategory]].getOrElse(Seq.empty)
   }
 
   lazy val versionNumbers: Seq[String] = versions.value.map(v => (v \ "version").as[String])
