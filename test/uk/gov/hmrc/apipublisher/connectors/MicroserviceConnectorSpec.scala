@@ -31,12 +31,12 @@ import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
@@ -89,6 +89,41 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       val result = await(connector.getAPIAndScopes(testService))
 
       result shouldEqual Some(ApiAndScopes(api, scopes))
+    }
+
+    "Not default categories when API is not in categories map" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result.get.categories shouldBe empty
+    }
+
+    "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
+      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-categories.json")).mkString
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result.get.categories should contain only CUSTOMS
+    }
+
+    "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
+      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-without-categories.json")).mkString
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result.get.categories should contain only EXAMPLE
+    }
+
+    "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
+      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-empty-categories.json")).mkString
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result.get.categories should contain only EXAMPLE
     }
 
     "Return none if the API endpoint returns 204" in new Setup {

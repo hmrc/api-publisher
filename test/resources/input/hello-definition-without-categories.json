@@ -1,0 +1,35 @@
+{
+  "scopes": [
+    {
+      "key": "read:hello",
+      "name": "Say Hello",
+      "description": "Ability to Say Hello"
+    }
+  ],
+  "api": {
+    "name" : "Hello World",
+    "description" : "Hello API",
+    "context" : "hello",
+    "versions" : [
+      {
+        "version" : "1.0",
+        "access" : {
+          "type" : "PRIVATE",
+          "whitelistedApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+        },
+        "status" : "PUBLISHED"
+      },
+      {
+        "version" : "2.0",
+        "access" : {
+          "type" : "PUBLIC"
+        },
+        "status" : "PUBLISHED"
+      },
+      {
+        "version" : "3.0",
+        "status" : "PROTOTYPED"
+      }
+    ]
+  }
+}

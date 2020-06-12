@@ -27,6 +27,7 @@ import org.json.JSONObject
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
+import uk.gov.hmrc.apipublisher.models.APICategory.categoryMap
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, OptionHttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -57,7 +58,10 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
 
   def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"
-    http.GET[Option[ApiAndScopes]](url).map(validateApiAndScopesAgainstSchema) recover unprocessableRecovery
+    http.GET[Option[ApiAndScopes]](url)
+      .map(validateApiAndScopesAgainstSchema)
+      .map(defaultCategories)
+      .recover(unprocessableRecovery)
   }
 
   private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
@@ -66,6 +70,21 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
         apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
       }
       definition
+    }
+  }
+
+  private def defaultCategories(apiAndScopes: Option[ApiAndScopes]) = {
+    apiAndScopes map { definition =>
+      if (definition.categories.isEmpty) {
+        categoryMap.get(definition.apiName) match {
+          case Some(categories) =>
+            val updatedApi = definition.api ++ Json.obj("categories" -> categories)
+            definition.copy(api = updatedApi)
+          case _ => definition
+        }
+      } else {
+        definition
+      }
     }
   }
 
