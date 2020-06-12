@@ -111,7 +111,7 @@
           "name": "ppns-field",
           "description": "ppns test field",
           "hint": "Just a hint",
-          "type": "PPNSTopic"
+          "type": "PPNSField"
         }
       ]
     },

@@ -193,7 +193,7 @@
                         "URL",
                         "SecureToken",
                         "STRING",
-                        "PPNSTopic"
+                        "PPNSField"
                       ]
                     },
                     "hint": {
