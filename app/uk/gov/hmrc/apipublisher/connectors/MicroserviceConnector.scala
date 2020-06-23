@@ -27,7 +27,7 @@ import org.json.JSONObject
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
-import uk.gov.hmrc.apipublisher.models.APICategory.categoryMap
+import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, OptionHttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -76,12 +76,9 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
   private def defaultCategories(apiAndScopes: Option[ApiAndScopes]) = {
     apiAndScopes map { definition =>
       if (definition.categories.isEmpty) {
-        categoryMap.get(definition.apiName) match {
-          case Some(categories) =>
-            val updatedApi = definition.api ++ Json.obj("categories" -> categories)
-            definition.copy(api = updatedApi)
-          case _ => definition
-        }
+        val defaultCategories = categoryMap.getOrElse(definition.apiName, Seq(OTHER))
+        val updatedApi = definition.api ++ Json.obj("categories" -> defaultCategories)
+        definition.copy(api = updatedApi)
       } else {
         definition
       }

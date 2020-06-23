@@ -2,6 +2,7 @@
   "name" : "Test",
   "description" : "Test API",
   "context" : "test/api",
+  "categories" : ["OTHER"],
   "versions" : [
     {
       "version" : "1.0",
