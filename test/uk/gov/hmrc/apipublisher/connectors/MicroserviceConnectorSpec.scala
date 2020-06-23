@@ -31,7 +31,7 @@ import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE}
+import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
@@ -91,12 +91,12 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       result shouldEqual Some(ApiAndScopes(api, scopes))
     }
 
-    "Not default categories when API is not in categories map" in new Setup {
+    "Default categories to OTHER when API is not in categories map" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
       val result = await(connector.getAPIAndScopes(testService))
 
-      result.get.categories shouldBe empty
+      result.get.categories should contain only OTHER
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
