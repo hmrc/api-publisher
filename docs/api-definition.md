@@ -44,7 +44,6 @@ Used to indicate whether this API version is public or private. If absent, the A
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `whitelistedApplicationIds` | _string[]_ | Optional |  | A list of Developer Hub Application IDs that are whitelisted to access this Private API version |
 | `isTrial` | _boolean_ | Optional |  | Whether this API version is a private trial |
 | `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
 
