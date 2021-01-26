@@ -52,9 +52,13 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
   val apiAndScopeDefinition = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints.json")).mkString
+  val apiAndScopeDefinitionWithoutWhitelisting = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")).mkString
+
   val invalidDefinition = Source.fromURL(getClass.getResource("/input/invalid-api-definition.json")).mkString
 
   val api = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
+  val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
+
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
   trait Setup {
@@ -89,6 +93,14 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
       val result = await(connector.getAPIAndScopes(testService))
 
       result shouldEqual Some(ApiAndScopes(api, scopes))
+    }
+
+    "Accept api definition for private API without whitelisted application IDs" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutWhitelisting)))
+
+      val result = await(connector.getAPIAndScopes(testService))
+
+      result shouldEqual Some(ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes))
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {
