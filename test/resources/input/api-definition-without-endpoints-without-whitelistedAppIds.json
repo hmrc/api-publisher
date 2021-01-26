@@ -1,0 +1,34 @@
+{
+  "scopes": [
+    {
+      "key": "read:hello",
+      "name": "Say Hello",
+      "description": "Ability to Say Hello"
+    }
+  ],
+  "api": {
+    "name" : "Test",
+    "description" : "Test API",
+    "context" : "test/api",
+    "versions" : [
+      {
+        "version" : "1.0",
+        "access" : {
+          "type" : "PRIVATE"
+        },
+        "status" : "PUBLISHED"
+      },
+      {
+        "version" : "2.0",
+        "access" : {
+          "type" : "PUBLIC"
+        },
+        "status" : "PUBLISHED"
+      },
+      {
+        "version" : "3.0",
+        "status" : "PROTOTYPED"
+      }
+    ]
+  }
+}
