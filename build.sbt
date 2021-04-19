@@ -92,7 +92,7 @@ lazy val microservice = (project in file("."))
   .settings(
     name := appName,
     majorVersion := 0,
-    scalaVersion := "2.12.11",
+    scalaVersion := "2.12.12",
     targetJvm := "jvm-1.8",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= jettyOverrides,
@@ -117,8 +117,6 @@ lazy val microservice = (project in file("."))
     IntegrationTest / parallelExecution:= false
   )
   .settings(
-    resolvers += Resolver.bintrayRepo("hmrc", "releases"),
-    resolvers += Resolver.jcenterRepo,
     resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
   )
   .settings(scalacOptions ++= Seq("-Ypartial-unification"))
