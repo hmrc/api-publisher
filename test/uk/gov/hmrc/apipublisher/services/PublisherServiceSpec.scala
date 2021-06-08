@@ -16,23 +16,20 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import org.mockito.Matchers.any
-import org.mockito.BDDMockito.given
-import org.mockito.Mockito.{verify, verifyZeroInteractions}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
+import utils.AsyncHmrcSpec
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsArray
 
-class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures {
+class PublisherServiceSpec extends AsyncHmrcSpec {
 
   val testServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
@@ -70,10 +67,10 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
       mockApprovalService
     )
 
-    given(mockApprovalService.createOrUpdateServiceApproval(any[APIApproval])).willReturn(true)
-    given(mockApiDefinitionConnector.publishAPI(any[JsObject])(any[HeaderCarrier])).willReturn(())
-    given(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(any[Seq[ApiFieldDefinitions]])(any[HeaderCarrier])).willReturn(())
-    given(mockApiScopeConnector.publishScopes(any[JsValue])(any[HeaderCarrier])).willReturn(())
+    when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(true))
+    when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(successful(()))
+    when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(successful(()))
+    when(mockApiScopeConnector.publishScopes(*)(*)).thenReturn(successful(()))
   }
 
   "publishAPIDefinitionAndScopes" should {
@@ -82,14 +79,14 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
       await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes)) shouldBe true
 
-      verify(mockApiDefinitionConnector).publishAPI(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).publishScopes(scopes)
-      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(expectedApiFieldDefinitions)
+      verify(mockApiDefinitionConnector).publishAPI(*)(*)
+      verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
+      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(eqTo(expectedApiFieldDefinitions))(*)
     }
 
     "Retrieve the api from the microservice but don't Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is not allowed" in new Setup {
 
-      given(mockApprovalService.createOrUpdateServiceApproval(any[APIApproval])).willReturn(false)
+      when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(false))
 
       await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes)) shouldBe false
 
@@ -101,42 +98,35 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     "When publication allowed and api does not have subscription fields, publish API to api-definition, api-scope and api-documentation only" in new Setup {
       await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopesWithoutFieldDefinitions)) shouldBe true
 
-      verify(mockApiScopeConnector).publishScopes(scopes)
+      verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
     }
 
     "Fail, propagating an error, when the apiScopeConnector fails" in new Setup {
 
-      given(mockApiScopeConnector.publishScopes(any[JsValue])(any[HeaderCarrier])).willReturn(failed(emulatedServiceError))
+      when(mockApiScopeConnector.publishScopes(*)(*)).thenReturn(failed(emulatedServiceError))
 
-      val future = publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe emulatedServiceError
-      }
+      intercept[UnsupportedOperationException] {
+        await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes))
+      } shouldBe emulatedServiceError
     }
 
     "Fail, propagating an error, when the apiDefinitionConnector fails" in new Setup {
 
-      given(mockApiDefinitionConnector.publishAPI(any[JsObject])(any[HeaderCarrier])).willReturn(failed(emulatedServiceError))
+      when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(failed(emulatedServiceError))
 
-      val future = publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe emulatedServiceError
-      }
+      intercept[UnsupportedOperationException] {
+        await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation,apiAndScopes))
+      } shouldBe emulatedServiceError
     }
 
     "Fail, propagating an error, when the apiSubscriptionFieldsConnector fails" in new Setup {
 
-      given(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(any[Seq[ApiFieldDefinitions]])(any[HeaderCarrier]))
-        .willReturn(failed(emulatedServiceError))
-
-      val future = publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe emulatedServiceError
-      }
+      when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(failed(emulatedServiceError))
+      
+      intercept[UnsupportedOperationException] {
+        await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes))
+      } shouldBe emulatedServiceError
     }
   }
 
@@ -144,50 +134,48 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
     "Succeed when no validation failures are detected" in new Setup {
 
-      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
     }
 
     "Fail when Field Definition is invalid" in new Setup {
 
       val errorString = """{"error":"blah"}"""
-      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(errorString))))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"fieldDefinitionErrors":$errorString}"""
-
     }
 
     "Fail when scope is invalid" in new Setup {
 
       val errorString = """{"error":"blah"}"""
-      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(errorString))))
-      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
-
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$errorString}"""
@@ -196,16 +184,15 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
     "Fail when api definition is invalid" in new Setup {
 
       val errorString = """{"error":"blah"}"""
-      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier]))
-        .willReturn(successful(Some(Json.parse( """{"error":"blah"}"""))))
-      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(None))
-      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse( """{"error":"blah"}"""))))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"apiDefinitionErrors":$errorString}"""
@@ -215,16 +202,15 @@ class PublisherServiceSpec extends UnitSpec with MockitoSugar with ScalaFutures 
 
       val scopeErrorString = """{"error":"invalid-scope"}"""
       val apiDefinitionErrorString = """{"error":"invalid-api-definition"}"""
-      given(mockApiDefinitionConnector.validateAPIDefinition(any[JsObject])(any[HeaderCarrier]))
-        .willReturn(successful(Some(Json.parse(apiDefinitionErrorString))))
-      given(mockApiScopeConnector.validateScopes(any[JsValue])(any[HeaderCarrier])).willReturn(successful(Some(Json.parse(scopeErrorString))))
-      given(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(any())(any[HeaderCarrier])).willReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse(apiDefinitionErrorString))))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(Some(Json.parse(scopeErrorString))))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(any[JsObject])(any[HeaderCarrier])
-      verify(mockApiScopeConnector).validateScopes(any[JsValue])(any[HeaderCarrier])
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(any())(any[HeaderCarrier])
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$scopeErrorString,"apiDefinitionErrors":$apiDefinitionErrorString}"""

@@ -19,23 +19,20 @@ package uk.gov.hmrc.apipublisher.connectors
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
 import play.api.libs.json.Json
-import play.api.test.Helpers.{CONTENT_TYPE, JSON}
+import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
+import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
+class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
 
 
@@ -70,13 +67,13 @@ class APIScopeConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAft
 
       await(connector.publishScopes(scopes))
 
-      verify(postRequestedFor(urlEqualTo("/scope"))
+      verifyStub(postRequestedFor(urlEqualTo("/scope"))
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalTo(scopes.toString())))
     }
 
     "Fail if the api-scope endpoint returns 500" in new Setup {
-      stubFor(post(urlEqualTo("/scope")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
+      stubFor(post(urlEqualTo("/scope")).willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR)))
 
       val caught = intercept[Exception] {
         await(connector.publishScopes(scopes))

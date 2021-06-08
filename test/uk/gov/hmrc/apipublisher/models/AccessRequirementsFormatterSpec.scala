@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import org.scalatest.{Matchers, WordSpec}
 import uk.gov.hmrc.apipublisher.models.AccessRequirementsFormatters
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
 import uk.gov.hmrc.apipublisher.models.FieldDefinition
 import uk.gov.hmrc.apipublisher.models.FieldDefinitionType
+import utils.HmrcSpec
 
-class AccessRequirementsFormatterSpec extends WordSpec with Matchers with AccessRequirementsFormatters {
+class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFormatters {
 
   private def objectAsJsonString[A](a: A)(implicit t: Writes[A]) = Json.asciiStringify(Json.toJson(a))
 

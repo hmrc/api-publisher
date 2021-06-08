@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import org.scalatest.WordSpec
-import org.scalatest.Matchers
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirements
 import uk.gov.hmrc.apipublisher.models.DevhubAccessLevel._
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
+import utils.HmrcSpec
 
-class AccessRequirementsSpec extends WordSpec with Matchers {
+class AccessRequirementsSpec extends HmrcSpec {
 
   "DevhubRequirement" should {
 

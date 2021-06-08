@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.wiring
 
-import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.test.UnitSpec
+import utils.AsyncHmrcSpec
 
-class AppContextSpec extends UnitSpec with MockitoSugar {
+
+class AppContextSpec extends AsyncHmrcSpec {
 
   "AppContext" must {
     "Correctly rewrite URLs for an environment" in {

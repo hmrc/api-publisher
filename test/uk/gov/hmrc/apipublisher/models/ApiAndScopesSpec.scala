@@ -19,9 +19,10 @@ package uk.gov.hmrc.apipublisher.models
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.http.UnprocessableEntityException
-import uk.gov.hmrc.play.test.UnitSpec
+import utils.AsyncHmrcSpec
 
-class ApiAndScopesSpec extends UnitSpec {
+
+class ApiAndScopesSpec extends AsyncHmrcSpec {
 
   "ValidateAPIScopesAreDefined" should {
 

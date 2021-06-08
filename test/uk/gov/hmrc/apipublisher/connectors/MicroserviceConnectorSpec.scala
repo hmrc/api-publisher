@@ -22,12 +22,8 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.everit.json.schema.ValidationException
-import org.mockito.Mockito.{verify => verifyMock}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.Status
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
 import play.api.{Configuration, Environment}
@@ -36,12 +32,13 @@ import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
+import utils.AsyncHmrcSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
-class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
+class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
   SharedMetricRegistries.clear()
   val apiProducerPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
@@ -139,7 +136,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
     }
 
     "Return none if the API endpoint returns 204" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
       val result = await(connector.getAPIAndScopes(testService))
 
@@ -147,7 +144,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
     }
 
     "Fail if the API endpoint returns 404" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.NOT_FOUND)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
 
       intercept[NotFoundException] {
         await(connector.getAPIAndScopes(testService))
@@ -180,7 +177,7 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
           |</body>
           |</html>""".stripMargin
 
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(Status.BAD_GATEWAY).withBody(badGatewayResponse)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(BAD_GATEWAY).withBody(badGatewayResponse)))
 
       val badGatewayException = intercept[Upstream5xxResponse] {
         await(connector.getAPIAndScopes(testService))
@@ -193,6 +190,6 @@ class MicroserviceConnectorSpec extends UnitSpec with ScalaFutures with BeforeAn
   "should call the microservice to get the application.raml" in new Setup {
     connector.getRaml(testService, "1.0")
 
-    verifyMock(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
+    verify(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
   }
 }
