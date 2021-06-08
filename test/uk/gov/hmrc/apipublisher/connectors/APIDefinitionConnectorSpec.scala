@@ -19,25 +19,22 @@ package uk.gov.hmrc.apipublisher.connectors
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
-import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
-
+import utils.AsyncHmrcSpec
+import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source.fromURL
 
-class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeAndAfterAll with MockitoSugar with GuiceOneAppPerSuite {
+class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
   val apiDefinitionPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiDefinitionHost = "localhost"
@@ -74,14 +71,14 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
 
       await(connector.publishAPI(api))
 
-      verify(postRequestedFor(urlEqualTo("/api-definition"))
+      verifyStub(postRequestedFor(urlEqualTo("/api-definition"))
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalToJson(definition)))
 
     }
 
     "Fail if the api-definition endpoint returns 500" in new Setup {
-      stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse().withStatus(Status.INTERNAL_SERVER_ERROR)))
+      stubFor(post(urlEqualTo("/api-definition")).willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR)))
 
       intercept[Exception] {
         await(connector.publishAPI(api))
@@ -92,12 +89,12 @@ class APIDefinitionConnectorSpec extends UnitSpec with ScalaFutures with BeforeA
   "Validate api" should {
 
     "add dummy serviceBaseUrl and serviceName" in new Setup {
-      stubFor(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse().withStatus(Status.NO_CONTENT)))
+      stubFor(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
       await(connector.validateAPIDefinition(api))
-
+      
       val expected: JsObject = api.as[JsObject] ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy")
-      verify(postRequestedFor(urlPathEqualTo("/api-definition/validate")).withRequestBody(equalToJson(expected.toString())))
+      verifyStub(postRequestedFor(urlPathEqualTo("/api-definition/validate")).withRequestBody(equalToJson(expected.toString())))
     }
   }
 }

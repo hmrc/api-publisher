@@ -100,24 +100,24 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     }
   }
 
-  def fetchUnapprovedServices(): Action[AnyContent] = Action.async { implicit request =>
+  def fetchUnapprovedServices(): Action[AnyContent] = Action.async { _ =>
     approvalService.fetchUnapprovedServices().map {
       result => Ok(Json.toJson(result.seq))
     } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
   }
 
-  def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
+  def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async { _ =>
     approvalService.fetchServiceApproval(serviceName)
       .map(res => Ok(Json.toJson(res)))
       .recover(recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES))
   }
 
-  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request => {
+  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request => ({
       for {
         serviceLocation <- approvalService.approveService(serviceName)
         result <- publishService(serviceLocation)
       } yield result
-    } recover recovery(FAILED_TO_APPROVE_SERVICES)
+    }) recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {

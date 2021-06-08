@@ -20,11 +20,12 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import utils.AsyncHmrcSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class APIApprovalRepositorySpec extends UnitSpec
+class APIApprovalRepositorySpec extends AsyncHmrcSpec
   with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {

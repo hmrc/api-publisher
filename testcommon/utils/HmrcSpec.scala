@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.connectors
+package utils
 
-import play.api.http.Status.UNPROCESSABLE_ENTITY
-import uk.gov.hmrc.http.UnprocessableEntityException
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import org.scalatest.{Matchers, OptionValues, WordSpec}
+import org.scalatestplus.play.WsScalaTestClient
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-trait ConnectorRecovery {
+abstract class HmrcSpec extends WordSpec with Matchers with OptionValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
 
-  def unprocessableRecovery[U]: PartialFunction[Throwable, U] = {
-    case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => throw new UnprocessableEntityException(message)
-  }
-}
+abstract class AsyncHmrcSpec extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}

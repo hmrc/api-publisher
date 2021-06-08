@@ -18,7 +18,7 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import java.io.InputStream
 import java.nio.charset.StandardCharsets.UTF_8
-
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
 import org.apache.commons.io.IOUtils
 import org.everit.json.schema.Schema
@@ -29,7 +29,7 @@ import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, OptionHttpReads}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, HttpReadsOption}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
@@ -39,7 +39,7 @@ import scala.util.Try
 
 @Singleton
 class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: RamlLoader, http: HttpClient, env: Environment)
-                                     (implicit val ec: ExecutionContext) extends ConnectorRecovery with OptionHttpReads {
+                                     (implicit val ec: ExecutionContext) extends ConnectorRecovery with HttpReadsOption {
 
   val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
@@ -49,7 +49,7 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
   }
 
   // Overridden so we can map only 204 to None, rather than also including 404
-  implicit override def readOptionOf[P](implicit rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
+  implicit override def readOptionOfNotFound[P](implicit rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
     def read(method: String, url: String, response: HttpResponse): Option[P] = response.status match {
       case NO_CONTENT => None
       case _ => Some(rds.read(method, url, response))
@@ -58,7 +58,7 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
 
   def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"
-    http.GET[Option[ApiAndScopes]](url)
+    http.GET[Option[ApiAndScopes]](url)(readOptionOfNotFound, implicitly, implicitly)
       .map(validateApiAndScopesAgainstSchema)
       .map(defaultCategories)
       .recover(unprocessableRecovery)

@@ -19,10 +19,15 @@ package uk.gov.hmrc.apipublisher.connectors
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.HttpResponse
+import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
+import uk.gov.hmrc.http.UnprocessableEntityException
+
 
 @Singleton
 class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
@@ -30,17 +35,22 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Unit] = {
-    http.POST(s"$serviceBaseUrl/scope", scopes).map(_ => ()) recover unprocessableRecovery
+    http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/scope", scopes).map {
+      case Right(_) => (())
+      case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+      case Left(err) => throw err
+    }
   }
 
   def validateScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
     val url = s"$serviceBaseUrl/scope/validate"
-    http.POST(url, scopes)
-      .map(_ => None)
-      .recover {
-        case e: BadRequestException =>
-          Logger.debug(s"Failed request. POST url=$url: ${e.message}")
-          Some(JsString(e.message))
+    http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](url, scopes)
+      .map {
+        case Right(_) => None
+        case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) => 
+          Logger.debug(s"Failed request. POST url=$url: $message")
+          Some(JsString(message))
+        case Left(err) => throw err
       }
   }
 }
