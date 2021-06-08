@@ -1,5 +1,5 @@
-import _root_.play.core.PlayVersion
-import _root_.play.sbt.PlayScala
+import play.core.PlayVersion
+import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import bloop.integrations.sbt.BloopDefaults
