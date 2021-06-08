@@ -26,11 +26,12 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
@@ -75,10 +76,11 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     "Fail if the api-scope endpoint returns 500" in new Setup {
       stubFor(post(urlEqualTo("/scope")).willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR)))
 
-      val caught = intercept[Exception] {
+      val caught = intercept[UpstreamErrorResponse] {
         await(connector.publishScopes(scopes))
       }
-      assert(caught.isInstanceOf[Upstream5xxResponse])
+      
+      assert(caught.statusCode == INTERNAL_SERVER_ERROR)
       assert(caught.getMessage.contains("/scope' returned 500"))
     }
   }

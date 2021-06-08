@@ -29,13 +29,14 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.Source.fromURL
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
@@ -111,10 +112,11 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
       stubFor(put(urlEqualTo(subscriptionFieldsUrl2)).willReturn(
         aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody(error500ResponseBody)))
 
-      val caught = intercept[Upstream5xxResponse] {
+      val caught = intercept[UpstreamErrorResponse] {
         await(publishFieldDefinitions())
       }
 
+      caught.statusCode shouldBe INTERNAL_SERVER_ERROR
       caught.message should include (error500ResponseBody)
     }
   }

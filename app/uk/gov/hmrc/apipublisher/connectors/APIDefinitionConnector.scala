@@ -19,10 +19,14 @@ package uk.gov.hmrc.apipublisher.connectors
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
+import uk.gov.hmrc.http.UnprocessableEntityException
 
 @Singleton
 class APIDefinitionConnector @Inject()(config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
@@ -30,17 +34,22 @@ class APIDefinitionConnector @Inject()(config: ApiDefinitionConfig, http: HttpCl
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
-    http.POST(s"$serviceBaseUrl/api-definition", api).map(_ => ()) recover unprocessableRecovery
+    http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/api-definition", api, Seq.empty).map {
+      case Right(_) => (())
+      case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+      case Left(err) => throw err
+    }
   }
 
   def validateAPIDefinition(definition: JsObject)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
     val url = s"$serviceBaseUrl/api-definition/validate"
-    http.POST(url, definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
-      .map(_ => None)
-      .recover {
-        case e: BadRequestException =>
-          Logger.debug(s"Failed request. POST url=$url: ${e.message}")
-          Some(JsString(e.message))
+    http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](url, definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
+      .map {
+        case Right(_) => None
+        case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) => 
+          Logger.debug(s"Failed request. POST url=$url: $message")
+          Some(JsString(message))
+        case Left(err) => throw err
       }
   }
 }

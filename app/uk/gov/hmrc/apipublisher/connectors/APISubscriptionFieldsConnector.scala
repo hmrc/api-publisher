@@ -18,9 +18,8 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -29,6 +28,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apipublisher.models.FieldDefinition
 import play.api.libs.json.JsString
 import play.api.libs.json.JsValue
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.UnprocessableEntityException
 
 @Singleton
 class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
@@ -40,28 +43,33 @@ class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsCon
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
         val urlEncodedApiContext = URLEncoder.encode(apiContext, StandardCharsets.UTF_8.name)
-        val jsonRequestBody = Json.toJson(ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions))
+        val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
         val putUrl = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
-        http.PUT(putUrl, jsonRequestBody).map(_ => ()) recover unprocessableRecovery
+        http.PUT[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
+        .map {
+          case Right(_) => (())
+          case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+          case Left(err) => throw err
+        }
     }
+    
     Future.sequence(putFutures).map(_ => ())
   }
 
   def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    import uk.gov.hmrc.http.Upstream4xxResponse
-    import play.api.http.Status.{UNPROCESSABLE_ENTITY, BAD_REQUEST}
-
     if(fieldDefinitions.isEmpty)
       Future.successful(None)
     else {
-      val jsonRequestBody = Json.toJson(ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions))
+      val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
       val putUrl = s"$serviceBaseUrl/validate"
 
-      http.POST(putUrl, jsonRequestBody)
-      .map(_ => None)
-      .recover {
-        case Upstream4xxResponse(_, UNPROCESSABLE_ENTITY, _, _) | Upstream4xxResponse(_, BAD_REQUEST, _, _) => Some(JsString("Field definitions are invalid"))
-      }
+      http.POST[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
+        .map {
+          case Right(_) => None
+          case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Some(JsString("Field definitions are invalid"))
+          case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _))          => Some(JsString("Field definitions are invalid"))
+          case Left(err) => throw err
+        }
     }
   }
 }
