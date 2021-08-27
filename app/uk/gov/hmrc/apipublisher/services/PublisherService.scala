@@ -17,14 +17,15 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.immutable
 import scala.concurrent.Future.successful
-import scala.util.{Success,Failure, Try}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
@@ -59,6 +60,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
+        //TODO check scopes unchanged
         result <- if (isApproved) publish(apiAndScopes) else successful(false)
       } yield result
     }
@@ -80,21 +82,37 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         successful(None)
     }
 
+    def scopesRemainUnchanged(scopes: JsValue): Future[Option[JsString]] = {
+      val scopesSearch: immutable.Seq[String] = scopes.as[Seq[Scope]].map(s => s.key).toList
+      val scopeServiceScopes: Future[Option[JsValue]] = apiScopeConnector.retrieveScopes(scopesSearch)
+      scopeServiceScopes.map((retrievedScopes: Option[JsValue]) => {
+        val same: Option[Boolean] = retrievedScopes.map(rs => rs == scopes)
+        retrievedScopes == scopes match {
+          case true => None
+          case false => {
+            println(s"scopes is $scopes,\nretrievedScopes is $retrievedScopes")
+            Some(JsString("Updating scopes while publishing is no longer supported. See http://confluence"))
+          }
+        }
+      })
+    }
+
     Try(apiAndScopes.validateAPIScopesAreDefined()) match {
       case Success(_) =>
         for {
           scopeErrors     <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+          scopeChangedErrors <- scopesRemainUnchanged(apiAndScopes.scopes)
           apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
           fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
         } yield {
-
-          if (scopeErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
+          if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
             None
           } else {
             Some(
               JsObject(
                 Seq.empty[(String, JsValue)] ++
                   scopeErrors.map("scopeErrors" -> _) ++
+                  scopeChangedErrors.map("scopeChangedErrors" -> _) ++
                   apiErrors.map("apiDefinitionErrors" -> _) ++
                   fieldDefnErrors.map("fieldDefinitionErrors" -> _)
               )
@@ -112,5 +130,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription)
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }
+
+
 
 }

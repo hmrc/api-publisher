@@ -18,15 +18,13 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.{JsString, JsValue}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.http.HttpResponse
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import uk.gov.hmrc.http.UnprocessableEntityException
+import play.api.libs.json.{JsString, JsValue}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
+import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
@@ -47,8 +45,20 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
     http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](url, scopes)
       .map {
         case Right(_) => None
-        case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) => 
+        case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>
           Logger.debug(s"Failed request. POST url=$url: $message")
+          Some(JsString(message))
+        case Left(err) => throw err
+      }
+  }
+
+  def retrieveScopes(scopeKeys: Seq[String])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
+    http.GET[Either[UpstreamErrorResponse, HttpResponse]](url)
+      .map {
+        case Right(_) => None
+        case Left(UpstreamErrorResponse(message, _, _, _)) =>
+          Logger.debug(s"Failed to retrieve scopes from $url so unable to ensure none is being changed")
           Some(JsString(message))
         case Left(err) => throw err
       }
