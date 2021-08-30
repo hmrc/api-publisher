@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.HeaderCarrier
@@ -89,21 +89,26 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     "retrieve scopes when one search key is provided" in new Setup {
       val scopeKeys = Seq("akey")
       val urlToCall = "/scope?keys=akey"
-      stubFor(get(urlEqualTo(urlToCall)).willReturn(aResponse()))
+      stubFor(get(urlEqualTo(urlToCall))
+        .willReturn(aResponse().withBody(scopes.toString())))
 
-      await(connector.retrieveScopes(scopeKeys))
+      val result: Option[JsValue] = await(connector.retrieveScopes(scopeKeys))
 
       verifyStub(getRequestedFor(urlEqualTo(urlToCall)))
+      result shouldEqual Some(scopes)
+
     }
 
     "retrieve scopes when multiple search keys are provided" in new Setup {
       val scopeKeys = Seq("akey", "anotherKey", "oneMoreForLuck")
       val urlToCall = s"/scope?keys=${scopeKeys.mkString("+")}"
-      stubFor(get(urlEqualTo(urlToCall)).willReturn(aResponse()))
+      stubFor(get(urlEqualTo(urlToCall))
+        .willReturn(aResponse().withBody(scopes.toString())))
 
-      await(connector.retrieveScopes(scopeKeys))
+      val result: Option[JsValue] = await(connector.retrieveScopes(scopeKeys))
 
       verifyStub(getRequestedFor(urlEqualTo(urlToCall)))
+      result shouldEqual Some(scopes)
     }
   }
 }

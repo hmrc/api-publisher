@@ -56,7 +56,7 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
     val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
     http.GET[Either[UpstreamErrorResponse, HttpResponse]](url)
       .map {
-        case Right(_) => None
+        case Right(response) => Some(response.json)
         case Left(UpstreamErrorResponse(message, _, _, _)) =>
           Logger.debug(s"Failed to retrieve scopes from $url so unable to ensure none is being changed")
           Some(JsString(message))

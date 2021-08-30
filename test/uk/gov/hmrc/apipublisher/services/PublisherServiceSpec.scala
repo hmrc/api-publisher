@@ -221,8 +221,26 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$scopeErrorString,"apiDefinitionErrors":$apiDefinitionErrorString}"""
     }
 
-    "Fail when scope updating is attempted" in new Setup {
+    "Fail when scope updating is attempted on a pre-existing scope" in new Setup {
       val scopeFromScopeService = """[{"key":"read:hello","name":"Say Hello","description":"I have changed"}]"""
+      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello")))(*)).thenReturn(successful(Some((Json.parse(scopeFromScopeService)))))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":$scopeErrorString}"""
+    }
+
+    "Fail when a new scope is being attempted to add" in new Setup {
+      val scopeFromScopeService = """[]"""
       val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
