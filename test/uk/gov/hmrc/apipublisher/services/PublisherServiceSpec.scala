@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models._
@@ -26,8 +26,7 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import utils.AsyncHmrcSpec
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsArray
+
 
 class PublisherServiceSpec extends AsyncHmrcSpec {
 
@@ -245,6 +244,25 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello")))(*)).thenReturn(successful(Some((Json.parse(scopeFromScopeService)))))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":$scopeErrorString}"""
+    }
+
+    "Fail when failed to retrieve scopes" in new Setup {
+      val scopeFromScopeService = JsString("""unexpected error""")
+
+      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello")))(*)).thenReturn(successful(Some((scopeFromScopeService))))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
