@@ -84,18 +84,18 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     }
 
     def scopesRemainUnchanged(scopes: JsValue): Future[Option[JsValue]] = {
-      val scopesSearch: immutable.Seq[String] = scopes.as[Seq[Scope]].map(s => s.key).toList
-      val scopeServiceScopes: Future[Option[JsValue]] = apiScopeConnector.retrieveScopes(scopesSearch)
-      scopeServiceScopes.map {
-        case Some(scopesJsVal) =>
-          if (scopesJsVal == scopes) {
-              None
-          } else {
-            Logger.error(s"scopes is $scopes,\nretrievedScopes is $scopesJsVal")
-            Some(JsString("Updating scopes while publishing is no longer supported. See http://confluence"))
-          }
-        case None => None
-      }
+      val scopeSeq: Seq[Scope] = scopes.as[Seq[Scope]]
+      val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
+      val scopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
+
+      scopeServiceScopes.map (serviceScopes => {
+        if (serviceScopes == scopeSeq) {
+          None
+        } else {
+          Logger.error(s"scopes is $scopes,\nretrievedScopes is $serviceScopes")
+          Some(JsString("Updating scopes while publishing is no longer supported. See http://confluence"))
+        }
+      })
     }
 
     Try(apiAndScopes.validateAPIScopesAreDefined()) match {

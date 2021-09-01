@@ -20,6 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsString, JsValue}
+import uk.gov.hmrc.apipublisher.models.Scope
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -52,16 +53,9 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
       }
   }
 
-  def retrieveScopes(scopeKeys: Seq[String])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+  def retrieveScopes(scopeKeys: Seq[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
     val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
-    http.GET[Either[UpstreamErrorResponse, HttpResponse]](url)
-      .map {
-        case Right(response) => Some(response.json)
-        case Left(UpstreamErrorResponse(message, _, _, _)) =>
-          Logger.debug(s"Failed to retrieve scopes from $url due to error $message")
-          Some(JsString(message))
-        case Left(err) => throw err
-      }
+    http.GET[Seq[Scope]](url)
   }
 }
 
