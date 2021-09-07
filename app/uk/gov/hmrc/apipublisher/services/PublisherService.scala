@@ -42,7 +42,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
 
     def publish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
-        _ <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
+        _ <- apiScopeConnector.publishScopes(apiAndScopes.scopes.getOrElse(JsArray()))
         _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation(apiAndScopes))
         _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
       } yield true
@@ -83,7 +83,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     Try(apiAndScopes.validateAPIScopesAreDefined()) match {
       case Success(_) =>
         for {
-          scopeErrors     <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+          scopeErrors     <- apiScopeConnector.validateScopes(apiAndScopes.scopes.getOrElse(JsArray()))
           apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
           fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
         } yield {

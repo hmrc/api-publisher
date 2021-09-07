@@ -297,7 +297,6 @@
     }
   },
   "required": [
-    "scopes",
     "api"
   ],
   "additionalProperties": false
