@@ -48,7 +48,7 @@ class ApiAndScopesSpec extends AsyncHmrcSpec {
   }
 
   "Field definitions should be extracted from the JSON definition" in {
-    val apiAndScopes = ApiAndScopes(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject], scopes = JsArray())
+    val apiAndScopes = ApiAndScopes(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject], scopes = Some(JsArray()))
     val apiContext = apiAndScopes.apiContext
     val expectedApiWithoutFieldDefinitions = json("/input/api-with-endpoints.json").as[JsObject]
     val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(

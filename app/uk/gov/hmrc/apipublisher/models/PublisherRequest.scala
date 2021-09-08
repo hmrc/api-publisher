@@ -20,7 +20,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
 
-case class ApiAndScopes(api: JsObject, scopes: JsArray) {
+case class ApiAndScopes(api: JsObject, scopes: Option[JsArray]) {
 
   def validateAPIScopesAreDefined(): Unit = {
     val missing: Seq[String] = apiScopes.filterNot(definedScopes.contains)
@@ -29,7 +29,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     }
   }
 
-  private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])
+  private lazy val definedScopes: Seq[String] = (scopes.getOrElse(JsArray()) \\ "key").map(_.as[String])
 
   private lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String])
 

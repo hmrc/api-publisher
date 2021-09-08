@@ -35,10 +35,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
   val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
   val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
-  val apiAndScopes = ApiAndScopes(api, scopes)
+  val apiAndScopes = ApiAndScopes(api, Some(scopes))
 
   val apiWithoutFieldDefinitions = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
-  val apiAndScopesWithoutFieldDefinitions = ApiAndScopes(apiWithoutFieldDefinitions, scopes)
+  val apiAndScopesWithoutFieldDefinitions = ApiAndScopes(apiWithoutFieldDefinitions, Some(scopes))
 
   val apiContext = "test"
   val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
