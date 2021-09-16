@@ -51,7 +51,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val apiAndScopeDefinition = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints.json")).mkString
   val apiAndScopeDefinitionWithoutWhitelisting = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")).mkString
-  val apiAndScopeDefinitionWithoutScopes = Source.fromURL(getClass.getResource("/input/api-definition-without-scopes.json")).mkString
 
   val invalidDefinition = Source.fromURL(getClass.getResource("/input/invalid-api-definition.json")).mkString
 
@@ -91,15 +90,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       val result = await(connector.getAPIAndScopes(testService))
 
-      result shouldEqual Some(ApiAndScopes(api, Some(scopes)))
-    }
-
-    "Return the api definition when it has no scopes included" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutScopes)))
-
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result shouldEqual Some(ApiAndScopes(api, None))
+      result shouldEqual Some(ApiAndScopes(api, scopes))
     }
 
     "Accept api definition for private API without whitelisted application IDs" in new Setup {
@@ -107,7 +98,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       val result = await(connector.getAPIAndScopes(testService))
 
-      result shouldEqual Some(ApiAndScopes(apiWithoutWhitelistedAppIDs, Some(scopes)))
+      result shouldEqual Some(ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes))
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {
