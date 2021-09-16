@@ -1,11 +1,11 @@
 # HMRC API definition. See [JSON definition]
-Generated from [JSON schema](../app/resources/api-definition-schema.json)
+Generated from [JSON schema](app/resources/api-definition-schema.json)
 ## `root`
 HMRC API definition. See [JSON definition]
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `scopes` | _object[]_ | Optional | [scopes](#scopes) | _Deprecated_ All OAuth scopes used by an API should now be defined in [the api-scopes service JSON scopes file](https://github.com/hmrc/api-scope/blob/master/conf/scopes.json). If processing the contents of this _object[]_ would result in creating new or changing existing scopes then the API will not be published  
+| `scopes` | _object[]_ | Required | [scopes](#scopes) | A list of all OAuth scopes used by this API |
 | `api` | _object_ | Required | [api](#api) | Details of the API |
 ### `scopes`
 Details of an OAuth scope

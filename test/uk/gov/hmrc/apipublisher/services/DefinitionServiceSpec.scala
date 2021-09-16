@@ -69,10 +69,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-simple.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -85,10 +85,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-simple-no-context.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -101,10 +101,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-simple-dodgy-context.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -117,10 +117,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-simple-throttling.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -133,10 +133,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-simple.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
@@ -151,12 +151,12 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val api_exp = json[JsObject]("/expected/api-multi-version.json")
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, Some(scopes)))))
+      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml_1)
       when(mockMicroserviceConnector.getRaml(testService, "2.0")).thenReturn(testRaml_2)
       when(mockMicroserviceConnector.getRaml(testService, "3.0")).thenReturn(testRaml_3)
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, Some(scopes)))
+      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
       val definition = await(definitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
