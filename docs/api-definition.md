@@ -5,7 +5,7 @@ HMRC API definition. See [JSON definition]
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `scopes` | _object[]_ | Required | [scopes](#scopes) | A list of all OAuth scopes used by this API |
+| `scopes` | _object[]_ | Required | [scopes](#scopes) | This _object[]_ should be an empty list and all OAuth scopes used by an API should now be defined in [the api-scopes service JSON scopes file](https://github.com/hmrc/api-scope/blob/master/conf/scopes.json). If processing the contents of this _object[]_ would result in creating new or changing existing scopes then the API will not be published. See [this Confluence post](https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes)  
 | `api` | _object_ | Required | [api](#api) | Details of the API |
 ### `scopes`
 Details of an OAuth scope
