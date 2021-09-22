@@ -1,0 +1,12 @@
+[
+    {
+      "key": "read:hello",
+      "name": "Say Hello",
+      "description": "Ability to Say Hello"
+    },
+    {
+      "key": "read:test",
+      "name": "Test",
+      "description": "Another one to test"
+    }
+]

@@ -59,6 +59,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The api scope is running")
       apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
       apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
+      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
+        .willReturn(aResponse().withStatus(200).withBody(scopes)))
+
 
       When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =

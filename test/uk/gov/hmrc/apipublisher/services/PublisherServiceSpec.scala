@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, JsObject, Json}
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
+import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
-import utils.AsyncHmrcSpec
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsArray
+
 
 class PublisherServiceSpec extends AsyncHmrcSpec {
 
@@ -35,7 +34,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
   val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
   val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
+  val scopesSeq = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[Seq[Scope]]
+  val multiScopes = Json.parse(getClass.getResourceAsStream("/input/multi-scopes.json")).as[JsArray]
   val apiAndScopes = ApiAndScopes(api, scopes)
+  val apiAndMultiScopes = ApiAndScopes(api, multiScopes)
 
   val apiWithoutFieldDefinitions = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
   val apiAndScopesWithoutFieldDefinitions = ApiAndScopes(apiWithoutFieldDefinitions, scopes)
@@ -131,11 +133,13 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
   }
 
   "validateAPIDefinitionAndScopes" should {
+    val scopeChangedErrorString = "Updating scopes while publishing is no longer supported. " +
+      "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes"
 
     "Succeed when no validation failures are detected" in new Setup {
-
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
@@ -151,6 +155,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       val errorString = """{"error":"blah"}"""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
@@ -168,6 +173,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       val errorString = """{"error":"blah"}"""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
+      when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
 
@@ -186,6 +192,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       val errorString = """{"error":"blah"}"""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse( """{"error":"blah"}"""))))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
@@ -204,6 +211,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       val apiDefinitionErrorString = """{"error":"invalid-api-definition"}"""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse(apiDefinitionErrorString))))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(Some(Json.parse(scopeErrorString))))
+      when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
       val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
@@ -214,6 +222,73 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"scopeErrors":$scopeErrorString,"apiDefinitionErrors":$apiDefinitionErrorString}"""
+    }
+
+    "Fail when scope updating is attempted on a pre-existing scope" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "I have changed"))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
+    }
+
+    "Fail when a new scope is being attempted to add" in new Setup {
+      val scopeFromScopeService = Seq()
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful(scopeFromScopeService))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
+    }
+
+    "Fail when requested for updating multiple scopes match with only one of many" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "I have changed"), Scope("read:test", "wrong test", "Make it fail"))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val result = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
+    }
+
+    "Validate successfully when requested for updating multiple scopes match with all existing ones" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"), Scope("read:test", "Test", "Another one to test"))
+
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val errors = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      errors.isDefined shouldBe false
     }
 
     "Fail with UnprocessableEntityException when the api definition references a scope that is undefined" in new Setup {
