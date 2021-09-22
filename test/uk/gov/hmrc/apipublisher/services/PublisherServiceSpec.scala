@@ -133,9 +133,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
   }
 
   "validateAPIDefinitionAndScopes" should {
+    val scopeChangedErrorString = "Updating scopes while publishing is no longer supported. " +
+      "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes"
 
     "Succeed when no validation failures are detected" in new Setup {
-
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
@@ -225,7 +226,6 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
     "Fail when scope updating is attempted on a pre-existing scope" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "I have changed"))
-      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
@@ -237,12 +237,11 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
-      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":$scopeErrorString}"""
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
     }
 
     "Fail when a new scope is being attempted to add" in new Setup {
       val scopeFromScopeService = Seq()
-      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful(scopeFromScopeService))
@@ -255,13 +254,11 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
-      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":$scopeErrorString}"""
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
     }
 
     "Fail when requested for updating multiple scopes match with only one of many" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "I have changed"), Scope("read:test", "wrong test", "Make it fail"))
-
-      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))
@@ -274,13 +271,12 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
-      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":$scopeErrorString}"""
+      Json.stringify(result.get) shouldBe s"""{"scopeChangedErrors":"$scopeChangedErrorString"}"""
     }
 
     "Validate successfully when requested for updating multiple scopes match with all existing ones" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"), Scope("read:test", "Test", "Another one to test"))
 
-      val scopeErrorString = """"Updating scopes while publishing is no longer supported. See http://confluence""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))

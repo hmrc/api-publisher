@@ -62,6 +62,10 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate"))
         .willReturn(aResponse().withStatus(400).withBody("""{"error":"invalid"}""")))
 
+      And("the API Scope service is primed to respond to a 'keys' query with a success")
+      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
+        .willReturn(aResponse().withStatus(200).withBody(scopes)))
+
       And("the API Scope service is primed to respond with a success")
       apiScopeMock.register(post(urlEqualTo("/scope/validate"))
         .willReturn(aResponse().withStatus(204)))
@@ -139,6 +143,17 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       |    ]
       |  }
       |}
+    """.stripMargin
+
+  val scopes: String =
+    """
+      |  [
+      |    {
+      |      "key": "read:hello",
+      |      "name": "Say Hello",
+      |      "description": "Ability to Say Hello"
+      |    }
+      |  ]
     """.stripMargin
 
 }
