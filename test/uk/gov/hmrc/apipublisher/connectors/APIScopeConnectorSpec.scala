@@ -25,13 +25,13 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Helpers._
+import uk.gov.hmrc.apipublisher.models.Scope
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
@@ -82,6 +82,33 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
       
       assert(caught.statusCode == INTERNAL_SERVER_ERROR)
       assert(caught.getMessage.contains("/scope' returned 500"))
+    }
+  }
+
+  "retrieveScopes" should {
+    "retrieve scopes when one search key is provided" in new Setup {
+      val scopeKeys = Seq("akey")
+      val urlToCall = "/scope?keys=akey"
+      stubFor(get(urlEqualTo(urlToCall))
+        .willReturn(aResponse().withBody(scopes.toString())))
+
+      val result: Seq[Scope] = await(connector.retrieveScopes(scopeKeys))
+
+      verifyStub(getRequestedFor(urlEqualTo(urlToCall)))
+      result shouldEqual scopes.as[Seq[Scope]]
+
+    }
+
+    "retrieve scopes when multiple search keys are provided" in new Setup {
+      val scopeKeys = Seq("akey", "anotherKey", "oneMoreForLuck")
+      val urlToCall = s"/scope?keys=${scopeKeys.mkString("+")}"
+      stubFor(get(urlEqualTo(urlToCall))
+        .willReturn(aResponse().withBody(scopes.toString())))
+
+      val result: Seq[Scope] = await(connector.retrieveScopes(scopeKeys))
+
+      verifyStub(getRequestedFor(urlEqualTo(urlToCall)))
+      result shouldEqual scopes.as[Seq[Scope]]
     }
   }
 }
