@@ -29,3 +29,4 @@ yarn-error.log
 .vscode
 project/metals.sbt
 .DS_Store
+/.bsp/sbt.json

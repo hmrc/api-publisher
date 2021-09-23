@@ -120,7 +120,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     }) recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
-  private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+  private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {
     val authHeader = request.headers.get("Authorization")
     if (authHeader.isEmpty || appContext.publishingKey != base64Decode(authHeader.get)) {
       Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
