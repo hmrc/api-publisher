@@ -83,11 +83,12 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         successful(None)
     }
 
-    def sameScopes(serviceScopes: Seq[Scope], requestedScopes: Seq[Scope]): Boolean = {
-      serviceScopes.toSet == requestedScopes.toSet
-    }
-
     def scopesRemainUnchanged(scopes: JsValue): Future[Option[JsValue]] = {
+
+      def sameScopes(serviceScopes: Seq[Scope], requestedScopes: Seq[Scope]): Boolean = {
+        serviceScopes.toSet == requestedScopes.toSet
+      }
+
       val scopeSeq: Seq[Scope] = scopes.as[Seq[Scope]]
       val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
       val scopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
@@ -95,7 +96,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         if(sameScopes(serviceScopes, scopeSeq)) {
           None
         } else {
-          Logger.error(s"requestedScopes is $scopeSeq,\nretrievedScopes is $serviceScopes")
+          Logger.error(s"declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes"))
         }
