@@ -292,6 +292,40 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       errors.isDefined shouldBe false
     }
 
+    "Validate successfully when requested for updating multiple scopes match with all existing ones but out of order" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:test", "Test", "Another one to test"), Scope("read:hello", "Say Hello", "Ability to Say Hello"))
+
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val errors = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      errors.isDefined shouldBe false
+    }
+
+    "Validate successfully when requested for updating multiple scopes match with all existing ones having out of order duplicates" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:test", "Test", "Another one to test"), Scope("read:hello", "Say Hello", "Ability to Say Hello"),
+        Scope("read:test", "Test", "Another one to test"))
+
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Seq("read:hello", "read:test")))(*)).thenReturn(successful((scopeFromScopeService)))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val errors = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      errors.isDefined shouldBe false
+    }
     "Fail with UnprocessableEntityException when the api definition references a scope that is undefined" in new Setup {
 
       val input = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
