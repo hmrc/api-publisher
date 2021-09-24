@@ -95,7 +95,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         if(sameScopes(serviceScopes, scopeSeq)) {
           None
         } else {
-          Logger.error(s"scopes is $scopes,\nretrievedScopes is $serviceScopes")
+          Logger.error(s"requestedScopes is $scopeSeq,\nretrievedScopes is $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes"))
         }
