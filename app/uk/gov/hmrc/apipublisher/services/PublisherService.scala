@@ -83,13 +83,16 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         successful(None)
     }
 
+    def sameScopes(serviceScopes: Seq[Scope], requestedScopes: Seq[Scope]): Boolean = {
+      serviceScopes.toSet == requestedScopes.toSet
+    }
+
     def scopesRemainUnchanged(scopes: JsValue): Future[Option[JsValue]] = {
       val scopeSeq: Seq[Scope] = scopes.as[Seq[Scope]]
       val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
       val scopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
-
       scopeServiceScopes.map (serviceScopes => {
-        if (serviceScopes == scopeSeq) {
+        if(sameScopes(serviceScopes, scopeSeq)) {
           None
         } else {
           Logger.error(s"scopes is $scopes,\nretrievedScopes is $serviceScopes")
