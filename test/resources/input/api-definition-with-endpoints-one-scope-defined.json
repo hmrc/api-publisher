@@ -1,0 +1,64 @@
+{
+  "scopes": [
+    {
+      "key": "read:hello",
+      "name": "Read Hello",
+      "description": "Ability to Read Hello"
+    }
+  ],
+  "api": {
+    "name" : "Test",
+    "description" : "Test API",
+    "context" : "test",
+    "versions" : [
+      {
+        "version" : "1.0",
+        "access" : {
+          "type" : "PRIVATE",
+          "whitelistApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+        },
+        "status" : "PUBLISHED",
+        "endpoints" : [
+          {
+            "uriPattern" : "/hello",
+            "endpointName": "Say Hello",
+            "method" : "GET",
+            "authType" : "NONE",
+            "throttlingTier" : "UNLIMITED"
+          }
+        ]
+      },
+      {
+        "version" : "2.0",
+        "access" : {
+          "type" : "PUBLIC"
+        },
+        "status" : "PUBLISHED",
+        "endpoints" : [
+          {
+            "uriPattern" : "/hello",
+            "endpointName": "Say Hello",
+            "method" : "GET",
+            "authType" : "NONE",
+            "throttlingTier" : "UNLIMITED",
+            "scope": "say:hello"
+          }
+        ]
+      },
+      {
+        "version" : "3.0",
+        "status" : "PROTOTYPED",
+        "endpoints" : [
+          {
+            "uriPattern" : "/hello",
+            "endpointName": "Say Hello",
+            "method" : "GET",
+            "authType" : "NONE",
+            "throttlingTier" : "UNLIMITED",
+            "scope": "read:hello"
+          }
+        ]
+      }
+    ]
+  }
+}

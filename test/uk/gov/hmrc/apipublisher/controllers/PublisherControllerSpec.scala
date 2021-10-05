@@ -181,7 +181,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     "fail when an UnprocessableEntityException is thrown" in new Setup {
 
       val errorString = "TESTING! Scope blah has not been defined"
-      val input = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints.json"))
+      val input = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
       when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 

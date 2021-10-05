@@ -20,13 +20,23 @@ import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
 
+import scala.collection.immutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
 
-  def validateAPIScopesAreDefined(): Unit = {
-    val missing: Seq[String] = apiScopes.filterNot(definedScopes.contains)
-    if (missing.nonEmpty) {
-      throw new UnprocessableEntityException(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
-    }
+  def validateAPIScopesAreDefined(storedScopes: Future[Seq[Scope]] = Future(Seq())): Future[ScopesDefinedResult] = {
+  storedScopes.map(scopes => {
+    val scopeKeys: immutable.Seq[String] = scopes.map(scope => scope.key).toList
+      val knownScopes = definedScopes ++ scopeKeys
+      val missing: Seq[String] = apiScopes.filterNot(knownScopes.contains)
+      if (missing.nonEmpty) {
+        ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
+      } else {
+        ScopesDefinedOk
+      }
+    })
   }
 
   private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])

@@ -27,3 +27,11 @@ object ErrorCode extends Enumeration {
   val UNKNOWN_ERROR = Value("API_PUBLISHER_UNKNOWN_ERROR")
   val UNAUTHORIZED = Value("UNAUTHORIZED")
 }
+
+
+sealed trait ScopesDefinedResult
+
+case object ScopesDefinedOk extends ScopesDefinedResult
+
+//object ScopesNotDefined extends ScopesDefinedResult
+case class ScopesNotDefined(message: String) extends ScopesDefinedResult
