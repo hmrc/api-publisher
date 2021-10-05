@@ -33,5 +33,4 @@ sealed trait ScopesDefinedResult
 
 case object ScopesDefinedOk extends ScopesDefinedResult
 
-//object ScopesNotDefined extends ScopesDefinedResult
 case class ScopesNotDefined(message: String) extends ScopesDefinedResult
