@@ -102,7 +102,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
 
    eventualScopeServiceScopes flatMap {
      scopeServiceScopes => {
-        apiAndScopes.validateAPIScopesAreDefined(scopeServiceScopes) match {
+        ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
           case ScopesDefinedOk =>
             for {
               scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)

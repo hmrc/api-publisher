@@ -20,34 +20,30 @@ import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models
 import utils.AsyncHmrcSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
-
 class ApiAndScopesSpec extends AsyncHmrcSpec {
 
   "ValidateAPIScopesAreDefined" should {
 
     "pass when the scopes used in the API are defined in the API definition" in {
-      val result = apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").validateAPIScopesAreDefined()
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json"))
       result shouldBe ScopesDefinedOk
     }
 
     "pass when the scopes used in the API are not defined in the API definition but have been retrieved from api-scope" in {
-      val result = apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json")
-      .validateAPIScopesAreDefined(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello"),
-        Scope("read:hello", "Read Hello", "Ability to Read Hello")))
+      val result = ApiAndScopes.validateAPIScopesAreDefined(
+        apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json"),
+        Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello"), Scope("read:hello", "Read Hello", "Ability to Read Hello")))
       result shouldBe ScopesDefinedOk
     }
 
     "pass when the scopes used in the API are defined partly in the API definition and the remainder are retrieved from api-scope" in {
-      val result = apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json")
-      .validateAPIScopesAreDefined(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello")))
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json")
+        ,Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello")))
       result shouldBe ScopesDefinedOk
     }
 
     "fail when the scopes used in the API are not defined" in {
-      val result = apiAndScope("/input/api-definition-invalid-scope.json").validateAPIScopesAreDefined()
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-invalid-scope.json"))
       result shouldBe ScopesNotDefined("Undefined scopes used in definition: [say:hello]")
     }
   }
