@@ -40,7 +40,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     val prune = (__ \ 'versions).json.prune
     val putNew = __.json.update((__ \ 'versions).json.put(versionsWithoutFieldDefinitions))
     val replaceVersions = prune andThen putNew
-    transformJson(api, replaceVersions, s"Could not put versions without field definitions in api")
+    transformJson(api, replaceVersions, "Could not put versions without field definitions in api")
   }
 
   lazy val apiName: String = {
