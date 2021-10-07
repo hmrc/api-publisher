@@ -29,26 +29,25 @@ class ApiAndScopesSpec extends AsyncHmrcSpec {
   "ValidateAPIScopesAreDefined" should {
 
     "pass when the scopes used in the API are defined in the API definition" in {
-      val result = await(apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json")
-        .validateAPIScopesAreDefined())
+      val result = apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").validateAPIScopesAreDefined()
       result shouldBe ScopesDefinedOk
     }
 
     "pass when the scopes used in the API are not defined in the API definition but have been retrieved from api-scope" in {
-      val result = await(apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json")
-      .validateAPIScopesAreDefined(Future(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello"),
-        Scope("read:hello", "Read Hello", "Ability to Read Hello")))))
+      val result = apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json")
+      .validateAPIScopesAreDefined(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello"),
+        Scope("read:hello", "Read Hello", "Ability to Read Hello")))
       result shouldBe ScopesDefinedOk
     }
 
     "pass when the scopes used in the API are defined partly in the API definition and the remainder are retrieved from api-scope" in {
-      val result = await(apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json")
-      .validateAPIScopesAreDefined(Future(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello")))))
+      val result = apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json")
+      .validateAPIScopesAreDefined(Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello")))
       result shouldBe ScopesDefinedOk
     }
 
     "fail when the scopes used in the API are not defined" in {
-      val result = await(apiAndScope("/input/api-definition-invalid-scope.json").validateAPIScopesAreDefined())
+      val result = apiAndScope("/input/api-definition-invalid-scope.json").validateAPIScopesAreDefined()
       result shouldBe ScopesNotDefined("Undefined scopes used in definition: [say:hello]")
     }
   }

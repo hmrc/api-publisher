@@ -28,7 +28,6 @@ object ErrorCode extends Enumeration {
   val UNAUTHORIZED = Value("UNAUTHORIZED")
 }
 
-
 sealed trait ScopesDefinedResult
 
 case object ScopesDefinedOk extends ScopesDefinedResult
