@@ -21,14 +21,6 @@ import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICatego
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
-
-  def validateAPIScopesAreDefined(): Unit = {
-    val missing: Seq[String] = apiScopes.filterNot(definedScopes.contains)
-    if (missing.nonEmpty) {
-      throw new UnprocessableEntityException(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
-    }
-  }
-
   private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])
 
   private lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String])
@@ -48,7 +40,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     val prune = (__ \ 'versions).json.prune
     val putNew = __.json.update((__ \ 'versions).json.put(versionsWithoutFieldDefinitions))
     val replaceVersions = prune andThen putNew
-    transformJson(api, replaceVersions, s"Could not put versions without field definitions in api")
+    transformJson(api, replaceVersions, "Could not put versions without field definitions in api")
   }
 
   lazy val apiName: String = {
@@ -76,9 +68,9 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {
     versionJs.validate[OptionalFieldDefinitions](OptionalFieldDefinitions.reads) match {
       case success: JsSuccess[OptionalFieldDefinitions] => for {
-          fieldDefinitions <- success.get.fieldDefinitions
-          apiVersion = success.get.version
-        } yield ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions)
+        fieldDefinitions <- success.get.fieldDefinitions
+        apiVersion = success.get.version
+      } yield ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions)
 
       case error: JsError =>
         throw new UnprocessableEntityException(s"Could not parse versions element for field definitions: ${JsError.toJson(error)}")
@@ -91,11 +83,21 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
       case error: JsError => throw new UnprocessableEntityException(s"$errorClue: ${JsError.toJson(error)}")
     }
   }
-
 }
 
 object ApiAndScopes {
   implicit val formats = Json.format[ApiAndScopes]
+
+  def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
+    val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
+    val allKnownScopes = apiAndScopes.definedScopes ++ retrievedScopesKeys
+    val missing: Seq[String] = apiAndScopes.apiScopes.filterNot(allKnownScopes.contains)
+    if (missing.nonEmpty) {
+      ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
+    } else {
+      ScopesDefinedOk
+    }
+  }
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])

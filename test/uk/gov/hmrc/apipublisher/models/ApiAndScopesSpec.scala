@@ -18,33 +18,46 @@ package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models
-import uk.gov.hmrc.http.UnprocessableEntityException
 import utils.AsyncHmrcSpec
-
 
 class ApiAndScopesSpec extends AsyncHmrcSpec {
 
   "ValidateAPIScopesAreDefined" should {
 
-    "pass when the scopes used in the API are defined" in {
-      noException should be thrownBy apiAndScope("/input/api-definition-with-endpoints.json").validateAPIScopesAreDefined()
+    "pass when the scopes used in the API are defined in the API definition" in {
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json"))
+      result shouldBe ScopesDefinedOk
+    }
+
+    "pass when the scopes used in the API are not defined in the API definition but have been retrieved from api-scope" in {
+      val result = ApiAndScopes.validateAPIScopesAreDefined(
+        apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json"),
+        Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello"), Scope("read:hello", "Read Hello", "Ability to Read Hello")))
+      result shouldBe ScopesDefinedOk
+    }
+
+    "pass when the scopes used in the API are defined partly in the API definition and the remainder are retrieved from api-scope" in {
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json")
+        ,Seq(Scope("say:hello", "Say Hello", "Ability to Say Hello")))
+      result shouldBe ScopesDefinedOk
     }
 
     "fail when the scopes used in the API are not defined" in {
-      an [UnprocessableEntityException] should be thrownBy apiAndScope("/input/api-definition-invalid-scope.json").validateAPIScopesAreDefined()
+      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-invalid-scope.json"))
+      result shouldBe ScopesNotDefined("Undefined scopes used in definition: [say:hello]")
     }
   }
 
   "API Name should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints.json").apiName shouldEqual "Test"
+    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").apiName shouldEqual "Test"
   }
 
   "API Description should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints.json").description.get shouldEqual "Test API"
+    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").description.get shouldEqual "Test API"
   }
 
   "API version numbers should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints.json").versionNumbers should contain only("1.0", "2.0", "3.0")
+    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain only("1.0", "2.0", "3.0")
   }
 
   "Field definitions should be extracted from the JSON definition" in {

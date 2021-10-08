@@ -27,7 +27,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.collection.immutable
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 @Singleton
 class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
@@ -74,7 +73,6 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     validation(apiAndScopes)
   }
 
-
   def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean = true)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
     def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
       if (validateApiDefinition)
@@ -83,17 +81,16 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         successful(None)
     }
 
-    def scopesRemainUnchanged(scopes: JsValue): Future[Option[JsValue]] = {
+    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
+    val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
+    val eventualScopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
 
-      def sameScopes(serviceScopes: Seq[Scope], requestedScopes: Seq[Scope]): Boolean = {
-        serviceScopes.toSet == requestedScopes.toSet
+    def scopesRemainUnchanged(): Future[Option[JsValue]] = {
+      def matchingScopes(storedScopes: Seq[Scope], scopesForPublish: Seq[Scope]): Boolean = {
+        storedScopes.toSet == scopesForPublish.toSet
       }
-
-      val scopeSeq: Seq[Scope] = scopes.as[Seq[Scope]]
-      val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
-      val scopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
-      scopeServiceScopes.map (serviceScopes => {
-        if(sameScopes(serviceScopes, scopeSeq)) {
+      eventualScopeServiceScopes.map (serviceScopes => {
+        if(matchingScopes(serviceScopes, scopeSeq)) {
           None
         } else {
           Logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
@@ -103,39 +100,40 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
       })
     }
 
-    Try(apiAndScopes.validateAPIScopesAreDefined()) match {
-      case Success(_) =>
-        for {
-          scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
-          scopeChangedErrors <- scopesRemainUnchanged(apiAndScopes.scopes)
-          apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-          fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
-        } yield {
-          if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
-            None
-          } else {
-            Some(
-              JsObject(
-                Seq.empty[(String, JsValue)] ++
-                  scopeErrors.map("scopeErrors" -> _) ++
-                  scopeChangedErrors.map("scopeChangedErrors" -> _) ++
-                  apiErrors.map("apiDefinitionErrors" -> _) ++
-                  fieldDefnErrors.map("fieldDefinitionErrors" -> _)
-              )
-            )
-          }
+   eventualScopeServiceScopes flatMap {
+     scopeServiceScopes => {
+        ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
+          case ScopesDefinedOk =>
+            for {
+              scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+              scopeChangedErrors <- scopesRemainUnchanged()
+              apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
+              fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
+            } yield {
+              if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
+                None
+              } else {
+                Some(
+                  JsObject(
+                    Seq.empty[(String, JsValue)] ++
+                      scopeErrors.map("scopeErrors" -> _) ++
+                      scopeChangedErrors.map("scopeChangedErrors" -> _) ++
+                      apiErrors.map("apiDefinitionErrors" -> _) ++
+                      fieldDefnErrors.map("fieldDefinitionErrors" -> _)
+                  )
+                )
+              }
+            }
+          case ScopesNotDefined(msg) =>
+            val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
+            successful(Some(undefinedScopesErrorJson))
         }
-
-      case Failure(e) =>
-        val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> e.getMessage))))
-        successful(Some(undefinedScopesErrorJson))
+        }
+      }
     }
-  }
 
   def checkApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription)
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }
-
-
 }
