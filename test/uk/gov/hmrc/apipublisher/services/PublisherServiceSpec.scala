@@ -135,7 +135,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
   "validateAPIDefinitionAndScopes" should {
     val scopeChangedErrorString =
       "Updating scopes while publishing is no longer supported. " +
-        "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes"
+        "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"
 
     "Succeed when no validation failures are detected" in new Setup {
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
