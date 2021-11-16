@@ -24,7 +24,6 @@ import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConn
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.collection.immutable
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -82,18 +81,18 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
     }
 
     val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
-    val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
+    val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
     val eventualScopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
 
     def scopesRemainUnchanged(): Future[Option[JsValue]] = {
       def matchingScopes(storedScopes: Seq[Scope], scopesForPublish: Seq[Scope]): Boolean = {
-        storedScopes.toSet == scopesForPublish.toSet
+        scopesForPublish.filterNot(storedScopes.contains).isEmpty
       }
       eventualScopeServiceScopes.map (serviceScopes => {
         if(matchingScopes(serviceScopes, scopeSeq)) {
           None
         } else {
-          Logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
+          Logger.error(s"Scope publishing error. API name: ${apiAndScopes.apiName} defined scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
         }

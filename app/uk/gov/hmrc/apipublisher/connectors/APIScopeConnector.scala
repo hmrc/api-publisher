@@ -53,7 +53,7 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
       }
   }
 
-  def retrieveScopes(scopeKeys: Seq[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
+  def retrieveScopes(scopeKeys: Set[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
     val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
     http.GET[Seq[Scope]](url)
   }
