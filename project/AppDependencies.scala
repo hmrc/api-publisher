@@ -13,7 +13,7 @@ object AppDependencies {
     "org.json"                  %  "json"                         % "20180130",
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.6",
     "org.julienrf"              %% "play-json-derived-codecs"     % "6.0.0",
-    "com.typesafe.play"         %% "play-json"                    % "2.7.1",
+    "com.typesafe.play"         %% "play-json"                    % "2.9.2",
     "org.typelevel"             %% "cats-core"                    % "2.1.0",
 
     "com.fasterxml.jackson.module"      %% "jackson-module-scala"           % jacksonVersion,
