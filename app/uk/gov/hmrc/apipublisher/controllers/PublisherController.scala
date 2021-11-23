@@ -29,7 +29,7 @@ import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, Pu
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

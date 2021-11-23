@@ -35,9 +35,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   var server: TestServer = _
 
-  feature("Publish API on notification") {
+  Feature("Publish API on notification") {
 
-    scenario("Publisher receive an API notification") {
+    Scenario("Publisher receive an API notification") {
 
       Given("A microservice is running with an API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
@@ -77,7 +77,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       )
 
       // TOOD - restore when api definition no longer rejects updated api
-      // Then("The api defintion is validated")
+      // Then("The api definition is validated")
       // apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition/validate"))
       //   .withHeader(CONTENT_TYPE, containing(JSON))
       // )
@@ -112,7 +112,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       publishResponse.is2xx shouldBe true
     }
 
-    scenario("Validation of API definition failed") {
+    Scenario("Validation of API definition failed") {
 
       Given("A microservice is running with an invalid API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))

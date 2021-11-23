@@ -17,11 +17,10 @@
 package uk.gov.hmrc.apipublisher.models
 
 import cats.data.{NonEmptyList => NEL}
-import cats.implicits._
 import julienrf.json.derived
 import julienrf.json.derived.TypeTagSetting
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
 
 object NonEmptyListOps {
@@ -81,12 +80,12 @@ implicit val FieldDefitionTypeFormat: Format[FieldDefinitionType] =
 }
 
 case class FieldDefinition(
-  name: String, 
-  description: String, 
+  name: String,
+  description: String,
   hint: Option[String],
-  `type`: FieldDefinitionType.Value, 
-  shortDescription: Option[String] = None, 
-  validation: Option[Validation] = None, 
+  `type`: FieldDefinitionType.Value,
+  shortDescription: Option[String] = None,
+  validation: Option[Validation] = None,
   access: AccessRequirements = AccessRequirements.Default)
 
 
