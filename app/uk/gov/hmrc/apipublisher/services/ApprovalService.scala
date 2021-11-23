@@ -17,16 +17,17 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext) {
+class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext)
+                                extends ApplicationLogger {
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices()
 
@@ -51,7 +52,7 @@ class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, ap
       approval <- fetchServiceApproval(serviceName)
       _ <- apiApprovalRepository.save(approval.copy(approved = Some(true)))
     } yield {
-      Logger.info(s"Approved service $serviceName")
+      logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
     }
 

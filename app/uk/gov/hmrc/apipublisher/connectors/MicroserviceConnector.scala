@@ -30,7 +30,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, HttpReadsOption}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 

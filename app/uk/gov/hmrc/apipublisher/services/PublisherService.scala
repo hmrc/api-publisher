@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.Logger
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future.successful
@@ -31,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
                                  apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
                                  apiScopeConnector: APIScopeConnector,
-                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
+                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext)
+extends ApplicationLogger {
 
   def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Boolean] = {
 
@@ -92,7 +92,7 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         if(matchingScopes(serviceScopes, scopeSeq)) {
           None
         } else {
-          Logger.error(s"Scope publishing error. API name: ${apiAndScopes.apiName} defined scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
+          logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
         }

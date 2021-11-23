@@ -30,7 +30,7 @@ import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
