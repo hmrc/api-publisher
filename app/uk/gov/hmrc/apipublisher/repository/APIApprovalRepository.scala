@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apipublisher.repository
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -29,6 +28,7 @@ import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.Option.empty
 
@@ -51,9 +51,9 @@ class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   }
 
   def fetch(serviceName: String): Future[Option[APIApproval]] = {
-    Logger.info(s"Fetching API $serviceName in mongo")
+    logger.info(s"Fetching API $serviceName in mongo")
     collection.find[JsObject, JsObject](selector = Json.obj("serviceName" -> serviceName)).one[APIApproval].map { apiApproval =>
-      Logger.debug(s"Retrieved apiApproval $serviceName in mongo: $apiApproval")
+      logger.debug(s"Retrieved apiApproval $serviceName in mongo: $apiApproval")
       apiApproval
     }
   }
