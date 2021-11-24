@@ -80,49 +80,46 @@ extends ApplicationLogger {
         successful(None)
     }
 
-    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
-    val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
-    val eventualScopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
-
-    def scopesRemainUnchanged(): Future[Option[JsValue]] = {
-      def matchingScopes(storedScopes: Seq[Scope], scopesForPublish: Seq[Scope]): Boolean = {
-        scopesForPublish.filterNot(storedScopes.contains).isEmpty
+    def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] ={
+      for {
+        scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+        scopeChangedErrors <- successful(scopesRemainUnchanged(scopeServiceScopes, scopeSeq))
+        apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
+        fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
+      } yield {
+        if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
+          None
+        } else {
+          Some(
+            JsObject(
+              Seq.empty[(String, JsValue)] ++
+                scopeErrors.map("scopeErrors" -> _) ++
+                scopeChangedErrors.map("scopeChangedErrors" -> _) ++
+                apiErrors.map("apiDefinitionErrors" -> _) ++
+                fieldDefnErrors.map("fieldDefinitionErrors" -> _)
+            )
+          )
+        }
       }
-      eventualScopeServiceScopes.map (serviceScopes => {
-        if(matchingScopes(serviceScopes, scopeSeq)) {
+    }
+
+    def scopesRemainUnchanged(serviceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Option[JsValue] = {
+        if(scopeSeq.forall(serviceScopes.contains)) {
           None
         } else {
           logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
         }
-      })
     }
 
-   eventualScopeServiceScopes flatMap {
+    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
+    val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
+
+    apiScopeConnector.retrieveScopes(scopesSearch) flatMap {
      scopeServiceScopes => {
         ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
-          case ScopesDefinedOk =>
-            for {
-              scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
-              scopeChangedErrors <- scopesRemainUnchanged()
-              apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-              fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
-            } yield {
-              if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
-                None
-              } else {
-                Some(
-                  JsObject(
-                    Seq.empty[(String, JsValue)] ++
-                      scopeErrors.map("scopeErrors" -> _) ++
-                      scopeChangedErrors.map("scopeChangedErrors" -> _) ++
-                      apiErrors.map("apiDefinitionErrors" -> _) ++
-                      fieldDefnErrors.map("fieldDefinitionErrors" -> _)
-                  )
-                )
-              }
-            }
+          case ScopesDefinedOk => checkScopesForErrors(scopeServiceScopes, scopeSeq)
           case ScopesNotDefined(msg) =>
             val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
             successful(Some(undefinedScopesErrorJson))
