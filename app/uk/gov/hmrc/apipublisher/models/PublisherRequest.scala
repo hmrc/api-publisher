@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.UnprocessableEntityException
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])
 
-  private lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String])
+  lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String])
 
   private lazy val versions: JsArray = (api \ "versions").as[JsArray]
 
@@ -90,8 +90,8 @@ object ApiAndScopes {
 
   def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
     val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
-    val allKnownScopes = apiAndScopes.definedScopes ++ retrievedScopesKeys
-    val missing: Seq[String] = apiAndScopes.apiScopes.filterNot(allKnownScopes.contains)
+    val scopesRequiredByApi: Seq[String] = apiAndScopes.definedScopes ++ apiAndScopes.apiScopes
+    val missing = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
     if (missing.nonEmpty) {
       ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
     } else {

@@ -89,7 +89,7 @@
       "access": {
         "type" : "PUBLIC"
       },
-      "status" : "PUBLSHED",
+      "status" : "PUBLISHED",
       "endpoints" : [
         {
           "uriPatter" : "/hello",

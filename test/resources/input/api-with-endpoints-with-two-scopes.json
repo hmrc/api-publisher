@@ -45,12 +45,12 @@
       "status" : "PUBLISHED",
       "endpoints" : [
         {
-          "uriPatter" : "/hello",
-          "endpointName": "Say Hello",
+          "uriPatter" : "/goodbye",
+          "endpointName": "Say Goodbye",
           "method" : "GET",
           "authType" : "NONE",
           "throttlingTier" : "UNLIMITED",
-          "scope": "read:hello"
+          "scope": "read:goodbye"
         }
       ]
     },

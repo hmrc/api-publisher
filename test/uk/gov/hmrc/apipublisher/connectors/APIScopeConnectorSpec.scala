@@ -87,7 +87,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
 
   "retrieveScopes" should {
     "retrieve scopes when one search key is provided" in new Setup {
-      val scopeKeys = Seq("akey")
+      val scopeKeys = Set("akey")
       val urlToCall = "/scope?keys=akey"
       stubFor(get(urlEqualTo(urlToCall))
         .willReturn(aResponse().withBody(scopes.toString())))
@@ -100,7 +100,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     }
 
     "retrieve scopes when multiple search keys are provided" in new Setup {
-      val scopeKeys = Seq("akey", "anotherKey", "oneMoreForLuck")
+      val scopeKeys = Set("akey", "anotherKey", "oneMoreForLuck")
       val urlToCall = s"/scope?keys=${scopeKeys.mkString("+")}"
       stubFor(get(urlEqualTo(urlToCall))
         .willReturn(aResponse().withBody(scopes.toString())))
