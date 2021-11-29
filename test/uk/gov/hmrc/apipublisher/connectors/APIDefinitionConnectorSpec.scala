@@ -28,7 +28,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.{CONTENT_TYPE, JSON}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import utils.AsyncHmrcSpec
 import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext.Implicits.global

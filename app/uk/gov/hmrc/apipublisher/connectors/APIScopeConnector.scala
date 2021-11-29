@@ -17,19 +17,20 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsString, JsValue}
 import uk.gov.hmrc.apipublisher.models.Scope
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext) extends ConnectorRecovery {
+class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+  extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
@@ -47,13 +48,13 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
       .map {
         case Right(_) => None
         case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>
-          Logger.debug(s"Failed request. POST url=$url: $message")
+          logger.debug(s"Failed request. POST url=$url: $message")
           Some(JsString(message))
         case Left(err) => throw err
       }
   }
 
-  def retrieveScopes(scopeKeys: Seq[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
+  def retrieveScopes(scopeKeys: Set[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
     val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
     http.GET[Seq[Scope]](url)
   }

@@ -19,13 +19,14 @@ package uk.gov.hmrc.apipublisher
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.featurespec.AnyFeatureSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
 
-abstract class BaseFeatureSpec extends FeatureSpec
+abstract class BaseFeatureSpec extends AnyFeatureSpec
   with GivenWhenThen with ScalaFutures
-  with BeforeAndAfter with BeforeAndAfterEach
-  with BeforeAndAfterAll with Matchers {
+  with BeforeAndAfterEach with Matchers {
 
   val port = 12121
   val serverUrl = s"http://localhost:$port"

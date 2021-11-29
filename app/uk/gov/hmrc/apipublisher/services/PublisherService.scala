@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.Logger
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, _}
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.collection.immutable
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
                                  apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
                                  apiScopeConnector: APIScopeConnector,
-                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext) {
+                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext)
+extends ApplicationLogger {
 
   def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Boolean] = {
 
@@ -81,49 +80,46 @@ class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
         successful(None)
     }
 
-    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
-    val scopesSearch: immutable.Seq[String] = scopeSeq.map(s => s.key).toList
-    val eventualScopeServiceScopes: Future[Seq[Scope]] = apiScopeConnector.retrieveScopes(scopesSearch)
-
-    def scopesRemainUnchanged(): Future[Option[JsValue]] = {
-      def matchingScopes(storedScopes: Seq[Scope], scopesForPublish: Seq[Scope]): Boolean = {
-        storedScopes.toSet == scopesForPublish.toSet
-      }
-      eventualScopeServiceScopes.map (serviceScopes => {
-        if(matchingScopes(serviceScopes, scopeSeq)) {
+    def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] ={
+      for {
+        scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+        scopeChangedErrors <- successful(scopesRemainUnchanged(scopeServiceScopes, scopeSeq))
+        apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
+        fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
+      } yield {
+        if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
           None
         } else {
-          Logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
+          Some(
+            JsObject(
+              Seq.empty[(String, JsValue)] ++
+                scopeErrors.map("scopeErrors" -> _) ++
+                scopeChangedErrors.map("scopeChangedErrors" -> _) ++
+                apiErrors.map("apiDefinitionErrors" -> _) ++
+                fieldDefnErrors.map("fieldDefinitionErrors" -> _)
+            )
+          )
+        }
+      }
+    }
+
+    def scopesRemainUnchanged(serviceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Option[JsValue] = {
+        if(scopeSeq.forall(serviceScopes.contains)) {
+          None
+        } else {
+          logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
           Some(JsString("Updating scopes while publishing is no longer supported. " +
             "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
         }
-      })
     }
 
-   eventualScopeServiceScopes flatMap {
+    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
+    val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
+
+    apiScopeConnector.retrieveScopes(scopesSearch) flatMap {
      scopeServiceScopes => {
         ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
-          case ScopesDefinedOk =>
-            for {
-              scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
-              scopeChangedErrors <- scopesRemainUnchanged()
-              apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-              fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
-            } yield {
-              if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
-                None
-              } else {
-                Some(
-                  JsObject(
-                    Seq.empty[(String, JsValue)] ++
-                      scopeErrors.map("scopeErrors" -> _) ++
-                      scopeChangedErrors.map("scopeChangedErrors" -> _) ++
-                      apiErrors.map("apiDefinitionErrors" -> _) ++
-                      fieldDefnErrors.map("fieldDefinitionErrors" -> _)
-                  )
-                )
-              }
-            }
+          case ScopesDefinedOk => checkScopesForErrors(scopeServiceScopes, scopeSeq)
           case ScopesNotDefined(msg) =>
             val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
             successful(Some(undefinedScopesErrorJson))

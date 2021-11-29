@@ -38,8 +38,8 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
 
   val malformedJson = """{ "some" "invalid"" "json" }"""
 
-  feature("Validate should fail when given malformed json") {
-    scenario("The /validate endpoint is called with malformed Json") {
+  Feature("Validate should fail when given malformed json") {
+    Scenario("The /validate endpoint is called with malformed Json") {
       Given("The API Publisher is running")
       startServer()
       When("malformed Json is passed to an endpoint")
@@ -52,8 +52,8 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Validate should fail when API Definition service responds with errors") {
-    scenario("The /validate endpoint is called") {
+  Feature("Validate should fail when API Definition service responds with errors") {
+    Scenario("The /validate endpoint is called") {
 
       Given("the API Publisher is running")
       startServer()

@@ -28,7 +28,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.apipublisher.models.Scope
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import utils.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -87,7 +87,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
 
   "retrieveScopes" should {
     "retrieve scopes when one search key is provided" in new Setup {
-      val scopeKeys = Seq("akey")
+      val scopeKeys = Set("akey")
       val urlToCall = "/scope?keys=akey"
       stubFor(get(urlEqualTo(urlToCall))
         .willReturn(aResponse().withBody(scopes.toString())))
@@ -100,7 +100,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     }
 
     "retrieve scopes when multiple search keys are provided" in new Setup {
-      val scopeKeys = Seq("akey", "anotherKey", "oneMoreForLuck")
+      val scopeKeys = Set("akey", "anotherKey", "oneMoreForLuck")
       val urlToCall = s"/scope?keys=${scopeKeys.mkString("+")}"
       stubFor(get(urlEqualTo(urlToCall))
         .willReturn(aResponse().withBody(scopes.toString())))
