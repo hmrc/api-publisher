@@ -92,7 +92,7 @@ object ApiAndScopes {
     val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
     val scopesRequiredByApi: Seq[String] = apiAndScopes.definedScopes ++ apiAndScopes.apiScopes
     val missing = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
-    if (!missing.isEmpty) {
+    if (missing.nonEmpty) {
       ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
     } else {
       ScopesDefinedOk
