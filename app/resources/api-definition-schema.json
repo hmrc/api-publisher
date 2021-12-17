@@ -129,7 +129,7 @@
                 ]
               },
               "endpointsEnabled": {
-                "description": "Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA",
+                "description": "Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA",
                 "type": "boolean",
                 "default": true
               },
