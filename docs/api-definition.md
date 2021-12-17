@@ -36,7 +36,7 @@ Details of an API version
 | `status` | _string_ | Required | PROTOTYPED<br>PUBLISHED<br>ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. PROTOTYPED and PUBLISHED should not be used. See [Lifecycle] |
 | `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version. |
 | `access` | _object_ | Optional | [access](#access) | Used to indicate whether this API version is public or private. If absent, the API defaults to public. See [Access] |
-| `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are enabled. This value MUST be false if the API versions status is ALPHA |
+| `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA |
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
 | `endpoints` | _None_ | Optional |  | DEPRECATED |
 ### `access`
