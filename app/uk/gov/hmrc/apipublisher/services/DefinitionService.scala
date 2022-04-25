@@ -20,28 +20,16 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.domain.Endpoints
 
-import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit val ec: ExecutionContext) {
+class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit ec: ExecutionContext) extends AbstractDefinitionService(microserviceConnector)(ec) {
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
-    microserviceConnector.getAPIAndScopes(serviceLocation).flatMap {
-      case Some(apiAndScopes) => addDetailFromRaml(serviceLocation, apiAndScopes) match {
-        case Success(data) => successful(Some(data))
-        case Failure(ex) => failed(ex)
-      }
-      case None => successful(None)
-    }
-  }
-
-  private def addDetailFromRaml(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes] = {
+  override protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes] = {
     val api = apiAndScopes.api
     val context = (api \ "context").asOpt[String]
 
@@ -57,7 +45,7 @@ class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(
     )
   }
 
-  def populateVersionFromRaml(version: JsObject, raml: RAML, context: Option[String]): JsObject = {
+  private def populateVersionFromRaml(version: JsObject, raml: RAML, context: Option[String]): JsObject = {
     version + ("endpoints" -> Json.toJson(Endpoints(raml, context)).as[JsArray])
   }
 

@@ -262,7 +262,6 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
-
       when(mockApprovalService.approveService("unknown-service"))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 

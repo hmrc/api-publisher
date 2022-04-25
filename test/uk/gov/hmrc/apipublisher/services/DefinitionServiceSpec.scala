@@ -29,6 +29,9 @@ import uk.gov.hmrc.ramltools.loaders.ClasspathRamlLoader
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.util.Try
+import uk.gov.hmrc.ramltools.domain.Endpoints
+import uk.gov.hmrc.ramltools.domain.Endpoint
+import uk.gov.hmrc.ramltools.domain.QueryParam
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
@@ -163,35 +166,53 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
   }
 
-  "populateVersionFromRaml" should {
-    "Add in a simple GET endpoint - no context" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
+  "Create Endpoint objects" should {
+    "simple GET endpoint - no context" in new Setup {
       val raml1_0 = raml("input/simple-hello.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-1.json")
+      val context = None
+      val endpoints = Endpoints(raml1_0, context)
 
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, None)
-      actual shouldBe expOutput
+      endpoints should contain only Endpoint(
+        uriPattern = "/test/hello",
+        endpointName = "Say Hello",
+        method = "GET",
+        authType = "NONE",
+        throttlingTier = "UNLIMITED",
+        scope = None,
+        queryParameters = None
+      )
     }
 
-    "Add in a simple GET endpoint with context" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
+    "simple GET endpoint with context" in new Setup {
       val raml1_0 = raml("input/simple-hello.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-2.json")
+      val context = Some("test")
+      val endpoints = Endpoints(raml1_0, context)
 
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, Some("test"))
-      actual shouldBe expOutput
+      endpoints should contain only Endpoint(
+        uriPattern = "/hello",
+        endpointName = "Say Hello",
+        method = "GET",
+        authType = "NONE",
+        throttlingTier = "UNLIMITED",
+        scope = None,
+        queryParameters = None
+      )
     }
 
-    "Add in a GET endpoint with context and query parameters" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
+    "GET endpoint with context and query parameters" in new Setup {
       val raml1_0 = raml("input/simple-hello-with-params.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-3.json")
+      val context = Some("test")
+      val endpoints = Endpoints(raml1_0, context)
 
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, Some("test"))
-      actual shouldBe expOutput
+      endpoints should contain only Endpoint(
+        uriPattern = "/hello",
+        endpointName = "Say Hello",
+        method = "GET",
+        authType = "NONE",
+        throttlingTier = "UNLIMITED",
+        scope = None,
+        queryParameters = Some(Seq(QueryParam("name", true), QueryParam("desc", false)))
+      )
     }
   }
 }
