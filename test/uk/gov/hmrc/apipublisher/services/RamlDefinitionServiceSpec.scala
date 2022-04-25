@@ -33,23 +33,23 @@ import uk.gov.hmrc.ramltools.domain.Endpoints
 import uk.gov.hmrc.ramltools.domain.Endpoint
 import uk.gov.hmrc.ramltools.domain.QueryParam
 
-class DefinitionServiceSpec extends AsyncHmrcSpec {
+class RamlDefinitionServiceSpec extends AsyncHmrcSpec {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockMicroserviceConnector = mock[MicroserviceConnector]
-    val definitionService = new DefinitionService(mockMicroserviceConnector)
+    val ramlDefinitionService = new RamlDefinitionService(mockMicroserviceConnector)
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
     def raml(path: String): Try[RAML] = new ClasspathRamlLoader().load(path)
   }
 
-  "The DefinitionService" should {
+  "The RamlDefinitionService" should {
     "Return none if the microservice connector returns none" in new Setup {
       when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(None))
 
-      val definition: Option[ApiAndScopes] = await(definitionService.getDefinition(testService))
+      val definition: Option[ApiAndScopes] = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe None
     }
@@ -59,7 +59,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(failed(new RuntimeException(errorMessage)))
 
       val exception: Exception = intercept[Exception] {
-        await(definitionService.getDefinition(testService))
+        await(ramlDefinitionService.getDefinition(testService))
       }
 
       exception.getMessage shouldBe errorMessage
@@ -76,7 +76,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }
@@ -92,7 +92,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }
@@ -108,7 +108,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }
@@ -124,7 +124,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }
@@ -140,7 +140,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }
@@ -160,7 +160,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       when(mockMicroserviceConnector.getRaml(testService, "3.0")).thenReturn(testRaml_3)
 
       val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
+      val definition = await(ramlDefinitionService.getDefinition(testService))
 
       definition shouldBe expectedApiAndScopes
     }

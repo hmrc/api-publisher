@@ -25,7 +25,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
+import uk.gov.hmrc.apipublisher.services.{ApprovalService, RamlDefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(definitionService: DefinitionService,
+class PublisherController @Inject()(ramlDefinitionService: RamlDefinitionService,
                                     publisherService: PublisherService,
                                     approvalService: ApprovalService,
                                     appContext: AppContext,
@@ -62,7 +62,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     type Over[A] = EitherT[Future,Result, A]
 
     def getDefinition: Over[ApiAndScopes] = {
-      EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
+      EitherT(ramlDefinitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
     }
 
     def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
