@@ -59,20 +59,36 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
-  trait Setup {
+  trait BaseSetup {
     WireMock.reset()
     val mockRamlLoader = mock[DocumentationRamlLoader]
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
+    def oasFileLocator: MicroserviceConnector.OASFileLocator
+
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new MicroserviceConnector(MicroserviceConfig(validateApiDefinition = true), mockRamlLoader,
-      app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
+    lazy val connector = new MicroserviceConnector(
+      MicroserviceConfig(validateApiDefinition = true),
+      mockRamlLoader, 
+      oasFileLocator,
+      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[Environment]
+    )
+  }
+
+  trait Setup extends BaseSetup {
+    val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
   }
 
   trait SetupWithNoApiDefinitionValidation extends Setup {
-    override val connector = new MicroserviceConnector(MicroserviceConfig(validateApiDefinition = false), mockRamlLoader,
-      app.injector.instanceOf[HttpClient], app.injector.instanceOf[Environment])
+    override lazy val connector = new MicroserviceConnector(
+      MicroserviceConfig(validateApiDefinition = false),
+      mockRamlLoader,
+      MicroserviceConnector.MicroserviceOASFileLocator,
+      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[Environment]
+    )
   }
 
   override def beforeAll() {
@@ -193,5 +209,32 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     connector.getRaml(testService, "1.0")
 
     verify(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
+  }
+
+  "getOAS" should {
+    "load the OAS file when found as a valid model" in new Setup {
+      when(oasFileLocator.locationOf(*,*)).thenReturn("/oas/application.yaml")
+
+      val result = connector.getOAS(testService, "1.0")
+      result shouldBe 'right
+    }
+
+    "handle an invalid OAS file when found as a valid model" in new Setup {
+      when(oasFileLocator.locationOf(*,*)).thenReturn("/oas/bad-application.yaml")
+
+      val result = connector.getOAS(testService, "1.0")
+      result shouldBe 'left
+      result shouldBe Left(List("unable to parse `/oas/bad-application.yaml`"))
+    }
+
+
+    "return nothing when the OAS file when found as a valid model" in new Setup {
+      when(oasFileLocator.locationOf(*,*)).thenReturn("no-such-application.yaml")
+
+      val result = connector.getOAS(testService, "1.0")
+
+      result shouldBe 'left
+      result.leftSide shouldBe Left(List("unable to read location `no-such-application.yaml`"))
+    }
   }
 }

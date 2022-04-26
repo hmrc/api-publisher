@@ -18,6 +18,7 @@ import com.google.inject.AbstractModule
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector._
 
 class Module extends AbstractModule {
 
@@ -25,6 +26,7 @@ class Module extends AbstractModule {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
     bind(classOf[HttpClient]).to(classOf[DefaultHttpClient])
+    bind(classOf[OASFileLocator]).toInstance(MicroserviceOASFileLocator)
   }
 }
 

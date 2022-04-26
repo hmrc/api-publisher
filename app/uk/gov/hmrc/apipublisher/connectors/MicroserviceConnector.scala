@@ -36,10 +36,32 @@ import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.parser.OpenAPIV3Parser
+import scala.collection.JavaConverters._
+import io.swagger.v3.parser.core.models.ParseOptions
+
+object MicroserviceConnector {
+  trait OASFileLocator {
+    def locationOf(serviceLocation: ServiceLocation, version: String): String
+  }
+
+  object MicroserviceOASFileLocator extends OASFileLocator {
+    def locationOf(serviceLocation: ServiceLocation, version: String): String =
+      s"${serviceLocation.serviceUrl}/api/conf/$version/application.yaml"
+  }
+}
 
 @Singleton
-class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: RamlLoader, http: HttpClient, env: Environment)
-                                     (implicit val ec: ExecutionContext) extends ConnectorRecovery with HttpReadsOption {
+class MicroserviceConnector @Inject()(
+  config: MicroserviceConfig,
+  ramlLoader: RamlLoader,
+  oasFileLocator: MicroserviceConnector.OASFileLocator,
+  http: HttpClient,
+  env: Environment
+)(implicit val ec: ExecutionContext) extends ConnectorRecovery with HttpReadsOption {
+
+  private val openAPIV3Parser = new OpenAPIV3Parser();
 
   val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
@@ -87,6 +109,20 @@ class MicroserviceConnector @Inject()(config: MicroserviceConfig, ramlLoader: Ra
 
   def getRaml(serviceLocation: ServiceLocation, version: String): Try[RAML] = {
     ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
+  }
+
+  def getOAS(serviceLocation: ServiceLocation, version: String): Either[List[String], OpenAPI] = {
+    val parseOptions = new ParseOptions();
+    parseOptions.setResolve(true);
+    val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
+
+    val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
+    
+    (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
+      case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
+      case (_, Some(openApi)) => Right(openApi)
+      case _ => Left(List("No errors or openAPI where returned from parsing"))
+    }
   }
 }
 

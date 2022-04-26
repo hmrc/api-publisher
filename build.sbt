@@ -33,6 +33,8 @@ lazy val microservice = (project in file("."))
     Test / parallelExecution := false,
     Test / unmanagedSourceDirectories += baseDirectory.value / "test",
     Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
+    Test / unmanagedResourceDirectories += baseDirectory.value / "test/resources",
+    Test / unmanagedClasspath += baseDirectory.value / "test/resources",
     addTestReportOption(Test, "test-reports")
   )
   .configs(IntegrationTest)
