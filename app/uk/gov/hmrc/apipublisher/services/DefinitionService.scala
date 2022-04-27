@@ -1,0 +1,99 @@
+/*
+ * Copyright 2022 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.apipublisher.services
+
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.http.HeaderCarrier
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import cats.data.OptionT
+import cats.implicits._
+import play.api.libs.json._
+import uk.gov.hmrc.ramltools.domain.Endpoint
+import javax.inject.Inject
+
+object DefinitionService {
+  trait VersionDefinitionService {
+    def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = ???
+  }
+}
+
+class DefinitionService @Inject()(
+  microserviceConnector: MicroserviceConnector,
+  ramlVersionDefinitionService: RamlVersionDefinitionService,
+  oasVersionDefinitionService: OasVersionDefinitionService
+)(implicit val ec: ExecutionContext) {
+  
+  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+    (
+      for {
+        baseApiAndScopes     <- OptionT(microserviceConnector.getAPIAndScopes(serviceLocation))
+        detailedApiAndScopes <- OptionT.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
+      } 
+      yield detailedApiAndScopes
+    )
+    .value
+  }
+
+  private def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[ApiAndScopes] = {
+    val api = apiAndScopes.api
+    val context = (api \ "context").asOpt[String]
+    val versions = (api \ "versions").as[List[JsObject]]
+
+    val fDetailedVersions = 
+      Future.sequence(
+        versions.map { versionObj =>
+          val versionNbr = (versionObj \ "version").as[String]
+          val details = getDetailForVersion(serviceLocation, context, versionNbr)
+          
+          details.map(endpoints => versionObj + ("endpoints" -> Json.toJson(endpoints).as[JsArray]))
+        }
+      )
+
+    fDetailedVersions.map { detailsVersions =>
+      apiAndScopes.copy(api = api + ("versions" -> JsArray(detailsVersions)))
+    }
+  }
+
+  private def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
+    val ramlVD = ramlVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
+                  .orElse(successful(List.empty))
+
+    val oasVD = oasVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
+                  .orElse(successful(List.empty))
+
+    ramlVD.flatMap { raml => 
+      oasVD.map { oas =>
+        // Check they both match as we got both by getting here.
+        // if( raml != oas ) {
+        //   ???
+        // }
+        println("RAML " + Json.prettyPrint(Json.toJson(raml)))
+        println("OAS  " + Json.prettyPrint(Json.toJson(oas)))
+
+        (raml, oas) match {
+          case (Nil, Nil)                                                       => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
+          case (ramlEndpoints, Nil)                                             => ramlEndpoints
+          case (Nil, oasEndpoints)                                              => oasEndpoints
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => ramlEndpoints
+          case (ramlEndpoints, oasEndpoints)                                    => throw new IllegalStateException(s"Endpoints are defined in both RAML and OAS but these do not match for $version of ${serviceLocation.serviceName}")
+        }
+      }
+    }
+  }
+}

@@ -115,12 +115,22 @@ class MicroserviceConnector @Inject()(
     ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
   }
 
-  def getOAS(serviceLocation: ServiceLocation, version: String): Future[Either[List[String], OpenAPI]] = {
+  def getOAS(serviceLocation: ServiceLocation, version: String): Future[OpenAPI] = {
+    def handleSuccess(openApi: OpenAPI): Future[OpenAPI] = {
+      logger.info(s"Read OAS file from ${serviceLocation.serviceUrl}")
+      Future.successful(openApi)
+    }
+
+    def handleFailure(err: List[String]): Future[OpenAPI] = {
+      logger.warn(s"Failed to load OAS file from ${serviceLocation.serviceUrl} due to [${err.mkString}]")
+      Future.failed(new IllegalArgumentException("Cannot find valid OAS file"))
+    }
+    
     val parseOptions = new ParseOptions();
     parseOptions.setResolve(true);
     val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
 
-    val futureParsing: Future[Either[List[String], OpenAPI]] = Future {
+    val futureParsing = Future {
       blocking {
         val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
       
@@ -130,16 +140,17 @@ class MicroserviceConnector @Inject()(
           case _ => Left(List("No errors or openAPI where returned from parsing"))
         }
 
-        outcome.fold( 
-          err => logger.warn(s"Failed to load OAS file from ${serviceLocation.serviceUrl} due to [${err.mkString}]"),
-          oasApi => logger.info(s"Read OAS file from ${serviceLocation.serviceUrl}")
-        )
-
         outcome
       }
     }
+    .flatMap( outcome => 
+      outcome.fold( 
+          err => handleFailure(err),
+          oasApi => handleSuccess(oasApi)
+      )
+    )
 
-    val futureTimer: Future[Either[List[String], OpenAPI]] = akka.pattern.after(config.oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
+    val futureTimer: Future[OpenAPI] = akka.pattern.after(config.oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
 
     Future.firstCompletedOf(List(futureParsing, futureTimer))
   }

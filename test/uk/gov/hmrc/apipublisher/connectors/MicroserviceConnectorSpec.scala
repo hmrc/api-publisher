@@ -230,35 +230,37 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     }
   }
 
-  "should call the microservice to get the application.raml" in new Setup {
-    connector.getRaml(testService, "1.0")
+  "getRaml" should {
+    "call the microservice to get the application.raml" in new Setup {
+      connector.getRaml(testService, "1.0")
 
-    verify(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
+      verify(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
+    }
   }
 
   "getOAS" should {
-    "load the OAS file when found as a valid model" in new Setup {
+    "load the OAS file when found and is a valid model" in new Setup {
       when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/application.yaml")
 
-      val result = await(connector.getOAS(testService, "1.0"))
-      result shouldBe 'right
+      await(connector.getOAS(testService, "1.0"))
+
+      ok("Done")
     }
 
-    "handle an invalid OAS file when found as a valid model" in new Setup {
+    "handle an invalid OAS file" in new Setup {
       when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/bad-application.yaml")
 
-      val result = await(connector.getOAS(testService, "1.0"))
-      result shouldBe 'left
-      result shouldBe Left(List("unable to parse `/input/oas/bad-application.yaml`"))
+      intercept[RuntimeException] {
+        await(connector.getOAS(testService, "1.0"))
+      }
     }
 
-    "return nothing when the OAS file when found as a valid model" in new Setup {
+    "handle when the OAS file is not found" in new Setup {
       when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/no-such-application.yaml")
 
-      val result = await(connector.getOAS(testService, "1.0"))
-
-      result shouldBe 'left
-      result.leftSide shouldBe Left(List("unable to read location `/input/oas/no-such-application.yaml`"))
+      intercept[RuntimeException] {
+        await(connector.getOAS(testService, "1.0"))
+      }
     }
 
     "return timeout when OAS parser takes too long" in new SetupWithTimedOutParser {

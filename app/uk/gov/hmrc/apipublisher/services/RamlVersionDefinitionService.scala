@@ -17,16 +17,27 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.ramltools.RAML
+import uk.gov.hmrc.ramltools.domain.Endpoints
+
 import scala.concurrent.Future
-import scala.concurrent.Future.successful
+import uk.gov.hmrc.ramltools.domain.Endpoint
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import scala.util.Try
 
 @Singleton
-class OasDefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit ec: ExecutionContext) extends AbstractDefinitionService(microserviceConnector)(ec) {
+class RamlVersionDefinitionService @Inject()(microserviceConnector: MicroserviceConnector) extends DefinitionService.VersionDefinitionService {
 
-  protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[Option[ApiAndScopes]] = 
-    successful(Some(ApiAndScopes(JsObject(Seq.empty), JsArray())))
+  override def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
+    Future.fromTry(
+      getRamlForVersion(serviceLocation, version).map { raml =>
+        Endpoints(raml, context).toList
+      }
+    )
+  }
+
+  private def getRamlForVersion(serviceLocation: ServiceLocation, version: String): Try[RAML] = {
+    microserviceConnector.getRaml(serviceLocation, version)
+  }
 }

@@ -60,7 +60,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     val mockPublisherService = mock[PublisherService]
     val mockApprovalService = mock[ApprovalService]
     val mockAppContext = mock[AppContext]
-    val mockDefinitionService = mock[RamlDefinitionService]
+    val mockDefinitionService = mock[DefinitionService]
 
     val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
   }
