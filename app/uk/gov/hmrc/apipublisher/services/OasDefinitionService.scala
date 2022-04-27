@@ -21,12 +21,12 @@ import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import scala.concurrent.ExecutionContext
-import scala.util.Try
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
 @Singleton
 class OasDefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit ec: ExecutionContext) extends AbstractDefinitionService(microserviceConnector)(ec) {
 
-  protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes] = 
-    scala.util.Success(ApiAndScopes(JsObject(Seq.empty), JsArray()))
-  
+  protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[Option[ApiAndScopes]] = 
+    successful(Some(ApiAndScopes(JsObject(Seq.empty), JsArray())))
 }

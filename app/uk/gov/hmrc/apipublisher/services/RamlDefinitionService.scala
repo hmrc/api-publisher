@@ -25,24 +25,28 @@ import uk.gov.hmrc.ramltools.domain.Endpoints
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future
 
 @Singleton
 class RamlDefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit ec: ExecutionContext) extends AbstractDefinitionService(microserviceConnector)(ec) {
 
-  override protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes] = {
-    val api = apiAndScopes.api
-    val context = (api \ "context").asOpt[String]
+  override protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[Option[ApiAndScopes]] = {
+    Future.fromTry {
+      val api = apiAndScopes.api
+      val context = (api \ "context").asOpt[String]
 
-    val versions: List[Try[JsObject]] =
-      (api \ "versions").as[List[JsObject]].map { v =>
-        getRamlForVersion(serviceLocation, (v \ "version").as[String]).map { raml =>
-          populateVersionFromRaml(v, raml, context)
+      val versions: List[Try[JsObject]] =
+        (api \ "versions").as[List[JsObject]].map { v =>
+          getRamlForVersion(serviceLocation, (v \ "version").as[String]).map { raml =>
+            populateVersionFromRaml(v, raml, context)
+          }
         }
-      }
 
-    flipSequenceOfTrys(versions).map(vers =>
-      apiAndScopes.copy(api = api + ("versions" -> JsArray(vers)))
-    )
+      flipSequenceOfTrys(versions).map(vers =>
+        apiAndScopes.copy(api = api + ("versions" -> JsArray(vers)))
+      )
+    }
+    .map(Some(_))
   }
 
   private def populateVersionFromRaml(version: JsObject, raml: RAML, context: Option[String]): JsObject = {

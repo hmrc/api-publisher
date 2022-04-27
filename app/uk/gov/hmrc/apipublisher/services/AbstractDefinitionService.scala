@@ -20,22 +20,23 @@ import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import cats.data.OptionT
+import cats.implicits._
 
 abstract class AbstractDefinitionService(microserviceConnector: MicroserviceConnector)(implicit val ec: ExecutionContext) {
   
   def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
-    microserviceConnector.getAPIAndScopes(serviceLocation).flatMap {
-      case Some(apiAndScopes) => addDetailFromSpecification(serviceLocation, apiAndScopes) match {
-        case Success(data) => successful(Some(data))
-        case Failure(ex) => failed(ex)
-      }
-      case None => successful(None)
-    }
+    (
+      for {
+        baseApiAndScopes     <- OptionT(microserviceConnector.getAPIAndScopes(serviceLocation))
+        detailedApiAndScopes <- OptionT(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
+      } 
+      yield detailedApiAndScopes
+    )
+    .value
   }
 
-  protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes]
+  protected def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[Option[ApiAndScopes]]
 
 }

@@ -34,12 +34,15 @@ import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.Try
 import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.parser.OpenAPIV3Parser
 import scala.collection.JavaConverters._
 import io.swagger.v3.parser.core.models.ParseOptions
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
+import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
+import akka.actor.ActorSystem
+import scala.concurrent.duration.FiniteDuration
 
 object MicroserviceConnector {
   trait OASFileLocator {
@@ -50,18 +53,19 @@ object MicroserviceConnector {
     def locationOf(serviceLocation: ServiceLocation, version: String): String =
       s"${serviceLocation.serviceUrl}/api/conf/$version/application.yaml"
   }
+  
+  case class Config(validateApiDefinition: Boolean, oasParserMaxDuration: FiniteDuration)
 }
 
 @Singleton
 class MicroserviceConnector @Inject()(
-  config: MicroserviceConfig,
+  config: MicroserviceConnector.Config,
   ramlLoader: RamlLoader,
   oasFileLocator: MicroserviceConnector.OASFileLocator,
+  openAPIV3Parser: SwaggerParserExtension,
   http: HttpClient,
   env: Environment
-)(implicit val ec: ExecutionContext) extends ConnectorRecovery with HttpReadsOption {
-
-  private val openAPIV3Parser = new OpenAPIV3Parser();
+)(implicit val ec: ExecutionContext, system: ActorSystem) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
 
   val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
@@ -111,19 +115,32 @@ class MicroserviceConnector @Inject()(
     ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
   }
 
-  def getOAS(serviceLocation: ServiceLocation, version: String): Either[List[String], OpenAPI] = {
+  def getOAS(serviceLocation: ServiceLocation, version: String): Future[Either[List[String], OpenAPI]] = {
     val parseOptions = new ParseOptions();
     parseOptions.setResolve(true);
     val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
 
-    val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
-    
-    (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
-      case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
-      case (_, Some(openApi)) => Right(openApi)
-      case _ => Left(List("No errors or openAPI where returned from parsing"))
+    val futureParsing: Future[Either[List[String], OpenAPI]] = Future {
+      blocking {
+        val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
+      
+        val outcome = (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
+          case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
+          case (_, Some(openApi)) => Right(openApi)
+          case _ => Left(List("No errors or openAPI where returned from parsing"))
+        }
+
+        outcome.fold( 
+          err => logger.warn(s"Failed to load OAS file from ${serviceLocation.serviceUrl} due to [${err.mkString}]"),
+          oasApi => logger.info(s"Read OAS file from ${serviceLocation.serviceUrl}")
+        )
+
+        outcome
+      }
     }
+
+    val futureTimer: Future[Either[List[String], OpenAPI]] = akka.pattern.after(config.oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
+
+    Future.firstCompletedOf(List(futureParsing, futureTimer))
   }
 }
-
-case class MicroserviceConfig(validateApiDefinition: Boolean)
