@@ -24,6 +24,7 @@ import io.swagger.models.Method
 import scala.collection.mutable.Buffer
 import io.swagger.v3.oas.models.parameters.Parameter
 import scala.collection.JavaConverters._
+import io.swagger.v3.oas.models.security.SecurityScheme
 
 object SOpenAPI {
   object Helpers {
@@ -33,9 +34,10 @@ object SOpenAPI {
       def fromNullableList: List[A] = Option(list).map(_.asScala.toList).getOrElse(List.empty)
     }
 
-    // implicit class AsImmutableMapSyntax[A,B](wrap: java.util.Map[A,B]) {
-    //   def asScalaIMap: Map[A,B] = Map(wrap.asScala.toSeq: _*)
-    // }
+    implicit class AsImmutableMapSyntax[A,B](wrap: java.util.Map[A,B]) {
+      def asScalaIMap: Map[A,B] = Map( Option(wrap).map(_.asScala).getOrElse(Map.empty).toSeq: _* )
+    }
+    
     implicit class AsImmutableListMapMapSyntax[A,B](wrap: java.util.LinkedHashMap[A,B]) {
       def asScalaListMap: ListMap[A,B] = {
         val buffer = Buffer[(A, B)]()
@@ -61,6 +63,7 @@ final case class ParameterKey(name: ParameterName, in: ParameterIn)
 
 final case class SOpenAPI(inner: OpenAPI) {
   lazy val paths: SPaths = SPaths(inner.getPaths)
+  lazy val components: Option[SComponents] = Option(inner.getComponents()).map(SComponents)
 }
 
 case class SPaths(inner: Paths) {
@@ -97,6 +100,23 @@ case class SOperation(inner: Operation) {
     .map {
       case (ParameterKey(name, ParameterIn("query")), p: SParameter) => (name -> p)
     }
+
+  // Mutliple security schemes allowed by OAS 3, for which there is a map of key values of config
+  // We only allow ONE scheme at present in Api Platform
+  // We only allow OAuth2 so this is a scheme name and a list of scopes
+  lazy val schemeAndScope: Option[(String, Option[String])] = {
+    inner.getSecurity().fromNullableList.map(_.asScalaListMap.map { case (k,v) => k -> v.asScala.toList }) match {
+      case Nil               => None
+      case (scheme :: Nil)   => 
+        val (schemeName, scopes) = scheme.iterator.toList.head
+        scopes match {
+          case Nil               => Some((schemeName, None))
+          case (scope :: Nil)    => Some((schemeName, Some(scope)))
+          case (first :: second) => throw new RuntimeException("API Platform only supports one scope per endpoint")
+        }
+      case (first :: second) => throw new RuntimeException("API Platform only supports one security scheme per endpoint")
+    }
+  }
 }
 
 case class SParameter(
@@ -118,3 +138,40 @@ object SParameters {
     )
   }
 }
+
+
+case class SComponents(
+  inner: Components
+) {
+  lazy val securitySchemes = inner.getSecuritySchemes().asScalaIMap.map {
+    case (name, scheme) => 
+      (name -> SSecurityScheme(scheme))
+  }
+}
+
+sealed trait SSecurityScheme
+case class OAuth2AuthorizationCodeSecurityScheme(scopes: Set[String]) extends SSecurityScheme
+case class OAuth2ClientCredentialsSecurityScheme(scopes: Set[String]) extends SSecurityScheme
+
+object OAuth2SecurityScheme {
+  def apply(in: SecurityScheme): SSecurityScheme = {
+    val maybeAuthCodeScheme = Option(in.getFlows.getAuthorizationCode)
+    val maybeClientCredsScheme = Option(in.getFlows.getClientCredentials)
+
+    (maybeAuthCodeScheme, maybeClientCredsScheme) match {
+      case (Some(a), _) => OAuth2AuthorizationCodeSecurityScheme(a.getScopes.asScalaIMap.keySet)
+      case (_, Some(c)) => OAuth2ClientCredentialsSecurityScheme(c.getScopes.asScalaIMap.keySet)
+      case _ => throw new RuntimeException("Only supports up to one of authorization code or client credentials oauth flows")
+    } 
+  }
+}
+
+object SSecurityScheme {
+  def apply(in: SecurityScheme): SSecurityScheme = {
+    in.getType.toString match {
+      case "oauth2" => OAuth2SecurityScheme(in)
+      case s => throw new RuntimeException(s"Publishing does not support security schemes other than oauth2 [$s]")
+    }
+  }
+}
+

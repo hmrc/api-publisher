@@ -28,6 +28,10 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser {
   def apply(openAPI: OpenAPI): List[Endpoint] = {
     val sopenAPI = SOpenAPI(openAPI)
 
+    val securitySchemes: Map[String, SSecurityScheme] = sopenAPI.components
+      .map(_.securitySchemes)
+      .getOrElse(Map.empty)
+
     sopenAPI.paths.pathItems.flatMap {
       case (urlPattern, sPathItem) =>
         sPathItem.ops.map {
@@ -42,14 +46,36 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser {
                 case Nil => None
                 case list => Some(list)
               }
-            
+
+            val (scheme, scope) = 
+                (
+                  for {
+                    (schemeName, scope) <- operation.schemeAndScope
+                    scheme              <- securitySchemes.get(schemeName)
+                  }
+                  yield (Some(scheme), scope)
+                ).getOrElse( (None, None) )
+
+            val authType = 
+              (
+                for {
+                  scheme <- scheme
+                  auth <- scheme match {
+                    case _: OAuth2AuthorizationCodeSecurityScheme => Some("USER")
+                    case _: OAuth2ClientCredentialsSecurityScheme => Some("APPLICATION")
+                    case _ => Some("NONE")
+                  }
+                }
+                yield auth
+              ).getOrElse("NONE")
+
             Endpoint(
               urlPattern, 
               endpointName, 
               method, 
-              authType = "",
+              authType,
               throttlingTier = "UNLIMITED", 
-              scope = None,
+              scope,
               queryParameters
             )
         }.toList

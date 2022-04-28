@@ -45,7 +45,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
   }
 
   "OASParserImpl" should {
-    "reading a simple OAS file gives one path" in new Setup {
+    "read a simple OAS file gives one path" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -68,7 +68,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       result.endpointName shouldBe "no endpoint name provided"
     }
 
-    "reading a simple OAS file gives one path with summary" in new Setup {
+    "read a simple OAS file gives one path with summary" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -93,7 +93,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
     }
 
 
-    "reading a simple OAS file gives one path and two methods" in new Setup {
+    "read a simple OAS file gives one path and two methods" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -123,7 +123,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       put.method shouldBe "PUT"      
     }
 
-    "reading a simple OAS file gives two paths each with one method" in new Setup {
+    "read a simple OAS file gives two paths each with one method" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -153,7 +153,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       put.uriPattern shouldBe "/hello/user"
     }
 
-    "reading a simple OAS file with query parameter" in new Setup {
+    "read a simple OAS file with query parameter" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -178,7 +178,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       result.queryParameters shouldBe 'defined
       result.queryParameters.value.head shouldBe QueryParam("petId", true)
     }
-    "reading a simple OAS file with multiple query parameters" in new Setup {
+
+    "read a simple OAS file with multiple query parameters" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -209,7 +210,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       collarSize shouldBe QueryParam("collarSize", false)
     }
 
-    "reading a simple OAS file with multiple parameters but none are query params" in new Setup {
+    "read a simple OAS file with multiple parameters but none are query params" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -237,7 +238,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       result.queryParameters shouldBe 'empty
     }
 
-    "reading a simple OAS file gives one path and two methods with shared params" in new Setup {
+    "read a simple OAS file gives one path and two methods with shared params" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -275,7 +276,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       put.queryParameters.get should contain only QueryParam("petId", false)
     }
 
-    "reading a simple OAS file gives one path and two methods with shared params and an override" in new Setup {
+    "read a simple OAS file gives one path and two methods with shared params and an override" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -316,5 +317,134 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       put.queryParameters.get should contain only QueryParam("petId", false)
     }
 
+    "fail on a simple OAS file with openIdConnect security" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |
+        |  components:
+        |    securitySchemes:
+        |      aScheme:
+        |        type: openIdConnect
+        |        openIdConnectUrl: http://nothing.here.hmrc.gov.uk/oauth
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - aScheme:
+        |          - read:hello
+        |""".stripMargin
+      )
+      
+      intercept[RuntimeException] {
+        val (get :: Nil) = parser.apply(sample) 
+      }
+      .getMessage should startWith("Publishing does not support security schemes other than oauth2")
+    } 
+
+    "read a simple OAS file with oauth authorizationCode security" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |      applicationScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating app-restricted API requests
+        |        flows:
+        |          clientCredentials:
+        |            tokenUrl: https://example.com/api/auth
+        |            scopes:
+        |              read:hello: access hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - userScheme:
+        |          - read:hello
+        |""".stripMargin
+      )
+
+      val (get :: Nil) = parser.apply(sample)
+
+      get.authType shouldBe "USER"
+    }
+   
+    "read a simple OAS file with oauth clientCredentials security" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |      applicationScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating app-restricted API requests
+        |        flows:
+        |          clientCredentials:
+        |            tokenUrl: https://example.com/api/auth
+        |            scopes:
+        |              read:hello: access hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - applicationScheme:
+        |          - read:hello
+        |""".stripMargin
+      )
+
+      val (get :: Nil) = parser.apply(sample)
+
+      get.authType shouldBe "APPLICATION"
+    }
   }
 }
+
