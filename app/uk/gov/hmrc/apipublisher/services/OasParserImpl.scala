@@ -19,8 +19,41 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.Singleton
 import io.swagger.v3.oas.models.OpenAPI
 import uk.gov.hmrc.ramltools.domain.Endpoint
+import uk.gov.hmrc.apipublisher.models.oas._
+import uk.gov.hmrc.ramltools.domain.QueryParam
 
 @Singleton
 class OasParserImpl() extends OasVersionDefinitionService.OasParser {
-  def apply(openAPI: OpenAPI): List[Endpoint] = List.empty
+     
+  def apply(openAPI: OpenAPI): List[Endpoint] = {
+    val sopenAPI = SOpenAPI(openAPI)
+
+    sopenAPI.paths.pathItems.flatMap {
+      case (urlPattern, sPathItem) =>
+        sPathItem.ops.map {
+          case (method, operation) =>
+            val endpointName : String = operation.summary.getOrElse("no endpoint name provided")
+            
+            val queryParameters : Option[List[QueryParam]] = 
+              operation.queryParameters.map {
+                case (name, param) => QueryParam(name.value, param.required)
+              }
+              .toList match {
+                case Nil => None
+                case list => Some(list)
+              }
+            
+            Endpoint(
+              urlPattern, 
+              endpointName, 
+              method, 
+              authType = "",
+              throttlingTier = "UNLIMITED", 
+              scope = None,
+              queryParameters
+            )
+        }.toList
+    }
+    .toList
+  }
 }
