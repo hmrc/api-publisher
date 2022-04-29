@@ -96,9 +96,9 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(None)(sample) 
+      val (result :: Nil) = parser.apply(Some("hello"))(sample) 
       
-      result.uriPattern shouldBe "/hello/world"
+      result.uriPattern shouldBe "/world"
       result.method shouldBe "GET"
       result.endpointName shouldBe "no endpoint name provided"
     }

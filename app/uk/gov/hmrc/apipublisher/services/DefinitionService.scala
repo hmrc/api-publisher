@@ -82,10 +82,10 @@ class DefinitionService @Inject()(
       oasVD.map { oas =>
         (raml, oas) match {
           case (Nil, Nil)                                                       => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (ramlEndpoints, Nil)                                             => logger.info("Using RAML"); ramlEndpoints
-          case (Nil, oasEndpoints)                                              => logger.info("Using OAS"); oasEndpoints
-          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => logger.info("Both RAML and OAS match"); ramlEndpoints
-          case (ramlEndpoints, oasEndpoints)                                    => logger.info(s"Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); throw new IllegalStateException(s"Endpoints are defined in both RAML and OAS but these do not match for $version of ${serviceLocation.serviceName}")
+          case (ramlEndpoints, Nil)                                             => logger.info("Using RAML to publish"); ramlEndpoints
+          case (Nil, oasEndpoints)                                              => logger.info("Using OAS to publish"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => logger.info("Both RAML and OAS match for publishing"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints)                                    => logger.warn(s"Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); ramlEndpoints
         }
       }
     }
