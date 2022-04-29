@@ -37,7 +37,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory{
 
   val serviceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))

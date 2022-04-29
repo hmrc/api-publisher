@@ -112,9 +112,9 @@ case class SOperation(inner: Operation) {
         scopes match {
           case Nil               => Some((schemeName, None))
           case (scope :: Nil)    => Some((schemeName, Some(scope)))
-          case (first :: second) => throw new RuntimeException("API Platform only supports one scope per endpoint")
+          case (first :: second) => throw new IllegalStateException("API Platform only supports one scope per endpoint")
         }
-      case (first :: second) => throw new RuntimeException("API Platform only supports one security scheme per endpoint")
+      case (first :: second) => throw new IllegalStateException("API Platform only supports one security scheme per endpoint")
     }
   }
 }
@@ -161,7 +161,7 @@ object OAuth2SecurityScheme {
     (maybeAuthCodeScheme, maybeClientCredsScheme) match {
       case (Some(a), _) => OAuth2AuthorizationCodeSecurityScheme(a.getScopes.asScalaIMap.keySet)
       case (_, Some(c)) => OAuth2ClientCredentialsSecurityScheme(c.getScopes.asScalaIMap.keySet)
-      case _ => throw new RuntimeException("Only supports up to one of authorization code or client credentials oauth flows")
+      case _ => throw new IllegalStateException("Only supports up to one of authorization code or client credentials oauth flows")
     } 
   }
 }
@@ -170,8 +170,7 @@ object SSecurityScheme {
   def apply(in: SecurityScheme): SSecurityScheme = {
     in.getType.toString match {
       case "oauth2" => OAuth2SecurityScheme(in)
-      case s => throw new RuntimeException(s"Publishing does not support security schemes other than oauth2 [$s]")
+      case s => throw new IllegalStateException(s"Publishing does not support security schemes other than oauth2 [$s]")
     }
   }
 }
-

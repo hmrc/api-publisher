@@ -53,7 +53,7 @@
 
     <logger name="application" level="DEBUG"/>
 
-    <logger name="connector" level="TRACE">
+    <logger name="connector" level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </logger>
 

@@ -57,14 +57,14 @@ extends ApplicationLogger {
       }
     }
 
-    def validateAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
+    def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
         result <- if (isApproved) publish(apiAndScopes) else successful(false)
       } yield result
     }
 
-    validateAndPublish(apiAndScopes)
+    checkApprovedAndPublish(apiAndScopes)
 
   }
 

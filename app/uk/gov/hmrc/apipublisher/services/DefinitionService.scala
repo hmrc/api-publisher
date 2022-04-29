@@ -26,10 +26,11 @@ import cats.implicits._
 import play.api.libs.json._
 import uk.gov.hmrc.ramltools.domain.Endpoint
 import javax.inject.Inject
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object DefinitionService {
   trait VersionDefinitionService {
-    def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = ???
+    def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]]
   }
 }
 
@@ -37,7 +38,7 @@ class DefinitionService @Inject()(
   microserviceConnector: MicroserviceConnector,
   ramlVersionDefinitionService: RamlVersionDefinitionService,
   oasVersionDefinitionService: OasVersionDefinitionService
-)(implicit val ec: ExecutionContext) {
+)(implicit val ec: ExecutionContext) extends ApplicationLogger {
   
   def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
     (
@@ -79,19 +80,12 @@ class DefinitionService @Inject()(
 
     ramlVD.flatMap { raml => 
       oasVD.map { oas =>
-        // Check they both match as we got both by getting here.
-        // if( raml != oas ) {
-        //   ???
-        // }
-        println("RAML " + Json.prettyPrint(Json.toJson(raml)))
-        println("OAS  " + Json.prettyPrint(Json.toJson(oas)))
-
         (raml, oas) match {
           case (Nil, Nil)                                                       => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (ramlEndpoints, Nil)                                             => ramlEndpoints
-          case (Nil, oasEndpoints)                                              => oasEndpoints
-          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => ramlEndpoints
-          case (ramlEndpoints, oasEndpoints)                                    => throw new IllegalStateException(s"Endpoints are defined in both RAML and OAS but these do not match for $version of ${serviceLocation.serviceName}")
+          case (ramlEndpoints, Nil)                                             => logger.info("Using RAML"); ramlEndpoints
+          case (Nil, oasEndpoints)                                              => logger.info("Using OAS"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => logger.info("Both RAML and OAS match"); ramlEndpoints
+          case (ramlEndpoints, oasEndpoints)                                    => logger.info(s"Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); throw new IllegalStateException(s"Endpoints are defined in both RAML and OAS but these do not match for $version of ${serviceLocation.serviceName}")
         }
       }
     }

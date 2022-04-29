@@ -45,6 +45,18 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
   }
 
   "OASParserImpl" should {
+    "trim the context from the url when the context exists at the start of the url" in new Setup {
+      val res = parser.trimContext(Some("hello"))("/hello/world")
+
+      res shouldBe "/world"
+    }
+
+    "not trim the context from the url when the context does not exist at the start of the url" in new Setup {
+      val res = parser.trimContext(Some("world"))("/hello/world")
+
+      res shouldBe "/hello/world"
+    }
+
     "read a simple OAS file gives one path" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
@@ -61,7 +73,30 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(sample) 
+      val (result :: Nil) = parser.apply(None)(sample) 
+      
+      result.uriPattern shouldBe "/hello/world"
+      result.method shouldBe "GET"
+      result.endpointName shouldBe "no endpoint name provided"
+    }
+
+    "read a simple OAS file and remove context from leading edge of url" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |""".stripMargin)
+      
+      val (result :: Nil) = parser.apply(None)(sample) 
       
       result.uriPattern shouldBe "/hello/world"
       result.method shouldBe "GET"
@@ -85,7 +120,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(sample) 
+      val (result :: Nil) = parser.apply(None)(sample) 
       
       result.uriPattern shouldBe "/hello/world"
       result.method shouldBe "GET"
@@ -114,7 +149,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |""".stripMargin)
       
         // Methods ordered alpahbetically
-      val (get :: put :: Nil) = parser.apply(sample) 
+      val (get :: put :: Nil) = parser.apply(None)(sample) 
       
       get.uriPattern shouldBe "/hello/world"
       put.uriPattern shouldBe "/hello/world"
@@ -144,7 +179,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (get :: put :: Nil) = parser.apply(sample) 
+      val (get :: put :: Nil) = parser.apply(None)(sample) 
       
       get.method shouldBe "GET"      
       get.uriPattern shouldBe "/hello/world"
@@ -173,7 +208,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(sample) 
+      val (result :: Nil) = parser.apply(None)(sample) 
       
       result.queryParameters shouldBe 'defined
       result.queryParameters.value.head shouldBe QueryParam("petId", true)
@@ -202,7 +237,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(sample) 
+      val (result :: Nil) = parser.apply(None)(sample) 
       
       result.queryParameters shouldBe 'defined
       val (petId :: collarSize :: Nil) = result.queryParameters.value.toList
@@ -233,7 +268,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |            description: OK Response
         |""".stripMargin)
       
-      val (result :: Nil) = parser.apply(sample) 
+      val (result :: Nil) = parser.apply(None)(sample) 
       
       result.queryParameters shouldBe 'empty
     }
@@ -267,7 +302,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |""".stripMargin)
       
         // Methods ordered alpahbetically
-      val (get :: put :: Nil) = parser.apply(sample) 
+      val (get :: put :: Nil) = parser.apply(None)(sample) 
 
       get.queryParameters shouldBe 'defined  
       get.queryParameters.get should contain allOf (QueryParam("petId", false), QueryParam("collarSize", false))    
@@ -308,7 +343,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |""".stripMargin)
       
         // Methods ordered alpahbetically
-      val (get :: put :: Nil) = parser.apply(sample) 
+      val (get :: put :: Nil) = parser.apply(None)(sample) 
 
       get.queryParameters shouldBe 'defined  
       get.queryParameters.get should contain allOf (QueryParam("petId", true), QueryParam("collarSize", false))    
@@ -351,7 +386,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       )
       
       intercept[RuntimeException] {
-        val (get :: Nil) = parser.apply(sample) 
+        val (get :: Nil) = parser.apply(None)(sample) 
       }
       .getMessage should startWith("Publishing does not support security schemes other than oauth2")
     } 
@@ -396,7 +431,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |""".stripMargin
       )
 
-      val (get :: Nil) = parser.apply(sample)
+      val (get :: Nil) = parser.apply(None)(sample)
 
       get.authType shouldBe "USER"
     }
@@ -441,7 +476,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |""".stripMargin
       )
 
-      val (get :: Nil) = parser.apply(sample)
+      val (get :: Nil) = parser.apply(None)(sample)
 
       get.authType shouldBe "APPLICATION"
     }

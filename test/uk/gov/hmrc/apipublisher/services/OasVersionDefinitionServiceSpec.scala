@@ -58,7 +58,7 @@ class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
     "returns none if that OAS does not contain the version" in new Setup {
       val openAPI = mock[OpenAPI]
       MicroserviceConnectorMock.GetOAS.findsValid(openAPI)
-      when(mockParser.apply(openAPI)).thenReturn(List.empty)
+      when(mockParser.apply(context)(openAPI)).thenReturn(List.empty)
 
       val result = await(service.getDetailForVersion(aServiceLocation, context, "99.99"))
       result shouldBe List.empty
@@ -67,7 +67,7 @@ class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
     "returns the endpoints for the version" in new Setup {
       val openAPI = mock[OpenAPI]
       MicroserviceConnectorMock.GetOAS.findsValid(openAPI)
-      when(mockParser.apply(openAPI)).thenReturn(List(Endpoint("u","e","m","a","t", None, None)))
+      when(mockParser.apply(context)(openAPI)).thenReturn(List(Endpoint("u","e","m","a","t", None, None)))
 
       val result = await(service.getDetailForVersion(aServiceLocation, context, "99.99"))
       result should have size(1)      
