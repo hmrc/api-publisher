@@ -126,7 +126,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
 
-    "handle api and scopes with both RAML and OS data but that do not match" in new Setup {
+    "handle api and scopes with both RAML and OS data but that do not match by publishing RAML" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
@@ -134,10 +134,11 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       primeOasFor("1.0", Endpoint("/hello", "Say Hello", "GET", "OPEN", "UNLIMITED", Some("read:hello"), None))
       primeRamlFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
 
-      intercept[IllegalStateException] {
-        await(service.getDefinition(aServiceLocation))
-      }
-      .getMessage startsWith "Endpoints are defined in both RAML and OAS but these do not match"
+      val result = await(service.getDefinition(aServiceLocation))
+
+      // Expectation matches RAML processing.
+      val expected = json[JsObject]("/expected/api-simple.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
     }
   }
 }
