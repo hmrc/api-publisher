@@ -96,7 +96,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
     val oasParser = new SwaggerParserExtension {
       override def readLocation(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = {
-        Thread.sleep(60000)
+        Thread.sleep(15000)
         throw new RuntimeException("Should have crashed out of the blocking by now")
       }
 
@@ -269,7 +269,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/no-such-application.yaml")
 
       intercept[IllegalStateException] {
-        Await.result(connector.getOAS(testService, "1.0"), 30.seconds)
+        Await.result(connector.getOAS(testService, "1.0"), 29.seconds)
       }
     }
   }
