@@ -137,7 +137,7 @@ class MicroserviceConnector @Inject()(
         val outcome = (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
           case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
           case (_, Some(openApi)) => Right(openApi)
-          case _ => Left(List("No errors or openAPI where returned from parsing"))
+          case _ => Left(List("No errors or openAPI were returned from parsing"))
         }
 
         outcome

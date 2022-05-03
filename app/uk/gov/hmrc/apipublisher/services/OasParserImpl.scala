@@ -29,8 +29,8 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
      
   def trimContext(context: Option[String])(urlPattern: String): String = {
     context.fold(urlPattern)(c => {
-      val leading = "/"+c
-      if(urlPattern.startsWith(leading)) urlPattern.replaceFirst(leading, "") else urlPattern
+      val leading = s"/$c/".replace("//","/")
+      if(urlPattern.startsWith(leading)) urlPattern.replaceFirst(leading, "/") else urlPattern
     })
   }
   

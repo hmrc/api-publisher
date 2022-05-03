@@ -57,6 +57,21 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       res shouldBe "/hello/world"
     }
 
+    "trim the context handles / in context (just in case)" in new Setup {
+      val resL = parser.trimContext(Some("/hello"))("/hello/world")
+      resL shouldBe "/world"
+
+      val resR = parser.trimContext(Some("/hello/"))("/hello/world")
+      resR shouldBe "/world"
+    }
+
+    "trim the context handles accidental context similarity" in new Setup {
+      val res = parser.trimContext(Some("hello"))("/helloextra/world")
+
+      res shouldBe "/helloextra/world"
+    }
+
+
     "read a simple OAS file gives one path" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3

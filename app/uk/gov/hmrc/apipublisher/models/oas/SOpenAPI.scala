@@ -28,8 +28,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme
 
 object SOpenAPI {
   object Helpers {
-    // type SExtensions = Map[String, Object]
-
     implicit class FromNullableList[A](list: java.util.List[A]) {
       def fromNullableList: List[A] = Option(list).map(_.asScala.toList).getOrElse(List.empty)
     }
@@ -101,7 +99,7 @@ case class SOperation(inner: Operation) {
       case (ParameterKey(name, ParameterIn("query")), p: SParameter) => (name -> p)
     }
 
-  // Mutliple security schemes allowed by OAS 3, for which there is a map of key values of config
+  // Multiple security schemes allowed by OAS 3, for which there is a map of key values of config
   // We only allow ONE scheme at present in Api Platform
   // We only allow OAuth2 so this is a scheme name and a list of scopes
   lazy val schemeAndScope: Option[(String, Option[String])] = {
