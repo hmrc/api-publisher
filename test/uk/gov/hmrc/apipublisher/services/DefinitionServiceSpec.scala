@@ -16,182 +16,129 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HeaderNames.xRequestId
 import utils.AsyncHmrcSpec
-
-import uk.gov.hmrc.ramltools.RAML
-import uk.gov.hmrc.ramltools.loaders.ClasspathRamlLoader
-
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
-import scala.util.Try
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import uk.gov.hmrc.http.HeaderCarrier
+import play.api.libs.json._
+import uk.gov.hmrc.apipublisher.models.ApiAndScopes
+import uk.gov.hmrc.ramltools.domain.Endpoint
+import scala.concurrent.Future.successful
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
-  val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
+  
+  implicit val hc = HeaderCarrier()
 
-  trait Setup {
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockMicroserviceConnector = mock[MicroserviceConnector]
-    val definitionService = new DefinitionService(mockMicroserviceConnector)
+  trait Setup 
+      extends MicroserviceConnectorMockModule 
+      with MockitoSugar 
+      with ArgumentMatchersSugar {
+
+    val ramlVDS = mock[RamlVersionDefinitionService]
+    val oasVDS = mock[OasVersionDefinitionService]
+    val service = new DefinitionService(MicroserviceConnectorMock.aMock, ramlVDS, oasVDS)
+
+    val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
-    def raml(path: String): Try[RAML] = new ClasspathRamlLoader().load(path)
-  }
 
-  "The DefinitionService" should {
-    "Return none if the microservice connector returns none" in new Setup {
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(None))
-
-      val definition: Option[ApiAndScopes] = await(definitionService.getDefinition(testService))
-
-      definition shouldBe None
+    def primeRamlFor(version: String, endpoints: Endpoint*) = {
+      when(ramlVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))
     }
 
-    "Fail if the microservice connector fails" in new Setup {
-      val errorMessage = "something went wrong"
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(failed(new RuntimeException(errorMessage)))
+    def primeOasFor(version: String, endpoints: Endpoint*) = {
+      when(oasVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))
+    }
 
-      val exception: Exception = intercept[Exception] {
-        await(definitionService.getDefinition(testService))
+    def primeRamlOnlyFor(version: String, endpoints: Endpoint*) = {
+      primeRamlFor(version, endpoints: _*)
+      primeOasFor(version)
+    }
+
+    def primeOasOnlyFor(version: String, endpoints: Endpoint*) = {
+      primeRamlFor(version)
+      primeOasFor(version, endpoints: _*)
+    }
+  }
+
+  "getDefinition" should {
+    "handle no api and scopes for service location" in new Setup {
+      MicroserviceConnectorMock.GetAPIAndScopes.findsNone
+
+      val result = await(service.getDefinition(aServiceLocation))
+
+      result shouldBe None
+    }  
+
+    "handle api and scopes with no data" in new Setup {
+      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val scopes = json[JsArray]("/input/scopes.json")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
+
+      primeRamlFor("1.0")
+      primeOasFor("1.0")
+
+      intercept[IllegalStateException] {
+        await(service.getDefinition(aServiceLocation))
       }
-
-      exception.getMessage shouldBe errorMessage
+      .getMessage startsWith "No endpoints defined for"
     }
 
-    "Create a ApiAndScopes object from a definition.json with no endpoints and a single raml version" in new Setup {
+    "handle api and scopes with RAML data only" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml = raml("input/application.raml")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      val api_exp = json[JsObject]("/expected/api-simple.json")
+      primeRamlOnlyFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
+      val result = await(service.getDefinition(aServiceLocation))
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
+      val expected = json[JsObject]("/expected/api-simple.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
     }
-
-    "Create a ApiAndScopes object from a definition.json with no endpoints and no context" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_no_context.json")
-      val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml = raml("input/application.raml")
-
-      val api_exp = json[JsObject]("/expected/api-simple-no-context.json")
-
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
-
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
-    }
-
-    "Create a ApiAndScopes object from a definition.json with no endpoints and dodgy context" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_dodgy_context.json")
-      val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml = raml("input/application.raml")
-
-      val api_exp = json[JsObject]("/expected/api-simple-dodgy-context.json")
-
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
-
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
-    }
-
-    "Create a ApiAndScopes object from a definition.json with no endpoints and throttlingTier annotation" in new Setup {
+  
+    "handle api and scopes with OAS data only" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml = raml("input/application-with-throttling.raml")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      val api_exp = json[JsObject]("/expected/api-simple-throttling.json")
+      primeOasOnlyFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
+      val result = await(service.getDefinition(aServiceLocation))
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
+      val expected = json[JsObject]("/expected/api-simple.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
     }
-
-    "Create a ApiAndScopes object from a definition.json with no endpoints and a single raml version with an annotation library" in new Setup {
+  
+    "handle api and scopes with both RAML and OS data that matches" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml = raml("input/application-with-library.raml")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      val api_exp = json[JsObject]("/expected/api-simple.json")
+      primeOasFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
+      primeRamlFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml)
+      val result = await(service.getDefinition(aServiceLocation))
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
+      val expected = json[JsObject]("/expected/api-simple.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
     }
 
-    "Create a ApiAndScopes object from a definition.json with no endpoints and multiple raml versions" in new Setup {
-      val api = json[JsObject]("/input/api-multi-version.json")
+    "handle api and scopes with both RAML and OS data but that do not match by publishing RAML" in new Setup {
+      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
-      val testRaml_1 = raml("input/application.raml")
-      val testRaml_2 = raml("input/application-2.0.raml")
-      val testRaml_3 = raml("input/application-3.0.raml")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      val api_exp = json[JsObject]("/expected/api-multi-version.json")
+      primeOasFor("1.0", Endpoint("/hello", "Say Hello", "GET", "OPEN", "UNLIMITED", Some("read:hello"), None))
+      primeRamlFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
 
-      when(mockMicroserviceConnector.getAPIAndScopes(testService)).thenReturn(successful(Some(ApiAndScopes(api, scopes))))
-      when(mockMicroserviceConnector.getRaml(testService, "1.0")).thenReturn(testRaml_1)
-      when(mockMicroserviceConnector.getRaml(testService, "2.0")).thenReturn(testRaml_2)
-      when(mockMicroserviceConnector.getRaml(testService, "3.0")).thenReturn(testRaml_3)
+      val result = await(service.getDefinition(aServiceLocation))
 
-      val expectedApiAndScopes = Some(ApiAndScopes(api_exp, scopes))
-      val definition = await(definitionService.getDefinition(testService))
-
-      definition shouldBe expectedApiAndScopes
-    }
-  }
-
-  "populateVersionFromRaml" should {
-    "Add in a simple GET endpoint - no context" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
-      val raml1_0 = raml("input/simple-hello.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-1.json")
-
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, None)
-      actual shouldBe expOutput
-    }
-
-    "Add in a simple GET endpoint with context" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
-      val raml1_0 = raml("input/simple-hello.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-2.json")
-
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, Some("test"))
-      actual shouldBe expOutput
-    }
-
-    "Add in a GET endpoint with context and query parameters" in new Setup {
-
-      val version = json[JsObject]("/input/version-1.json")
-      val raml1_0 = raml("input/simple-hello-with-params.raml").get
-      val expOutput = json[JsObject]("/expected/json-exp-3.json")
-
-      val actual = definitionService.populateVersionFromRaml(version, raml1_0, Some("test"))
-      actual shouldBe expOutput
+      // Expectation matches RAML processing.
+      val expected = json[JsObject]("/expected/api-simple.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
     }
   }
 }

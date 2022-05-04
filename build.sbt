@@ -24,7 +24,7 @@ lazy val microservice = (project in file("."))
     targetJvm := "jvm-1.8",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "app/resources"
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
   )
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
@@ -33,6 +33,7 @@ lazy val microservice = (project in file("."))
     Test / parallelExecution := false,
     Test / unmanagedSourceDirectories += baseDirectory.value / "test",
     Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
+    Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
     addTestReportOption(Test, "test-reports")
   )
   .configs(IntegrationTest)

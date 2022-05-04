@@ -25,7 +25,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
+import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService, DefinitionService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}

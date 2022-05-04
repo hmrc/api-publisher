@@ -12,7 +12,9 @@ object AppDependencies {
     "org.json"                  %  "json"                         % "20210307",
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.8",
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
-    "org.typelevel"             %% "cats-core"                    % "2.6.1"
+    "org.typelevel"             %% "cats-core"                    % "2.6.1",
+    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.0.20"
+
   )
 
   private lazy val testDependencies = Seq(

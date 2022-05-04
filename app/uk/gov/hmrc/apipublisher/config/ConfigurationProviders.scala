@@ -21,6 +21,8 @@ import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.apipublisher.connectors._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 class ConfigurationModule extends Module {
 
@@ -29,7 +31,7 @@ class ConfigurationModule extends Module {
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
-      bind[MicroserviceConfig].toProvider[MicroserviceConfigProvider]
+      bind[MicroserviceConnector.Config].toProvider[MicroserviceConnectorConfigProvider]
     )
   }
 }
@@ -77,15 +79,17 @@ class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: C
 }
 
 @Singleton
-class MicroserviceConfigProvider @Inject()(val runModeConfiguration: Configuration,
+class MicroserviceConnectorConfigProvider @Inject()(val runModeConfiguration: Configuration,
                                            environment: Environment,
                                            servicesConfig: ServicesConfig)
-  extends Provider[MicroserviceConfig]{
+  extends Provider[MicroserviceConnector.Config]{
 
   protected def mode: Mode = environment.mode
 
-  override def get(): MicroserviceConfig = {
+  override def get(): MicroserviceConnector.Config = {
     val validateApiDefinition = runModeConfiguration.getOptional[Boolean]("validateApiDefinition").getOrElse(true)
-    MicroserviceConfig(validateApiDefinition)
+    val oasParserMaxDuration = FiniteDuration(runModeConfiguration.getMillis("oasParserMaxDuration"), TimeUnit.MILLISECONDS)
+
+    MicroserviceConnector.Config(validateApiDefinition, oasParserMaxDuration)
   }
 }

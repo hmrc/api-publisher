@@ -37,7 +37,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory{
 
   val serviceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
@@ -262,7 +261,6 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
-
       when(mockApprovalService.approveService("unknown-service"))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 

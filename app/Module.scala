@@ -18,6 +18,11 @@ import com.google.inject.AbstractModule
 import uk.gov.hmrc.apipublisher.connectors.{DocumentationRamlLoader, DocumentationUrlRewriter}
 import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector._
+import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
+import uk.gov.hmrc.apipublisher.services.OasParserImpl
+import uk.gov.hmrc.apipublisher.services.OasVersionDefinitionService
 
 class Module extends AbstractModule {
 
@@ -25,6 +30,9 @@ class Module extends AbstractModule {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
     bind(classOf[HttpClient]).to(classOf[DefaultHttpClient])
+    bind(classOf[OASFileLocator]).toInstance(MicroserviceOASFileLocator)
+    bind(classOf[SwaggerParserExtension]).toInstance(new OpenAPIV3Parser)
+    bind(classOf[OasVersionDefinitionService.OasParser]).toInstance(new OasParserImpl)
   }
 }
 

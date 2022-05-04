@@ -16,65 +16,78 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import javax.inject.{Inject, Singleton}
-import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.ramltools.RAML
-import uk.gov.hmrc.ramltools.domain.Endpoints
-
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import cats.data.OptionT
+import cats.implicits._
+import play.api.libs.json._
+import uk.gov.hmrc.ramltools.domain.Endpoint
+import javax.inject.Inject
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
-@Singleton
-class DefinitionService @Inject()(microserviceConnector: MicroserviceConnector)(implicit val ec: ExecutionContext) {
+object DefinitionService {
+  trait VersionDefinitionService {
+    def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]]
+  }
+}
 
+class DefinitionService @Inject()(
+  microserviceConnector: MicroserviceConnector,
+  ramlVersionDefinitionService: RamlVersionDefinitionService,
+  oasVersionDefinitionService: OasVersionDefinitionService
+)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+  
   def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
-    microserviceConnector.getAPIAndScopes(serviceLocation).flatMap {
-      case Some(apiAndScopes) => addDetailFromRaml(serviceLocation, apiAndScopes) match {
-        case Success(data) => successful(Some(data))
-        case Failure(ex) => failed(ex)
-      }
-      case None => successful(None)
-    }
+    (
+      for {
+        baseApiAndScopes     <- OptionT(microserviceConnector.getAPIAndScopes(serviceLocation))
+        detailedApiAndScopes <- OptionT.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
+      } 
+      yield detailedApiAndScopes
+    )
+    .value
   }
 
-  private def addDetailFromRaml(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Try[ApiAndScopes] = {
+  private def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[ApiAndScopes] = {
     val api = apiAndScopes.api
     val context = (api \ "context").asOpt[String]
+    val versions = (api \ "versions").as[List[JsObject]]
 
-    val versions: List[Try[JsObject]] =
-      (api \ "versions").as[List[JsObject]].map { v =>
-        getRamlForVersion(serviceLocation, (v \ "version").as[String]).map { raml =>
-          populateVersionFromRaml(v, raml, context)
+    val fDetailedVersions = 
+      Future.sequence(
+        versions.map { versionObj =>
+          val versionNbr = (versionObj \ "version").as[String]
+          val details = getDetailForVersion(serviceLocation, context, versionNbr)
+          
+          details.map(endpoints => versionObj + ("endpoints" -> Json.toJson(endpoints).as[JsArray]))
+        }
+      )
+
+    fDetailedVersions.map { detailsVersions =>
+      apiAndScopes.copy(api = api + ("versions" -> JsArray(detailsVersions)))
+    }
+  }
+
+  private def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
+    val ramlVD = ramlVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
+                  .orElse(successful(List.empty))
+
+    val oasVD = oasVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
+                  .orElse(successful(List.empty))
+
+    ramlVD.flatMap { raml => 
+      oasVD.map { oas =>
+        (raml, oas) match {
+          case (Nil, Nil)                                                       => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
+          case (ramlEndpoints, Nil)                                             => logger.info("Using RAML to publish"); ramlEndpoints
+          case (Nil, oasEndpoints)                                              => logger.info("Using OAS to publish"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => logger.info("Both RAML and OAS match for publishing"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints)                                    => logger.warn(s"Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); ramlEndpoints
         }
       }
-
-    flipSequenceOfTrys(versions).map(vers =>
-      apiAndScopes.copy(api = api + ("versions" -> JsArray(vers)))
-    )
-  }
-
-  def populateVersionFromRaml(version: JsObject, raml: RAML, context: Option[String]): JsObject = {
-    version + ("endpoints" -> Json.toJson(Endpoints(raml, context)).as[JsArray])
-  }
-
-  private def getRamlForVersion(serviceLocation: ServiceLocation, version: String): Try[RAML] = {
-    microserviceConnector.getRaml(serviceLocation, version)
-  }
-
-  private def flipSequenceOfTrys(versions: List[Try[JsObject]]): Try[Seq[JsObject]] = {
-    @scala.annotation.tailrec
-    def loop(trys: List[Try[JsObject]], acc: Seq[JsObject]): Try[Seq[JsObject]] = {
-      trys match {
-        case Nil => Success(acc)
-        case Success(obj) :: t => loop(t, acc :+ obj)
-        case Failure(ex) :: _ => Failure(ex)
-      }
     }
-
-    loop(versions, Seq.empty)
   }
 }
