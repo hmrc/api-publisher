@@ -1,5 +1,6 @@
 {
   "Hello World": ["EXAMPLE"],
+  "Open API Example": ["EXAMPLE"],
   "Agent Authorisation": ["AGENTS", "INCOME_TAX_MTD"],
   "Apprenticeship Levy": ["PRIVATE_GOVERNMENT"],
   "Bulk Data File List": ["CUSTOMS"],
