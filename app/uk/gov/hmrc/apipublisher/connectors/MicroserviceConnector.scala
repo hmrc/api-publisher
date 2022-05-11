@@ -43,6 +43,7 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import akka.actor.ActorSystem
 import scala.concurrent.duration.FiniteDuration
+import java.io.FileNotFoundException
 
 object MicroserviceConnector {
   trait OASFileLocator {
@@ -132,15 +133,19 @@ class MicroserviceConnector @Inject()(
 
     val futureParsing = Future {
       blocking {
-        val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
-      
-        val outcome = (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
-          case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
-          case (_, Some(openApi)) => Right(openApi)
-          case _ => Left(List("No errors or openAPI were returned from parsing"))
-        }
+        try {
+          val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
+        
+          val outcome = (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
+            case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
+            case (_, Some(openApi)) => Right(openApi)
+            case _ => Left(List("No errors or openAPI were returned from parsing"))
+          }
 
-        outcome
+          outcome
+        } catch {
+          case e: FileNotFoundException => Left(List(e.getMessage()))
+        }
       }
     }
     .flatMap( outcome => 
