@@ -45,6 +45,7 @@ import java.{util => ju}
 import scala.concurrent.Await
 import akka.actor.ActorSystem
 import scala.concurrent.duration._
+import java.io.FileNotFoundException
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -111,6 +112,19 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       mockRamlLoader,
       MicroserviceConnector.MicroserviceOASFileLocator,
       new OpenAPIV3Parser(),
+      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[Environment]
+    )
+  }
+
+  trait SetupWithMockedOpenApiParser extends Setup {
+    val mockOpenApiParser = mock[OpenAPIV3Parser]
+
+    override lazy val connector = new MicroserviceConnector(
+      MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
+      mockRamlLoader,
+      oasFileLocator,
+      mockOpenApiParser,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
@@ -263,8 +277,15 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       }
     }
 
-    // Flakey test in build server...
+    "handle a FileNotFoundException when locating yaml specification" in new SetupWithMockedOpenApiParser {
+      when(mockOpenApiParser.readLocation(*, *, *)).thenThrow(new FileNotFoundException("A problem reading the YAML file"))
 
+      intercept[IllegalArgumentException] {
+        await(connector.getOAS(testService, "1.0"))
+      }.getMessage() shouldBe "Cannot find valid OAS file"
+    }
+
+    // Flakey test in build server...
     "return timeout when OAS parser takes too long" ignore new SetupWithTimedOutParser {
       import scala.concurrent.duration._
 
