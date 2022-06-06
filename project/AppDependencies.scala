@@ -3,7 +3,7 @@ import sbt._
 
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
-  lazy val bootstrapVersion = "5.16.0"
+  lazy val bootstrapVersion = "5.24.0"
 
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"               %% "bootstrap-backend-play-28"    % bootstrapVersion,
@@ -13,7 +13,7 @@ object AppDependencies {
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.8",
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
     "org.typelevel"             %% "cats-core"                    % "2.6.1",
-    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.0.20"
+    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.0.31"
 
   )
 
