@@ -129,6 +129,7 @@ class MicroserviceConnector @Inject()(
     
     val parseOptions = new ParseOptions();
     parseOptions.setResolve(true);
+    parseOptions.setResolveFully(true);
     val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
 
     val futureParsing = Future {
