@@ -218,6 +218,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        - name: petId
         |          in: query
         |          required: true
+        |          schema:
+        |            type: string
         |        responses:
         |          200:
         |            description: OK Response
@@ -244,9 +246,13 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        - name: petId
         |          in: query
         |          required: true
+        |          schema:
+        |            type: string
         |        - name: collarSize
         |          in: query
         |          required: false
+        |          schema:
+        |            type: string
         |        responses:
         |          200:
         |            description: OK Response
@@ -275,9 +281,13 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        - name: petId
         |          in: header
         |          required: true
+        |          schema:
+        |            type: string
         |        - name: collarSize
         |          in: cookie
         |          required: false
+        |          schema:
+        |            type: string
         |        responses:
         |          200:
         |            description: OK Response
@@ -301,12 +311,16 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |      parameters:
         |        - name: petId
         |          in: query
+        |          schema:
+        |            type: string
         |          required: false
         |      get:
         |        parameters:
         |        - name: collarSize
         |          in: query
         |          required: false
+        |          schema:
+        |            type: string
         |        responses:
         |          200:
         |            description: OK Response
@@ -340,14 +354,20 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        - name: petId
         |          in: query
         |          required: false
+        |          schema:
+        |            type: string
         |      get:
         |        parameters:
         |        - name: petId
         |          in: query
         |          required: true
+        |          schema:
+        |            type: string
         |        - name: collarSize
         |          in: query
         |          required: false
+        |          schema:
+        |            type: string
         |        responses:
         |          200:
         |            description: OK Response
