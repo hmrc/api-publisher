@@ -24,7 +24,7 @@ import org.mongodb.scala.model.Filters.{or, equal, exists}
 import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-
+import com.mongodb.client.model.ReplaceOptions
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -49,10 +49,7 @@ class APIApprovalRepository @Inject()(mongo: MongoComponent)(implicit val ec: Ex
   def save(apiApproval: APIApproval): Future[APIApproval] = {
     val query = equal("serviceName", Codecs.toBson(apiApproval.serviceName))
 
-    collection.find(query).headOption flatMap {
-      case Some(document) => collection.replaceOne(filter = query, replacement = apiApproval).toFuture().map(_ => apiApproval)
-      case None           => collection.insertOne(apiApproval).toFuture().map(_ => apiApproval)
-    }
+    collection.replaceOne(query, apiApproval, new ReplaceOptions().upsert(true)).toFuture().map(_ => apiApproval)
   }
 
   def fetch(serviceName: String): Future[Option[APIApproval]] = {
