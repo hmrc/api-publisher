@@ -17,61 +17,54 @@
 package uk.gov.hmrc.apipublisher.repository
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{JsObject, Json}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor.FailOnError
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json.ImplicitBSONHandlers._
+import uk.gov.hmrc.mongo.MongoComponent
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Filters.{or, equal, exists}
 import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.Option.empty
 
 
 @Singleton
-class APIApprovalRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-  extends ReactiveRepository[APIApproval, BSONObjectID]("apiapproval", mongo.mongoConnector.db,
-    apiApprovalFormat, ReactiveMongoFormats.objectIdFormats) {
-
-  override def indexes = Seq(
-    Index(Seq("serviceName" -> IndexType.Ascending), name = Some("serviceNameIndex"), unique = true, background = true))
-
-  indexes.map(collection.indexesManager.ensure)
+class APIApprovalRepository @Inject()(mongo: MongoComponent)(implicit val ec: ExecutionContext)
+  extends PlayMongoRepository[APIApproval](
+    collectionName = "apiapproval", 
+    mongoComponent = mongo,
+    domainFormat = apiApprovalFormat, 
+    indexes = Seq(
+      IndexModel(
+        ascending("serviceName"),
+        IndexOptions()
+          .name("serviceNameIndex")
+          .unique(true)
+          .background(true)
+      )
+    ),
+    replaceIndexes = true
+  ) {
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
-    collection.find[JsObject, JsObject](selector = Json.obj("serviceName" -> apiApproval.serviceName)).one[BSONDocument].flatMap {
-      case Some(document) => collection.update(ordered=false).one(q = BSONDocument("_id" -> document.get("_id")), u = apiApproval)
-      case None => collection.insert(ordered=false).one(apiApproval)
-    }.map(_ => apiApproval)
-  }
+    val query = equal("serviceName", Codecs.toBson(apiApproval.serviceName))
 
-  def fetch(serviceName: String): Future[Option[APIApproval]] = {
-    logger.info(s"Fetching API $serviceName in mongo")
-    collection.find[JsObject, JsObject](selector = Json.obj("serviceName" -> serviceName)).one[APIApproval].map { apiApproval =>
-      logger.debug(s"Retrieved apiApproval $serviceName in mongo: $apiApproval")
-      apiApproval
+    collection.find(query).headOption flatMap {
+      case Some(document) => collection.replaceOne(filter = query, replacement = apiApproval).toFuture().map(_ => apiApproval)
+      case None           => collection.insertOne(apiApproval).toFuture().map(_ => apiApproval)
     }
   }
 
-  def or(op1: JsObject, op2: JsObject) : JsObject = Json.obj("$or" -> Json.arr(op1, op2))
-
-  def exists(field: String) : JsObject = Json.obj(field -> Json.obj("$exists" -> true))
-
-  def notExists(field: String): JsObject = Json.obj(field -> Json.obj("$exists" -> false))
-
-  def equals(field: String, value: Boolean): JsObject = Json.obj(field -> Json.obj("$eq" -> value))
-
-  def equals[T <: JsValueWrapper](field: String, value: T): JsObject = Json.obj(field -> Json.obj("$eq" -> value))
+  def fetch(serviceName: String): Future[Option[APIApproval]] = {
+    collection.find(equal("serviceName", Codecs.toBson(serviceName)))
+      .headOption()
+  }
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = {
-    val query = or(equals("approved", value = false), notExists("approved"))
-    collection.find[JsObject, JsObject](query, empty)
-      .cursor[APIApproval]()
-      .collect[Seq](-1, FailOnError[Seq[APIApproval]]())
+    collection.find(or(
+      equal("approved", Codecs.toBson(false)),
+      exists("approved", false)
+    )).toFuture()
+      .map(_.toList)
   }
 }
