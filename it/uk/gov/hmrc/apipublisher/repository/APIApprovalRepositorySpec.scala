@@ -16,31 +16,33 @@
 
 package uk.gov.hmrc.apipublisher.repository
 
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apipublisher.models.APIApproval
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Application
 import utils.AsyncHmrcSpec
 
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
-  with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll {
+  with BeforeAndAfterEach with BeforeAndAfterAll {
 
-  private val reactiveMongoComponent = new ReactiveMongoComponent {
-    override def mongoConnector: MongoConnector = mongoConnectorForTest
+  protected def appBuilder: GuiceApplicationBuilder = {
+    GuiceApplicationBuilder()
+      .configure(
+        "metrics.jvm" -> false,
+        "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
+      )
   }
+  implicit lazy val app: Application = appBuilder.build()
 
-  private val repository = new APIApprovalRepository(reactiveMongoComponent)
+  private val repository: APIApprovalRepository = app.injector.instanceOf[APIApprovalRepository]
 
   override def beforeEach() {
-    await(repository.drop)
+    await(repository.collection.drop().toFuture())
     await(repository.ensureIndexes)
   }
 
   override protected def afterAll() {
-    await(repository.drop)
+    await(repository.collection.drop().toFuture())
   }
 
   "createOrUpdate" should {
