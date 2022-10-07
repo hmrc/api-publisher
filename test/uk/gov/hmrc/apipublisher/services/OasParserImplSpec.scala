@@ -32,6 +32,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
     def generate(oasSpec: String): OpenAPI = {
       val parseOptions = new ParseOptions();
       parseOptions.setResolve(true);
+      parseOptions.setResolveFully(true);
       val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
 
       val result = new OpenAPIV3Parser().readContents(oasSpec,emptyAuthList, parseOptions)
