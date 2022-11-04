@@ -40,6 +40,9 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     val oasVDS = mock[OasVersionDefinitionService]
     val service = new DefinitionService(MicroserviceConnectorMock.aMock, ramlVDS, oasVDS)
 
+    val helloEndpoint = Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
+    val goodbyeEndpoint = Endpoint("/goodbye", "Say Goodbye", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
+
     val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
@@ -91,7 +94,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      primeRamlOnlyFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
+      primeRamlOnlyFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
@@ -104,7 +107,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      primeOasOnlyFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
+      primeOasOnlyFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
@@ -117,22 +120,36 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      primeOasFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
-      primeRamlFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
+      primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
+      primeRamlFor("1.0", helloEndpoint, goodbyeEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
-      val expected = json[JsObject]("/expected/api-simple.json")
+      val expected = json[JsObject]("/expected/api-simple-hello-goodbye.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
 
+    "handle api and scopes with both RAML and OS data that matches except for ordering" in new Setup {
+       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val scopes = json[JsArray]("/input/scopes.json")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
+
+      primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
+      primeRamlFor("1.0", goodbyeEndpoint, helloEndpoint)
+
+      val result = await(service.getDefinition(aServiceLocation))
+
+      val expected = json[JsObject]("/expected/api-simple-hello-goodbye.json")
+      result.value shouldBe ApiAndScopes(expected, scopes)
+    }
+    
     "handle api and scopes with both RAML and OS data but that do not match by publishing RAML" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      primeOasFor("1.0", Endpoint("/hello", "Say Hello", "GET", "OPEN", "UNLIMITED", Some("read:hello"), None))
-      primeRamlFor("1.0", Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None))
+      primeOasFor("1.0", helloEndpoint.copy(authType = "OPEN"))
+      primeRamlFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
