@@ -72,6 +72,7 @@ class DefinitionService @Inject()(
   }
 
   private def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
+    lazy val describeService: String = s"${serviceLocation.serviceName} - v${version}"
     val ramlVD = ramlVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
                   .orElse(successful(List.empty))
 
@@ -81,11 +82,11 @@ class DefinitionService @Inject()(
     ramlVD.flatMap { raml => 
       oasVD.map { oas =>
         (raml, oas) match {
-          case (Nil, Nil)                                                       => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (ramlEndpoints, Nil)                                             => logger.info("Using RAML to publish"); ramlEndpoints
-          case (Nil, oasEndpoints)                                              => logger.info("Using OAS to publish"); oasEndpoints
-          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints == oasEndpoints)  => logger.info("Both RAML and OAS match for publishing"); oasEndpoints
-          case (ramlEndpoints, oasEndpoints)                                    => logger.warn(s"Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); ramlEndpoints
+          case (Nil, Nil)                                                                   => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
+          case (ramlEndpoints, Nil)                                                         => logger.info(s"${describeService} : Using RAML to publish"); ramlEndpoints
+          case (Nil, oasEndpoints)                                                          => logger.info(s"${describeService} : Using OAS to publish"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints.toSet == oasEndpoints.toSet)  => logger.info(s"${describeService} : Both RAML and OAS match for publishing"); oasEndpoints
+          case (ramlEndpoints, oasEndpoints)                                                => logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); ramlEndpoints
         }
       }
     }
