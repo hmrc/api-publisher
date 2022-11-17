@@ -14,6 +14,7 @@ object AppDependencies {
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.8",
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
     "org.typelevel"             %% "cats-core"                    % "2.6.1",
+    "uk.gov.hmrc"               %% "play-json-union-formatter"    % "1.15.0-play-28",
     "io.swagger.parser.v3"      %  "swagger-parser"               % "2.0.33" excludeAll(
       ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
       ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),

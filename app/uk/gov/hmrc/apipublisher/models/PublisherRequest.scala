@@ -20,6 +20,36 @@ import play.api.libs.json._
 import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
 
+sealed trait ApiVersionSource {
+  def asText: String
+}
+
+object ApiVersionSource {
+  case object RAML extends ApiVersionSource {
+    val asText = "RAML"
+  }
+  case object OAS extends ApiVersionSource {
+    val asText = "OAS"
+  }
+
+  case object UNKNOWN extends ApiVersionSource {
+    val asText = "UNKNOWN"
+  }
+
+  implicit val format: Format[ApiVersionSource] = new Format[ApiVersionSource] {
+    def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
+      case JsString(RAML.asText) => JsSuccess(RAML)
+      case JsString(OAS.asText) => JsSuccess(OAS)
+      case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
+      case e => JsError(s"Cannot parse source value from '$e'")
+    }
+
+    def writes(foo: ApiVersionSource): JsValue = {
+      JsString(foo.asText)
+    }
+  }
+}
+
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])
 

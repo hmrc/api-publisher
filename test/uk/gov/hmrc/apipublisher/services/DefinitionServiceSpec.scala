@@ -98,7 +98,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val result = await(service.getDefinition(aServiceLocation))
 
-      val expected = json[JsObject]("/expected/api-simple.json")
+      val expected = json[JsObject]("/expected/api-simple-raml.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
   
@@ -111,7 +111,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val result = await(service.getDefinition(aServiceLocation))
 
-      val expected = json[JsObject]("/expected/api-simple.json")
+      val expected = json[JsObject]("/expected/api-simple-oas.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
   
@@ -143,7 +143,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
     
-    "handle api and scopes with both RAML and OS data but that do not match by publishing RAML" in new Setup {
+    "handle api and scopes with both RAML and OAS data but that do not match by publishing RAML" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
@@ -154,7 +154,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val result = await(service.getDefinition(aServiceLocation))
 
       // Expectation matches RAML processing.
-      val expected = json[JsObject]("/expected/api-simple.json")
+      val expected = json[JsObject]("/expected/api-simple-raml.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
   }

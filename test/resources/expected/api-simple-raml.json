@@ -6,7 +6,6 @@
     {
       "version" : "1.0",
       "status" : "PUBLISHED",
-      "versionSource" : "OAS",
       "endpoints" : [
         {
           "uriPattern" : "/hello",
@@ -15,17 +14,9 @@
           "scope": "read:hello",
           "authType" : "USER",
           "throttlingTier" : "UNLIMITED"
-        },
-        {
-          "uriPattern" : "/goodbye",
-          "endpointName": "Say Goodbye",
-          "method" : "GET",
-          "scope": "read:hello",
-          "authType" : "USER",
-          "throttlingTier" : "UNLIMITED"
         }
-
-      ]
+      ],
+      "versionSource" : "RAML"
     }
   ]
 }
