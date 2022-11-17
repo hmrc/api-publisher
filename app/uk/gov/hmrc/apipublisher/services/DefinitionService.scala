@@ -89,10 +89,10 @@ class DefinitionService @Inject()(
       oasVD.map { oas =>
         (raml, oas) match {
           case (Nil, Nil)                                                                   => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (ramlEndpoints, Nil)                                                         => logger.info(s"${describeService} : Using RAML to publish"); (ramlEndpoints, RAML)
-          case (Nil, oasEndpoints)                                                          => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, OAS)
-          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints.toSet == oasEndpoints.toSet)  => logger.info(s"${describeService} : Both RAML and OAS match for publishing"); (oasEndpoints, OAS)
-          case (ramlEndpoints, oasEndpoints)                                                => logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); (ramlEndpoints, RAML)
+          case (ramlEndpoints, Nil)                                                         => logger.info(s"${describeService} : Using RAML to publish"); (ramlEndpoints, ApiVersionSource.RAML)
+          case (Nil, oasEndpoints)                                                          => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, ApiVersionSource.OAS)
+          case (ramlEndpoints, oasEndpoints) if(ramlEndpoints.toSet == oasEndpoints.toSet)  => logger.info(s"${describeService} : Both RAML and OAS match for publishing"); (oasEndpoints, ApiVersionSource.OAS)
+          case (ramlEndpoints, oasEndpoints)                                                => logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); (ramlEndpoints, ApiVersionSource.RAML)
         }
       }
     }

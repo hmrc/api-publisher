@@ -23,14 +23,18 @@ import uk.gov.hmrc.http.UnprocessableEntityException
 sealed trait ApiVersionSource {
   def asText: String
 }
-case object RAML extends ApiVersionSource {
-  val asText = "RAML"
-}
-case object OAS extends ApiVersionSource {
-  val asText = "OAS"
-}
 
 object ApiVersionSource {
+  case object RAML extends ApiVersionSource {
+    val asText = "RAML"
+  }
+  case object OAS extends ApiVersionSource {
+    val asText = "OAS"
+  }
+
+  case object UNKNOWN extends ApiVersionSource {
+    val asText = "UNKNOWN"
+  }
 
   implicit val format: Format[ApiVersionSource] = new Format[ApiVersionSource] {
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
