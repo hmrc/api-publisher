@@ -260,6 +260,14 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       ok("Done")
     }
+  
+    "load the OAS file when multifile OAS is found and is a valid model" in new Setup {
+      when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/multifile/v1/application.yaml")
+
+      await(connector.getOAS(testService, "1.0"))
+
+      ok("Done")
+    }
 
     "handle an invalid OAS file" in new Setup {
       when(oasFileLocator.locationOf(*,*)).thenReturn("/input/oas/bad-application.yaml")

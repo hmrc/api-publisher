@@ -1,0 +1,13 @@
+components:
+  parameters:
+    correlationHeader:
+      name: X-Correlation-Id
+      in: header
+      schema:
+        type: string
+      required: true
+  headers:
+    correlationHeader:
+      schema:
+        type: string
+      required: true

@@ -15,13 +15,14 @@ object AppDependencies {
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
     "org.typelevel"             %% "cats-core"                    % "2.6.1",
     "uk.gov.hmrc"               %% "play-json-union-formatter"    % "1.15.0-play-28",
-    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.0.33" excludeAll(
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-annotations"),
-      ExclusionRule("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
-      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
-    ),
+    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
+      excludeAll(
+        ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
+        ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
+        ExclusionRule("com.fasterxml.jackson.core", "jackson-annotations"),
+        ExclusionRule("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
+        ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
+      ),
     "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
     "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
     "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
