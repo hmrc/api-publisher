@@ -71,8 +71,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       res shouldBe "/helloextra/world"
     }
 
-
-    "read a simple OAS file gives one path" in new Setup {
+    "read a simple OAS file that gives one path" in new Setup {
       val sample: OpenAPI = generate("""
         |  openapi: 3.0.3
         |
@@ -543,6 +542,256 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
 
       get.authType shouldBe "APPLICATION"
     }
+  
+    "reject a file with no security on endpoint or default" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |""".stripMargin)
+      
+      intercept[IllegalStateException] {
+        val (result :: Nil) = parser.apply(None)(sample) 
+      }.getMessage shouldBe "Cannot have an endpoint with no explicit security" 
+    }
+
+    "accept a file with no security on endpoint but a default" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |  security:
+        |  - userScheme:
+        |    - read:hello
+        |
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |""".stripMargin)
+      
+      
+      val (result :: Nil) = parser.apply(None)(sample) 
+      
+      result.authType shouldBe "USER"
+    }
+
+    "accept a file with security on endpoint and irrelevant default" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |  security:
+        |  - userScheme:
+        |    - read:hello
+        |
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - {}
+        |""".stripMargin)
+      
+      
+      val (result :: Nil) = parser.apply(None)(sample) 
+      
+      result.authType shouldBe "OPEN"
+    }
+
+
+    "reject a file with multiple security requirements on endpoint" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - {}
+        |        - userScheme:
+        |          - read:hello
+        |""".stripMargin)
+      
+      intercept[IllegalStateException] {
+        val (result :: Nil) = parser.apply(None)(sample) 
+      }.getMessage shouldBe "API Platform only supports one security requirement per endpoint"
+    }
+
+    
+    "reject a file with security scheme name that does not exist" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - noSuchScheme:
+        |          - read:hello
+        |""".stripMargin)
+      
+      intercept[IllegalStateException] {
+        val (result :: Nil) = parser.apply(None)(sample) 
+      }.getMessage shouldBe "Failed to find scheme of name noSuchScheme in component.securitySchemes"
+    }
+
+    "reject a file with multiple scopes for a security requirements on endpoint" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |              write:hello: write hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - userScheme:
+        |          - read:hello
+        |          - write:hello
+        |""".stripMargin)
+      
+      intercept[IllegalStateException] {
+        val (result :: Nil) = parser.apply(None)(sample) 
+      }.getMessage shouldBe "API Platform only supports one scope per security requirement for scheme: userScheme" 
+    }
+
+
+    "reject a file with invalid scopes for a security scheme on endpoint" in new Setup {
+      val sample: OpenAPI = generate("""
+        |  openapi: 3.0.3
+        |
+        |  info:
+        |    version: 1.0.0
+        |    title: Hello World
+        |    
+        |  components:
+        |    securitySchemes:
+        |      userScheme:
+        |        type: oauth2
+        |        description: HMRC supports OAuth 2.0 for authenticating User-restricted API requests
+        |        flows: 
+        |          authorizationCode:
+        |            authorizationUrl: https://api.service.hmrc.gov.uk/oauth/authorize
+        |            tokenUrl: https://api.service.hmrc.gov.uk/oauth/token
+        |            refreshUrl: https://api.service.hmrc.gov.uk/oauth/refresh
+        |            scopes:
+        |              read:hello: access hello user
+        |              write:hello: write hello user
+        |  paths:
+        |    /hello/world:
+        |      get:
+        |        responses:
+        |          200:
+        |            description: OK Response
+        |        security:
+        |        - userScheme:
+        |          - complete:bobbins
+        |""".stripMargin)
+      
+      intercept[IllegalStateException] {
+        val (result :: Nil) = parser.apply(None)(sample) 
+      }.getMessage shouldBe "Failed to find scope complete:bobbins in scheme: userScheme" 
+    }    
   }
 }
 
