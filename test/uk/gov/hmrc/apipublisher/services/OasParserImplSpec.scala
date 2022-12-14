@@ -86,6 +86,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(None)(sample) 
@@ -109,6 +111,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(Some("hello"))(sample) 
@@ -133,6 +137,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(None)(sample) 
@@ -157,10 +163,14 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |      put:
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
         // Methods ordered alpahbetically
@@ -187,11 +197,15 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |    /hello/user:
         |      put:
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (get :: put :: Nil) = parser.apply(None)(sample) 
@@ -223,6 +237,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(None)(sample) 
@@ -256,6 +272,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(None)(sample) 
@@ -291,6 +309,8 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
       val (result :: Nil) = parser.apply(None)(sample) 
@@ -324,10 +344,14 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |      put:
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
         // Methods ordered alpahbetically
@@ -371,10 +395,14 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |      put:
         |        responses:
         |          200:
         |            description: OK Response
+        |        security:
+        |        - {}
         |""".stripMargin)
       
         // Methods ordered alpahbetically

@@ -97,6 +97,8 @@ paths:
       - api-example-microservice
       parameters:
       - $ref: '#/components/parameters/acceptHeaderZ'
+      security:
+      - {}
       responses:
         200:
           description: "OK Response"

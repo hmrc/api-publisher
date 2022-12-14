@@ -25,11 +25,13 @@ import scala.collection.mutable.Buffer
 import io.swagger.v3.oas.models.parameters.Parameter
 import scala.collection.JavaConverters._
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.oas.models.security.SecurityRequirement
 
 object SOpenAPI {
   object Helpers {
     implicit class FromNullableList[A](list: java.util.List[A]) {
-      def fromNullableList: List[A] = Option(list).map(_.asScala.toList).getOrElse(List.empty)
+      def asOptionOfList: Option[List[A]] = Option(list).map(_.asScala.toList)
+      def fromNullableList: List[A] = asOptionOfList.getOrElse(List.empty)
     }
 
     implicit class AsImmutableMapSyntax[A,B](wrap: java.util.Map[A,B]) {
@@ -103,16 +105,29 @@ case class SOperation(inner: Operation) {
   // We only allow ONE scheme at present in Api Platform
   // We only allow OAuth2 so this is a scheme name and a list of scopes
   lazy val schemeAndScope: Option[(String, Option[String])] = {
-    inner.getSecurity().fromNullableList.map(_.asScalaListMap.map { case (k,v) => k -> v.asScala.toList }) match {
-      case Nil               => None
-      case (scheme :: Nil)   => 
-        val (schemeName, scopes) = scheme.iterator.toList.head
-        scopes match {
-          case Nil               => Some((schemeName, None))
-          case (scope :: Nil)    => Some((schemeName, Some(scope)))
-          case (first :: second) => throw new IllegalStateException("API Platform only supports one scope per endpoint")
+    val listOfSecurityRequirements = inner.getSecurity().fromNullableList
+
+    def changeSecurityRequirementToSchemesAndScopes(in: SecurityRequirement): List[(String, List[String])] =
+      in.asScalaListMap.toList.map {
+        case (name,scopes) => (name -> scopes.asScala.toList) 
+    }
+
+    listOfSecurityRequirements match {
+      case Nil => throw new IllegalStateException("Cannot have an endpoint with no explicit security")
+      case (securityRequirement: SecurityRequirement) :: Nil => {
+        changeSecurityRequirementToSchemesAndScopes(securityRequirement) match {
+          case Nil => None  // represents the `- {}` security specification
+          case (schemeName, scopes) :: Nil => {
+            scopes match {
+              case Nil               => Some((schemeName, None))
+              case (scope :: Nil)    => Some((schemeName, Some(scope)))
+              case _ => throw new IllegalStateException("API Platform only supports one scope per security scheme")
+            }
+          }
+          case _ => throw new IllegalStateException("API Platform only supports one scheme per endpoint")
         }
-      case (first :: second) => throw new IllegalStateException("API Platform only supports one security scheme per endpoint")
+      }
+      case _ => throw new IllegalStateException("API Platform only supports one security requirement per endpoint")
     }
   }
 }
