@@ -53,7 +53,7 @@ object SOpenAPI {
 }
 
 final case class ParameterIn(value: String) {
-  require(List("query", "header", "path", "cookie") contains value)
+  require(List("query", "header", "path", "cookie") contains value, s"Value (${Option(value).getOrElse("NULL")}) is not a valid parameter type")
 }
 
 final case class ParameterName(value: String) extends AnyVal
