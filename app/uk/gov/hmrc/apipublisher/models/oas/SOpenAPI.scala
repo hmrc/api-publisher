@@ -25,11 +25,13 @@ import scala.collection.mutable.Buffer
 import io.swagger.v3.oas.models.parameters.Parameter
 import scala.collection.JavaConverters._
 import io.swagger.v3.oas.models.security.SecurityScheme
+import io.swagger.v3.oas.models.security.SecurityRequirement
 
 object SOpenAPI {
   object Helpers {
     implicit class FromNullableList[A](list: java.util.List[A]) {
-      def fromNullableList: List[A] = Option(list).map(_.asScala.toList).getOrElse(List.empty)
+      def asOptionOfList: Option[List[A]] = Option(list).map(_.asScala.toList)
+      def fromNullableList: List[A] = asOptionOfList.getOrElse(List.empty)
     }
 
     implicit class AsImmutableMapSyntax[A,B](wrap: java.util.Map[A,B]) {
@@ -60,21 +62,36 @@ final case class ParameterKey(name: ParameterName, in: ParameterIn)
 
 
 final case class SOpenAPI(inner: OpenAPI) {
-  lazy val paths: SPaths = SPaths(inner.getPaths)
   lazy val components: Option[SComponents] = Option(inner.getComponents()).map(SComponents)
+  
+  lazy val securitySchemes: Map[String, SSecurityScheme] =
+    components
+    .map(_.securitySchemes)
+    .getOrElse(Map.empty)
+
+  lazy val defaultSecurityRequirements = inner.getSecurity().fromNullableList
+
+  lazy val paths: SPaths = SPaths(inner.getPaths, securitySchemes, defaultSecurityRequirements)
 }
 
-case class SPaths(inner: Paths) {
-  lazy val pathItems: ListMap[String, SPathItem] = inner.asScalaListMap.map { case (k,v) => k -> (SPathItem(v)) }
+case class SPaths(pathItems: ListMap[String, SPathItem])
+
+object SPaths {
+  def apply(inner: Paths, securitySchemes: Map[String, SSecurityScheme], defaultSecurityRequirements: List[SecurityRequirement]): SPaths = {
+    SPaths(inner.asScalaListMap.map { case (k,v) => k -> (SPathItem(v, securitySchemes, defaultSecurityRequirements)) })
+  }
 }
 
-case class SPathItem(inner: PathItem) {
-  lazy val summary: Option[String] = Option(inner.getSummary)
+case class SPathItem(summary: Option[String], ops: ListMap[String, SOperation])
 
-  private def add(method: Method, op: Operation) = 
-    Option(op).fold(ListMap.empty[Method,SOperation])(v => ListMap(method -> SOperation(v)))
+object SPathItem {
+  def apply(inner: PathItem, securitySchemes: Map[String, SSecurityScheme], defaultSecurityRequirements: List[SecurityRequirement]): SPathItem = {
+    val summary: Option[String] = Option(inner.getSummary)
 
-  lazy val ops: ListMap[String, SOperation] = 
+    def add(method: Method, op: Operation) = 
+      Option(op).fold(ListMap.empty[Method,SOperation])(v => ListMap(method -> SOperation(v, securitySchemes, defaultSecurityRequirements)))
+
+    val ops: ListMap[String, SOperation] = 
     (
       add(Method.DELETE, inner.getDelete) ++
       add(Method.GET, inner.getGet) ++
@@ -85,12 +102,73 @@ case class SPathItem(inner: PathItem) {
       add(Method.PUT, inner.getPut)
     )
     .map { case (k,v) => k.toValue.toUpperCase -> v }
+
+    SPathItem(summary, ops)
+  }
 }
 
-case class SOperation(inner: Operation) {
-  lazy val summary: Option[String] = Option(inner.getSummary)
-  lazy val parameters: ListMap[ParameterKey, SParameter] = SParameters(inner.getParameters.fromNullableList)
-  lazy val queryParameters: ListMap[ParameterName, SParameter] = 
+sealed trait SSecurityRequirement
+
+case object OpenSSecurityRequirement extends SSecurityRequirement
+case class OauthSSecurityRequirement(schemeName: String, scheme: SSecurityScheme, scope: Option[String]) extends SSecurityRequirement
+
+object SSecurityRequirement {
+  def apply(listOfSecurityRequirements: java.util.List[SecurityRequirement], securitySchemes: Map[String, SSecurityScheme], defaultSecurityRequirements: List[SecurityRequirement]): SSecurityRequirement = {
+    // Multiple security schemes allowed by OAS 3, for which there is a map of key values of config
+    // We only allow ONE scheme at present in Api Platform
+    // We only allow OAuth2 so this is a scheme name and a list of scopes
+    def changeSecurityRequirementToSchemesAndScopes(in: SecurityRequirement): List[(String, List[String])] =
+      in.asScalaListMap.toList.map {
+        case (name,scopes) => (name -> scopes.asScala.toList) 
+    }
+
+    def lookupSchemeName(schemeName: String): SSecurityScheme = {
+      securitySchemes.get(schemeName) match {
+        case None => throw new IllegalStateException(s"Failed to find scheme of name $schemeName in component.securitySchemes")
+        case Some(scheme) => scheme
+      }
+    }
+
+    def validateScope(scheme: SSecurityScheme, schemeName: String, scope: String): Unit = {
+      if( ! scheme.scopes.contains(scope))
+        throw new IllegalStateException(s"Failed to find scope $scope in scheme: ${schemeName}")
+    }
+
+    val listOrDefault = 
+      listOfSecurityRequirements.fromNullableList match {
+        case Nil => defaultSecurityRequirements
+        case head :: tail => head :: tail
+      }
+      
+     val securityRequirement = listOrDefault match {
+        case Nil => throw new IllegalStateException("Cannot have an endpoint with no explicit security")
+        case (securityRequirement: SecurityRequirement) :: Nil => {
+          changeSecurityRequirementToSchemesAndScopes(securityRequirement) match {
+            case Nil => OpenSSecurityRequirement
+            case (schemeName, scopes) :: Nil => {
+              val scheme = lookupSchemeName(schemeName)
+              scopes match {
+                case Nil               => OauthSSecurityRequirement(schemeName, scheme, None)
+                case (scope :: Nil)    => validateScope(scheme, schemeName, scope); OauthSSecurityRequirement(schemeName, scheme, Some(scope))
+                case _ => throw new IllegalStateException(s"API Platform only supports one scope per security requirement for scheme: $schemeName")
+              }
+            }
+            case _ => throw new IllegalStateException("API Platform only supports one scheme per endpoint")
+          }
+        }
+        case _ => throw new IllegalStateException("API Platform only supports one security requirement per endpoint")
+      }
+    securityRequirement
+  }
+}
+
+case class SOperation(summary: Option[String], parameters: ListMap[ParameterKey, SParameter], queryParameters: ListMap[ParameterName, SParameter], securityRequirement: SSecurityRequirement)
+
+object SOperation {
+  def apply(inner: Operation, securitySchemes: Map[String, SSecurityScheme], defaultSecurityRequirements: List[SecurityRequirement]): SOperation = {
+    val summary: Option[String] = Option(inner.getSummary)
+    val parameters: ListMap[ParameterKey, SParameter] = SParameters(inner.getParameters.fromNullableList)
+    val queryParameters: ListMap[ParameterName, SParameter] = 
     parameters.filter {
       case (ParameterKey(_, ParameterIn("query")), _) => true
       case _ => false
@@ -99,21 +177,9 @@ case class SOperation(inner: Operation) {
       case (ParameterKey(name, ParameterIn("query")), p: SParameter) => (name -> p)
     }
 
-  // Multiple security schemes allowed by OAS 3, for which there is a map of key values of config
-  // We only allow ONE scheme at present in Api Platform
-  // We only allow OAuth2 so this is a scheme name and a list of scopes
-  lazy val schemeAndScope: Option[(String, Option[String])] = {
-    inner.getSecurity().fromNullableList.map(_.asScalaListMap.map { case (k,v) => k -> v.asScala.toList }) match {
-      case Nil               => None
-      case (scheme :: Nil)   => 
-        val (schemeName, scopes) = scheme.iterator.toList.head
-        scopes match {
-          case Nil               => Some((schemeName, None))
-          case (scope :: Nil)    => Some((schemeName, Some(scope)))
-          case (first :: second) => throw new IllegalStateException("API Platform only supports one scope per endpoint")
-        }
-      case (first :: second) => throw new IllegalStateException("API Platform only supports one security scheme per endpoint")
-    }
+    val securityRequirement = SSecurityRequirement(inner.getSecurity(), securitySchemes, defaultSecurityRequirements)
+
+    SOperation(summary, parameters, queryParameters, securityRequirement)
   }
 }
 
@@ -147,7 +213,9 @@ case class SComponents(
   }
 }
 
-sealed trait SSecurityScheme
+sealed trait SSecurityScheme {
+  def scopes: Set[String]
+}
 case class OAuth2AuthorizationCodeSecurityScheme(scopes: Set[String]) extends SSecurityScheme
 case class OAuth2ClientCredentialsSecurityScheme(scopes: Set[String]) extends SSecurityScheme
 

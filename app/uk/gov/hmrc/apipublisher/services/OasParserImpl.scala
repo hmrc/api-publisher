@@ -38,11 +38,6 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
     try {
       logger.info("Starting OpenAPI to Endpoints processing...")
       val sopenAPI = SOpenAPI(openAPI)
-
-      val securitySchemes: Map[String, SSecurityScheme] =
-        sopenAPI.components
-          .map(_.securitySchemes)
-          .getOrElse(Map.empty)
     
       val result = sopenAPI.paths.pathItems.flatMap {
         case (urlPattern, sPathItem) =>
@@ -59,27 +54,16 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
                   case list => Some(list)
                 }
 
-              val (scheme, scope) = 
-                  (
-                    for {
-                      (schemeName, scope) <- operation.schemeAndScope
-                      scheme              <- securitySchemes.get(schemeName)
-                    }
-                    yield (Some(scheme), scope)
-                  ).getOrElse( (None, None) )
-
-              val authType = 
-                (
-                  for {
-                    scheme <- scheme
-                    auth <- scheme match {
-                      case _: OAuth2AuthorizationCodeSecurityScheme => Some("USER")
-                      case _: OAuth2ClientCredentialsSecurityScheme => Some("APPLICATION")
-                      case _ => Some("NONE")
+              val (authType: String, scope: Option[String]) = 
+                operation.securityRequirement match {
+                  case OpenSSecurityRequirement => ("OPEN", None)
+                  case OauthSSecurityRequirement(schemaName, scheme, oscope) => {
+                    scheme match {
+                      case _: OAuth2AuthorizationCodeSecurityScheme => ("USER", oscope)
+                      case _: OAuth2ClientCredentialsSecurityScheme => ("APPLICATION", oscope)
                     }
                   }
-                  yield auth
-                ).getOrElse("NONE")
+                }
 
               Endpoint(
                 trimContext(context)(urlPattern), 

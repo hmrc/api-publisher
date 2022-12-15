@@ -47,8 +47,5 @@ lazy val microservice = (project in file("."))
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution:= false
   )
-  .settings(
-    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
-  )
   .settings(scalacOptions ++= Seq("-Ypartial-unification"))
 
