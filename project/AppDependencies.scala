@@ -3,18 +3,18 @@ import sbt._
 
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
-  lazy val bootstrapVersion = "5.24.0"
+  lazy val bootstrapVersion = "7.12.0"
   lazy val jacksonVersion = "2.12.6"
+  lazy val mongoVersion = "0.74.0"
 
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"               %% "bootstrap-backend-play-28"    % bootstrapVersion,
     "uk.gov.hmrc"               %% "raml-tools"                   % "1.20.0",
-    "uk.gov.hmrc.mongo"         %% "hmrc-mongo-play-28"           % "0.71.0",
+    "uk.gov.hmrc.mongo"         %% "hmrc-mongo-play-28"           % mongoVersion,
     "org.json"                  %  "json"                         % "20210307",
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.8",
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
     "org.typelevel"             %% "cats-core"                    % "2.6.1",
-    "uk.gov.hmrc"               %% "play-json-union-formatter"    % "1.15.0-play-28",
     "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
       excludeAll(
         ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
@@ -32,7 +32,7 @@ object AppDependencies {
 
   private lazy val testDependencies = Seq(
     "uk.gov.hmrc"               %% "bootstrap-test-play-28"       % bootstrapVersion          % "test,it",
-    "uk.gov.hmrc.mongo"         %% "hmrc-mongo-test-play-28"      % "0.71.0"                  % "test,it",
+    "uk.gov.hmrc.mongo"         %% "hmrc-mongo-test-play-28"      % mongoVersion              % "test,it",
     "org.scalaj"                %% "scalaj-http"                  % "2.4.2"                   % "test,it",
     "org.mockito"               %% "mockito-scala-scalatest"      % "1.16.46"                 % "test,it",
     "com.typesafe.play"         %% "play-test"                    % PlayVersion.current       % "test,it",
