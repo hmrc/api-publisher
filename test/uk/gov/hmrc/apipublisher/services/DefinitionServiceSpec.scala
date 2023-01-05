@@ -148,7 +148,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
-      primeOasFor("1.0", helloEndpoint.copy(authType = "OPEN"))
+      primeOasFor("1.0", helloEndpoint.copy(authType = "NONE"))
       primeRamlFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
