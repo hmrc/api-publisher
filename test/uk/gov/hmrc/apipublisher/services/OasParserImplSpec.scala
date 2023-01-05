@@ -639,7 +639,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       
       val (result :: Nil) = parser.apply(None)(sample) 
       
-      result.authType shouldBe "OPEN"
+      result.authType shouldBe "NONE"
     }
 
 
