@@ -140,8 +140,9 @@ object SSecurityRequirement {
     }
 
     def validateScope(scheme: SSecurityScheme, schemeName: String, scope: String): Unit = {
-      if (!scheme.scopes.contains(scope))
+      if (!scheme.scopes.contains(scope)) {
         throw new IllegalStateException(s"Failed to find scope $scope in scheme: ${schemeName}")
+      }
     }
 
     val listOrDefault =

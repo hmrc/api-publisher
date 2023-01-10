@@ -52,9 +52,9 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
   }
 
   def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    if (fieldDefinitions.isEmpty)
+    if (fieldDefinitions.isEmpty) {
       Future.successful(None)
-    else {
+    } else {
       val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
       val putUrl  = s"$serviceBaseUrl/validate"
 

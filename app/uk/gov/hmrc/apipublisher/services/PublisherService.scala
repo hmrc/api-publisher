@@ -78,10 +78,11 @@ class PublisherService @Inject() (
 
   def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean = true)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
     def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
-      if (validateApiDefinition)
+      if (validateApiDefinition) {
         apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
-      else
+      } else {
         successful(None)
+      }
     }
 
     def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] = {
