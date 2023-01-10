@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.models.oas
 
-import scala.collection.immutable.ListMap
 import java.util.function.BiConsumer
-import io.swagger.v3.oas.models._
-import uk.gov.hmrc.apipublisher.models.oas.SOpenAPI.Helpers._
-import io.swagger.models.Method
-import scala.collection.mutable.Buffer
-import io.swagger.v3.oas.models.parameters.Parameter
 import scala.collection.JavaConverters._
-import io.swagger.v3.oas.models.security.SecurityScheme
-import io.swagger.v3.oas.models.security.SecurityRequirement
+import scala.collection.immutable.ListMap
+import scala.collection.mutable.Buffer
+
+import io.swagger.models.Method
+import io.swagger.v3.oas.models._
+import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
+
+import uk.gov.hmrc.apipublisher.models.oas.SOpenAPI.Helpers._
 
 object SOpenAPI {
 

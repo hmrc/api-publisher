@@ -16,13 +16,16 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import utils.HmrcSpec
+import scala.collection.JavaConverters._
+
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
-import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import scala.collection.JavaConverters._
+import utils.HmrcSpec
+
 import uk.gov.hmrc.ramltools.domain.QueryParam
+
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
 

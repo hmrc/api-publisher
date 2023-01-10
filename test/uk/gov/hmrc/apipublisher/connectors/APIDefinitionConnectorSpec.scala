@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source.fromURL
+
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -23,16 +26,13 @@ import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import utils.AsyncHmrcSpec
+
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers.{CONTENT_TYPE, JSON}
-import uk.gov.hmrc.http.HeaderCarrier
+import play.api.test.Helpers.{CONTENT_TYPE, JSON, _}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.HttpClient
-import utils.AsyncHmrcSpec
-import play.api.test.Helpers._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source.fromURL
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 

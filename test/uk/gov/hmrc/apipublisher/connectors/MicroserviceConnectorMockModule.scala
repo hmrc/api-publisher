@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.apipublisher.models.ApiAndScopes
+
 import io.swagger.v3.oas.models.OpenAPI
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apipublisher.models.ApiAndScopes
 
 trait MicroserviceConnectorMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>

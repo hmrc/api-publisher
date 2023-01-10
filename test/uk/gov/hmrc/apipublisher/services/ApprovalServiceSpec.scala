@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import uk.gov.hmrc.apipublisher.wiring.AppContext
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.successful
+
+import utils.AsyncHmrcSpec
+
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
-import utils.AsyncHmrcSpec
-import scala.concurrent.Future.successful
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 class ApprovalServiceSpec extends AsyncHmrcSpec {
 

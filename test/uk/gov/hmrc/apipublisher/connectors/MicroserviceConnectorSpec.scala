@@ -16,36 +16,36 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import java.io.FileNotFoundException
+import java.{util => ju}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.io.Source
+
+import akka.actor.ActorSystem
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import org.everit.json.schema.ValidationException
-import org.scalatest.BeforeAndAfterAll
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.libs.json.Json.parse
-import play.api.libs.json.{JsArray, JsObject}
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-import utils.AsyncHmrcSpec
-import play.api.test.Helpers._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, SwaggerParseResult}
-import java.{util => ju}
-import scala.concurrent.Await
-import akka.actor.ActorSystem
-import scala.concurrent.duration._
-import java.io.FileNotFoundException
+import org.everit.json.schema.ValidationException
+import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import utils.AsyncHmrcSpec
+
+import play.api.libs.json.Json.parse
+import play.api.libs.json.{JsArray, JsObject}
+import play.api.test.Helpers._
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -96,7 +96,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
   trait SetupWithTimedOutParser extends BaseSetup {
     val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
 
-    val oasParser      = new SwaggerParserExtension {
+    val oasParser = new SwaggerParserExtension {
 
       override def readLocation(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = {
         Thread.sleep(15000)

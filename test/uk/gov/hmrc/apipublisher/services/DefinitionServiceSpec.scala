@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import utils.AsyncHmrcSpec
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
-import uk.gov.hmrc.http.HeaderCarrier
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models.ApiAndScopes
-import uk.gov.hmrc.ramltools.domain.Endpoint
 import scala.concurrent.Future.successful
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import utils.AsyncHmrcSpec
+
+import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.ramltools.domain.Endpoint
+
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 

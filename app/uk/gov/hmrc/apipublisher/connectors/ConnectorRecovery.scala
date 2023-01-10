@@ -17,8 +17,7 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import play.api.http.Status.UNPROCESSABLE_ENTITY
-import uk.gov.hmrc.http.UnprocessableEntityException
-import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.{UnprocessableEntityException, UpstreamErrorResponse}
 
 trait ConnectorRecovery {
 

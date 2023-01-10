@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import uk.gov.hmrc.apipublisher.models.AccessRequirementsFormatters
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
-import uk.gov.hmrc.apipublisher.models.FieldDefinition
-import uk.gov.hmrc.apipublisher.models.FieldDefinitionType
 import utils.HmrcSpec
+
+import play.api.libs.json._
+
+import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
+import uk.gov.hmrc.apipublisher.models.{AccessRequirementsFormatters, FieldDefinition, FieldDefinitionType, _}
 
 class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFormatters {
 

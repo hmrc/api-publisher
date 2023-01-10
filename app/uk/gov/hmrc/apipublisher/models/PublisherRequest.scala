@@ -17,8 +17,9 @@
 package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models.APICategory.{formatAPICategory, APICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
+
+import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 
 sealed trait ApiVersionSource {
   def asText: String
@@ -30,7 +31,7 @@ object ApiVersionSource {
     val asText = "RAML"
   }
 
-  case object OAS  extends ApiVersionSource {
+  case object OAS extends ApiVersionSource {
     val asText = "OAS"
   }
 

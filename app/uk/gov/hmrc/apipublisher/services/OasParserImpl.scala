@@ -17,12 +17,14 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.Singleton
-import io.swagger.v3.oas.models.OpenAPI
-import uk.gov.hmrc.ramltools.domain.Endpoint
-import uk.gov.hmrc.apipublisher.models.oas._
-import uk.gov.hmrc.ramltools.domain.QueryParam
-import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import scala.util.control.NonFatal
+
+import io.swagger.v3.oas.models.OpenAPI
+
+import uk.gov.hmrc.ramltools.domain.{Endpoint, QueryParam}
+
+import uk.gov.hmrc.apipublisher.models.oas._
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
 class OasParserImpl() extends OasVersionDefinitionService.OasParser with ApplicationLogger {

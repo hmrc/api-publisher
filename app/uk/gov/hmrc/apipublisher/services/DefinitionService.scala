@@ -16,16 +16,19 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.http.HeaderCarrier
+import javax.inject.Inject
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+
 import cats.data.OptionT
 import cats.implicits._
+
 import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.domain.Endpoint
-import javax.inject.Inject
+
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object DefinitionService {

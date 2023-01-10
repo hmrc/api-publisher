@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import utils.AsyncHmrcSpec
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
-import uk.gov.hmrc.http.HeaderCarrier
-import play.api.libs.json._
+
 import io.swagger.v3.oas.models.OpenAPI
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import utils.AsyncHmrcSpec
+
+import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.domain.Endpoint
+
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))

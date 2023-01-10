@@ -18,24 +18,26 @@ package uk.gov.hmrc.apipublisher.controllers
 
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
+
 import akka.stream.Materializer
 import org.mockito.BDDMockito.given
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import utils.AsyncHmrcSpec
+
 import play.api.libs.json._
 import play.api.mvc._
+import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
+
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services._
 import uk.gov.hmrc.apipublisher.wiring.AppContext
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import utils.AsyncHmrcSpec
-import play.api.test.Helpers._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 
@@ -50,7 +52,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   private val scopes       = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
   private val apiAndScopes = ApiAndScopes(api, scopes)
 
-  private val employeeServiceApproval   = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
+  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
 
   private val marriageAllowanceApproval =
     APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))

@@ -16,34 +16,34 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import java.io.InputStream
+import java.io.{FileNotFoundException, InputStream}
 import java.nio.charset.StandardCharsets.UTF_8
-import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.util.Try
+
+import akka.actor.ActorSystem
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
+import io.swagger.v3.parser.core.models.ParseOptions
 import org.apache.commons.io.IOUtils
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
-import uk.gov.hmrc.apipublisher.models.APICategory.{categoryMap, OTHER}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse}
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpReadsOption, HttpResponse}
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
-import scala.concurrent.{blocking, ExecutionContext, Future}
-import scala.util.Try
-import io.swagger.v3.oas.models.OpenAPI
-import scala.collection.JavaConverters._
-import io.swagger.v3.parser.core.models.ParseOptions
+import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
-import akka.actor.ActorSystem
-import scala.concurrent.duration.FiniteDuration
-import java.io.FileNotFoundException
 
 object MicroserviceConnector {
 

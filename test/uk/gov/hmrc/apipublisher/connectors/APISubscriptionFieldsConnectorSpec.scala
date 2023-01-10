@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.io.Source.fromURL
+
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -23,20 +27,16 @@ import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import utils.AsyncHmrcSpec
+
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.test.Helpers._
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-import utils.AsyncHmrcSpec
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.io.Source.fromURL
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
@@ -48,10 +48,10 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
   val apiContext           = "some/api/context"
   val urlEncodedApiContext = "some%2Fapi%2Fcontext"
 
-  val version1                                      = "1.0"
-  val version2                                      = "2.0"
-  val fieldDefinitionsJString1                      = fromURL(getClass.getResource("/input/field-definitions_1.json")).mkString
-  val fieldDefinitionsJString2                      = fromURL(getClass.getResource("/input/field-definitions_2.json")).mkString
+  val version1                 = "1.0"
+  val version2                 = "2.0"
+  val fieldDefinitionsJString1 = fromURL(getClass.getResource("/input/field-definitions_1.json")).mkString
+  val fieldDefinitionsJString2 = fromURL(getClass.getResource("/input/field-definitions_2.json")).mkString
 
   val apiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
     models.ApiFieldDefinitions(apiContext, version1, (Json.parse(fieldDefinitionsJString1) \ "fieldDefinitions").as[Seq[FieldDefinition]]),

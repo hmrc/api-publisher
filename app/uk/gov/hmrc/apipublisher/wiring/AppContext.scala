@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apipublisher.wiring
 
 import javax.inject.Inject
+
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 

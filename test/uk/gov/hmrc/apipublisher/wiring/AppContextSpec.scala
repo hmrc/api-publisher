@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apipublisher.wiring
 
+import utils.AsyncHmrcSpec
+
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import utils.AsyncHmrcSpec
 
 class AppContextSpec extends AsyncHmrcSpec {
 

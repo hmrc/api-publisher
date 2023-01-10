@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.config
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.duration.FiniteDuration
+
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.apipublisher.connectors._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+
+import uk.gov.hmrc.apipublisher.connectors._
 
 class ConfigurationModule extends Module {
 

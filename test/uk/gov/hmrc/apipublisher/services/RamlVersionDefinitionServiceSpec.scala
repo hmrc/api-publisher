@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HeaderNames.xRequestId
+import scala.util.{Failure, Try}
+
 import utils.AsyncHmrcSpec
 
+import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.ramltools.RAML
+import uk.gov.hmrc.ramltools.domain.{Endpoint, Endpoints, QueryParam}
 import uk.gov.hmrc.ramltools.loaders.ClasspathRamlLoader
 
-import scala.util.Try
-import uk.gov.hmrc.ramltools.domain.Endpoints
-import uk.gov.hmrc.ramltools.domain.Endpoint
-import uk.gov.hmrc.ramltools.domain.QueryParam
-import scala.util.Failure
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
 class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {

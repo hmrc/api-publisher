@@ -18,20 +18,15 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.apipublisher.models.FieldDefinition
-import play.api.libs.json.JsString
-import play.api.libs.json.JsValue
-import uk.gov.hmrc.http.UpstreamErrorResponse
+
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.UnprocessableEntityException
+import play.api.libs.json.{JsString, JsValue}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UnprocessableEntityException, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
 class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)

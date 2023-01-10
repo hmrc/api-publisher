@@ -59,7 +59,7 @@ sealed trait DevhubAccessLevel {
   def satisfiesRequirement(requirement: DevhubAccessRequirement): Boolean = DevhubAccessLevel.satisfies(requirement)(this)
 }
 
-object DevhubAccessLevel       {
+object DevhubAccessLevel {
   case object Developer     extends DevhubAccessLevel
   case object Admininstator extends DevhubAccessLevel
 

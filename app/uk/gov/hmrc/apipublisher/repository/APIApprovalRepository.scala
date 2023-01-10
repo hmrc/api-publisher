@@ -17,15 +17,18 @@
 package uk.gov.hmrc.apipublisher.repository
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.mongo.MongoComponent
+import scala.concurrent.{ExecutionContext, Future}
+
+import com.mongodb.client.model.ReplaceOptions
+import org.mongodb.scala.model.Filters.{equal, exists, or}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Filters.{equal, exists, or}
+
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
 import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import com.mongodb.client.model.ReplaceOptions
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

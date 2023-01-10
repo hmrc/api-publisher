@@ -17,17 +17,14 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.UpstreamErrorResponse
+
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UnprocessableEntityException, UpstreamErrorResponse}
+
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import uk.gov.hmrc.http.UnprocessableEntityException
 
 @Singleton
 class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext)

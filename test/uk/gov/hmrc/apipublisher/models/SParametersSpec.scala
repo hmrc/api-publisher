@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import utils.HmrcSpec
 import io.swagger.v3.oas.models.parameters._
+import utils.HmrcSpec
+
 import uk.gov.hmrc.apipublisher.models.oas._
 
 class SParametersSpec extends HmrcSpec {

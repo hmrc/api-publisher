@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.services
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
+
+import utils.AsyncHmrcSpec
+
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import utils.AsyncHmrcSpec
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
 
 class PublisherServiceSpec extends AsyncHmrcSpec {
 
@@ -42,7 +44,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
   val apiWithoutFieldDefinitions: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
   val apiAndScopesWithoutFieldDefinitions: ApiAndScopes = ApiAndScopes(apiWithoutFieldDefinitions, scopes)
 
-  val apiContext                                            = "test"
+  val apiContext = "test"
 
   val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
     models.ApiFieldDefinitions(apiContext, "1.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),

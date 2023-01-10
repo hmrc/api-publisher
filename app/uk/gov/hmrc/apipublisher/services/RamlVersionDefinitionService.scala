@@ -17,14 +17,14 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.ramltools.RAML
-import uk.gov.hmrc.ramltools.domain.Endpoints
-
 import scala.concurrent.Future
-import uk.gov.hmrc.ramltools.domain.Endpoint
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
 import scala.util.Try
+
+import uk.gov.hmrc.ramltools.RAML
+import uk.gov.hmrc.ramltools.domain.{Endpoint, Endpoints}
+
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
 @Singleton
 class RamlVersionDefinitionService @Inject() (microserviceConnector: MicroserviceConnector) extends DefinitionService.VersionDefinitionService {

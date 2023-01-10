@@ -19,8 +19,10 @@ package uk.gov.hmrc.apipublisher.models
 import cats.data.{NonEmptyList => NEL}
 import julienrf.json.derived
 import julienrf.json.derived.TypeTagSetting
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
 import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
 
 object NonEmptyListOps {
