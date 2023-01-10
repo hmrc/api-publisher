@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
+import uk.gov.hmrc.apipublisher.models.APICategory.{formatAPICategory, APICategory}
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 sealed trait ApiVersionSource {
@@ -25,10 +25,12 @@ sealed trait ApiVersionSource {
 }
 
 object ApiVersionSource {
+
   case object RAML extends ApiVersionSource {
     val asText = "RAML"
   }
-  case object OAS extends ApiVersionSource {
+
+  case object OAS  extends ApiVersionSource {
     val asText = "OAS"
   }
 
@@ -37,11 +39,12 @@ object ApiVersionSource {
   }
 
   implicit val format: Format[ApiVersionSource] = new Format[ApiVersionSource] {
+
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
-      case JsString(RAML.asText) => JsSuccess(RAML)
-      case JsString(OAS.asText) => JsSuccess(OAS)
+      case JsString(RAML.asText)    => JsSuccess(RAML)
+      case JsString(OAS.asText)     => JsSuccess(OAS)
       case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
-      case e => JsError(s"Cannot parse source value from '$e'")
+      case e                        => JsError(s"Cannot parse source value from '$e'")
     }
 
     def writes(foo: ApiVersionSource): JsValue = {
@@ -59,7 +62,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
 
   private lazy val versionsWithoutFieldDefinitions: JsArray = {
     val pruneFieldDefinitions = (__ \ 'fieldDefinitions).json.prune
-    val newJsArrayValue = versions.value map { versionJs =>
+    val newJsArrayValue       = versions.value map { versionJs =>
       lazy val versionNo = (versionJs \ "version").asOpt[String].getOrElse("N/A")
       transformJson(versionJs, pruneFieldDefinitions, s"Could not prune field definitions from version $versionNo")
     }
@@ -67,8 +70,8 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   }
 
   lazy val apiWithoutFieldDefinitions: JsObject = {
-    val prune = (__ \ 'versions).json.prune
-    val putNew = __.json.update((__ \ 'versions).json.put(versionsWithoutFieldDefinitions))
+    val prune           = (__ \ 'versions).json.prune
+    val putNew          = __.json.update((__ \ 'versions).json.put(versionsWithoutFieldDefinitions))
     val replaceVersions = prune andThen putNew
     transformJson(api, replaceVersions, "Could not put versions without field definitions in api")
   }
@@ -77,7 +80,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     (api \ "name").as[String]
   }
 
-  lazy val description : Option[String] = {
+  lazy val description: Option[String] = {
     (api \\ "description").headOption.map(_.as[String])
   }
 
@@ -98,9 +101,9 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {
     versionJs.validate[OptionalFieldDefinitions](OptionalFieldDefinitions.reads) match {
       case success: JsSuccess[OptionalFieldDefinitions] => for {
-        fieldDefinitions <- success.get.fieldDefinitions
-        apiVersion = success.get.version
-      } yield ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions)
+          fieldDefinitions <- success.get.fieldDefinitions
+          apiVersion        = success.get.version
+        } yield ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions)
 
       case error: JsError =>
         throw new UnprocessableEntityException(s"Could not parse versions element for field definitions: ${JsError.toJson(error)}")
@@ -110,7 +113,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   private def transformJson(srcJson: JsValue, transformer: Reads[JsObject], errorClue: => String): JsObject = {
     srcJson.as[JsObject].transform(transformer) match {
       case JsSuccess(js, _) => js
-      case error: JsError => throw new UnprocessableEntityException(s"$errorClue: ${JsError.toJson(error)}")
+      case error: JsError   => throw new UnprocessableEntityException(s"$errorClue: ${JsError.toJson(error)}")
     }
   }
 }
@@ -121,7 +124,7 @@ object ApiAndScopes {
   def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
     val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
     val scopesRequiredByApi: Seq[String] = apiAndScopes.definedScopes ++ apiAndScopes.apiScopes
-    val missing = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
+    val missing                          = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
     if (missing.nonEmpty) {
       ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
     } else {

@@ -36,19 +36,19 @@ class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
   trait Setup {
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val version = "1.0"
-    val mockMicroserviceConnector = mock[MicroserviceConnector]
+    implicit val hc                  = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val version                      = "1.0"
+    val mockMicroserviceConnector    = mock[MicroserviceConnector]
     val ramlVersionDefinitionService = new RamlVersionDefinitionService(mockMicroserviceConnector)
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
-    def raml(path: String): Try[RAML] = new ClasspathRamlLoader().load(path)
+    def raml(path: String): Try[RAML]                               = new ClasspathRamlLoader().load(path)
   }
 
   "The ramlVersionDefinitionService" should {
     "Fail if the microservice connector fails" in new Setup {
       val errorMessage = "something went wrong"
-      when(mockMicroserviceConnector.getRaml(*,*)).thenReturn(Failure(new RuntimeException(errorMessage)))
+      when(mockMicroserviceConnector.getRaml(*, *)).thenReturn(Failure(new RuntimeException(errorMessage)))
 
       val exception: Exception = intercept[Exception] {
         await(ramlVersionDefinitionService.getDetailForVersion(testService, None, version))
@@ -96,8 +96,8 @@ class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {
 
   "Create Endpoint objects" should {
     "simple GET endpoint - no context" in new Setup {
-      val raml1_0 = raml("input/simple-hello.raml").get
-      val context = None
+      val raml1_0   = raml("input/simple-hello.raml").get
+      val context   = None
       val endpoints = Endpoints(raml1_0, context)
 
       endpoints should contain only Endpoint(
@@ -112,8 +112,8 @@ class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "simple GET endpoint with context" in new Setup {
-      val raml1_0 = raml("input/simple-hello.raml").get
-      val context = Some("test")
+      val raml1_0   = raml("input/simple-hello.raml").get
+      val context   = Some("test")
       val endpoints = Endpoints(raml1_0, context)
 
       endpoints should contain only Endpoint(
@@ -128,8 +128,8 @@ class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "GET endpoint with context and query parameters" in new Setup {
-      val raml1_0 = raml("input/simple-hello-with-params.raml").get
-      val context = Some("test")
+      val raml1_0   = raml("input/simple-hello-with-params.raml").get
+      val context   = Some("test")
       val endpoints = Endpoints(raml1_0, context)
 
       endpoints should contain only Endpoint(

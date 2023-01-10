@@ -38,10 +38,10 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
 
   val apiDefinitionPort = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiDefinitionHost = "localhost"
-  val wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
+  val wireMockServer    = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
 
   val definition = fromURL(getClass.getResource("/input/api-with-endpoints.json")).mkString
-  val api = Json.parse(definition).as[JsObject]
+  val api        = Json.parse(definition).as[JsObject]
 
   trait Setup {
     SharedMetricRegistries.clear()
@@ -92,7 +92,7 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
       stubFor(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
       await(connector.validateAPIDefinition(api))
-      
+
       val expected: JsObject = api.as[JsObject] ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy")
       verifyStub(postRequestedFor(urlPathEqualTo("/api-definition/validate")).withRequestBody(equalToJson(expected.toString())))
     }

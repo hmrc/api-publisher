@@ -30,7 +30,7 @@ import uk.gov.hmrc.apipublisher.models.ErrorCode.INVALID_API_DEFINITION
 
 class PublisherFeatureSpec extends BaseFeatureSpec {
 
-  val publishingKey: String = UUID.randomUUID().toString
+  val publishingKey: String        = UUID.randomUUID().toString
   val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
 
   var server: TestServer = _
@@ -50,7 +50,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       // apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
       apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
 
-
       And("The api subscription fields is running")
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
@@ -62,7 +61,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
         .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
-
       When("The publisher is triggered")
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
@@ -70,16 +68,13 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
           .header(AUTHORIZATION, encodedPublishingKey)
           .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
 
-
       Then("The scope is validated")
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-      )
+        .withHeader(CONTENT_TYPE, containing(JSON)))
 
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-      )
+        .withHeader(CONTENT_TYPE, containing(JSON)))
 
       And("The scope is published to the API Scope microservice")
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
@@ -88,8 +83,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
       Then("The definition is published to the API Definition microservice")
       apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-      )
+        .withHeader(CONTENT_TYPE, containing(JSON)))
 
       Then("The field definitions are published to the API Subscription Fields microservice")
       apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
@@ -122,7 +116,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       publishResponse.code shouldBe UNPROCESSABLE_ENTITY
 
       And("The validation errors are present in the response body")
-      val responseBody: JsValue = Json.parse(publishResponse.body)
+      val responseBody: JsValue      = Json.parse(publishResponse.body)
       (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String])
       errorMessages should contain only (
@@ -134,7 +128,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   override def beforeEach() {
     super.beforeEach()
-    server = TestServer.apply( port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
+    server = TestServer.apply(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 
@@ -143,8 +137,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
     server.stop()
   }
 
-  val apiContext = "test/api/context"
-  val urlEncodedApiContext = "test%2Fapi%2Fcontext"
+  val apiContext                          = "test/api/context"
+  val urlEncodedApiContext                = "test%2Fapi%2Fcontext"
   val apiSubscriptionFieldsUrlVersion_1_0 = s"/definition/context/$urlEncodedApiContext/version/1.0"
   val apiSubscriptionFieldsUrlVersion_2_0 = s"/definition/context/$urlEncodedApiContext/version/2.0"
   val apiSubscriptionFieldsUrlVersion_3_0 = s"/definition/context/$urlEncodedApiContext/version/3.0"
@@ -175,56 +169,56 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   val definitionJson =
     s"""
-      |{
-      |  "scopes": [
-      |    {
-      |      "key": "read:hello",
-      |      "name": "Say Hello",
-      |      "description": "Ability to Say Hello"
-      |    }
-      |  ],
-      |  "api": {
-      |    "name": "Test",
-      |    "description": "Test API",
-      |    "context": "$apiContext",
-      |    "versions": [
-      |      {
-      |        "version": "1.0",
-      |        "status": "PUBLISHED",
-      |        "fieldDefinitions": [
-      |          {
-      |            "name": "callbackUrl",
-      |            "description": "Callback URL",
-      |            "hint": "Just a hint",
-      |            "type": "URL"
-      |          },
-      |          {
-      |            "name": "token",
-      |            "description": "Secure Token",
-      |            "hint": "Just a hint",
-      |            "type": "SecureToken"
-      |          }
-      |        ]
-      |      },
-      |      {
-      |        "version": "2.0",
-      |        "status": "PUBLISHED"
-      |      },
-      |      {
-      |        "version": "3.0",
-      |        "status": "PUBLISHED",
-      |        "fieldDefinitions": [
-      |          {
-      |            "name": "callbackUrlOnly",
-      |            "description": "Only a callback URL",
-      |            "hint": "Just a hint",
-      |            "type": "URL"
-      |          }
-      |        ]
-      |      }
-      |    ]
-      |  }
-      |}
+       |{
+       |  "scopes": [
+       |    {
+       |      "key": "read:hello",
+       |      "name": "Say Hello",
+       |      "description": "Ability to Say Hello"
+       |    }
+       |  ],
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "Callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          },
+       |          {
+       |            "name": "token",
+       |            "description": "Secure Token",
+       |            "hint": "Just a hint",
+       |            "type": "SecureToken"
+       |          }
+       |        ]
+       |      },
+       |      {
+       |        "version": "2.0",
+       |        "status": "PUBLISHED"
+       |      },
+       |      {
+       |        "version": "3.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrlOnly",
+       |            "description": "Only a callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
     """.stripMargin
 
   val fieldDefinitions_1_0 =
@@ -249,70 +243,70 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
   val fieldDefinitions_3_0 =
     """
-     |{
-     |  "fieldDefinitions": [
-     |    {
-     |      "name": "callbackUrlOnly",
-     |      "description": "Only a callback URL",
-     |      "hint": "Just a hint",
-     |      "type": "URL"
-     |    }
-     |  ]
-     |}
+      |{
+      |  "fieldDefinitions": [
+      |    {
+      |      "name": "callbackUrlOnly",
+      |      "description": "Only a callback URL",
+      |      "hint": "Just a hint",
+      |      "type": "URL"
+      |    }
+      |  ]
+      |}
     """.stripMargin
 
   val api =
     s"""
-      |{
-      |  "serviceName" : "test.example.com",
-      |  "serviceBaseUrl" : "http://127.0.0.1:21112",
-      |  "name" : "Test",
-      |  "description" : "Test API",
-      |  "context" : "$apiContext",
-      |  "versions" : [
-      |    {
-      |      "version" : "1.0",
-      |      "status" : "PUBLISHED",
-      |        "endpoints": [
-      |          {
-      |            "uriPattern": "/hello",
-      |            "endpointName":"Say Hello",
-      |            "method": "GET",
-      |            "authType": "NONE",
-      |            "throttlingTier": "UNLIMITED"
-      |          }
-      |        ]
-      |    },
-      |    {
-      |      "version" : "2.0",
-      |      "status" : "PUBLISHED",
-      |        "endpoints": [
-      |          {
-      |            "uriPattern": "/hello",
-      |            "endpointName":"Say Hello",
-      |            "method": "GET",
-      |            "authType": "NONE",
-      |            "throttlingTier": "UNLIMITED",
-      |            "scope": "read:hello"
-      |          }
-      |        ]
-      |    },
-      |    {
-      |      "version" : "3.0",
-      |      "status" : "PUBLISHED",
-      |        "endpoints": [
-      |          {
-      |            "uriPattern": "/hello",
-      |            "endpointName":"Say Hello",
-      |            "method": "GET",
-      |            "authType": "NONE",
-      |            "throttlingTier": "UNLIMITED",
-      |            "scope": "read:hello"
-      |          }
-      |        ]
-      |    }
-      |  ]
-      |}
+       |{
+       |  "serviceName" : "test.example.com",
+       |  "serviceBaseUrl" : "http://127.0.0.1:21112",
+       |  "name" : "Test",
+       |  "description" : "Test API",
+       |  "context" : "$apiContext",
+       |  "versions" : [
+       |    {
+       |      "version" : "1.0",
+       |      "status" : "PUBLISHED",
+       |        "endpoints": [
+       |          {
+       |            "uriPattern": "/hello",
+       |            "endpointName":"Say Hello",
+       |            "method": "GET",
+       |            "authType": "NONE",
+       |            "throttlingTier": "UNLIMITED"
+       |          }
+       |        ]
+       |    },
+       |    {
+       |      "version" : "2.0",
+       |      "status" : "PUBLISHED",
+       |        "endpoints": [
+       |          {
+       |            "uriPattern": "/hello",
+       |            "endpointName":"Say Hello",
+       |            "method": "GET",
+       |            "authType": "NONE",
+       |            "throttlingTier": "UNLIMITED",
+       |            "scope": "read:hello"
+       |          }
+       |        ]
+       |    },
+       |    {
+       |      "version" : "3.0",
+       |      "status" : "PUBLISHED",
+       |        "endpoints": [
+       |          {
+       |            "uriPattern": "/hello",
+       |            "endpointName":"Say Hello",
+       |            "method": "GET",
+       |            "authType": "NONE",
+       |            "throttlingTier": "UNLIMITED",
+       |            "scope": "read:hello"
+       |          }
+       |        ]
+       |    }
+       |  ]
+       |}
     """.stripMargin
 
   val scopes =

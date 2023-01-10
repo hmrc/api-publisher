@@ -35,4 +35,3 @@ class Module extends AbstractModule {
     bind(classOf[OasVersionDefinitionService.OasParser]).toInstance(new OasParserImpl)
   }
 }
-

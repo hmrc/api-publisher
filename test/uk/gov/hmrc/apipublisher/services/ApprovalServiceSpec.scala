@@ -28,11 +28,12 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
 
   trait Setup {
     val mockApiApprovalRepository = mock[APIApprovalRepository]
-    val mockAppContext = mock[AppContext]
+    val mockAppContext            = mock[AppContext]
 
     val underTest = new ApprovalService(mockApiApprovalRepository, mockAppContext)
 
-    val unapprovedServices = Seq(APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
+    val unapprovedServices = Seq(
+      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
       APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), Some(false))
     )
   }

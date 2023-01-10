@@ -34,8 +34,8 @@ import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
-  extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+    extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = config.baseUrl
 
@@ -43,32 +43,32 @@ class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsCon
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
         val urlEncodedApiContext = URLEncoder.encode(apiContext, StandardCharsets.UTF_8.name)
-        val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-        val putUrl = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
+        val request              = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
+        val putUrl               = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
         http.PUT[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
-        .map {
-          case Right(_) => (())
-          case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-          case Left(err) => throw err
-        }
+          .map {
+            case Right(_)                                                         => (())
+            case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+            case Left(err)                                                        => throw err
+          }
     }
-    
+
     Future.sequence(putFutures).map(_ => ())
   }
 
   def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    if(fieldDefinitions.isEmpty)
+    if (fieldDefinitions.isEmpty)
       Future.successful(None)
     else {
       val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-      val putUrl = s"$serviceBaseUrl/validate"
+      val putUrl  = s"$serviceBaseUrl/validate"
 
       http.POST[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
         .map {
-          case Right(_) => None
+          case Right(_)                                                         => None
           case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Some(JsString("Field definitions are invalid"))
           case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _))          => Some(JsString("Field definitions are invalid"))
-          case Left(err) => throw err
+          case Left(err)                                                        => throw err
         }
     }
   }

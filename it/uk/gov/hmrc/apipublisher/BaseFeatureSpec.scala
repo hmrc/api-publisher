@@ -25,35 +25,35 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
 
 abstract class BaseFeatureSpec extends AnyFeatureSpec
-  with GivenWhenThen with ScalaFutures
-  with BeforeAndAfterEach with Matchers {
+    with GivenWhenThen with ScalaFutures
+    with BeforeAndAfterEach with Matchers {
 
-  val port = 12121
+  val port      = 12121
   val serverUrl = s"http://localhost:$port"
 
-  val apiDefinitionPort: Int = sys.env.getOrElse("WIREMOCK", "9604").toInt
-  val apiDefinitionHost = "localhost"
-  var apiDefinitionUrl = s"http://$apiDefinitionHost:$apiDefinitionPort"
-  val apiDefinitionServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
-  var apiDefinitionMock : WireMock = _
+  val apiDefinitionPort: Int      = sys.env.getOrElse("WIREMOCK", "9604").toInt
+  val apiDefinitionHost           = "localhost"
+  var apiDefinitionUrl            = s"http://$apiDefinitionHost:$apiDefinitionPort"
+  val apiDefinitionServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
+  var apiDefinitionMock: WireMock = _
 
-  val apiProducerPort: Int = sys.env.getOrElse("WIREMOCK", "21112").toInt
-  val apiProducerHost = "127.0.0.1"
-  val apiProducerUrl = s"http://$apiProducerHost:$apiProducerPort"
-  val apiProducerServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
-  var apiProducerMock : WireMock = _
+  val apiProducerPort: Int      = sys.env.getOrElse("WIREMOCK", "21112").toInt
+  val apiProducerHost           = "127.0.0.1"
+  val apiProducerUrl            = s"http://$apiProducerHost:$apiProducerPort"
+  val apiProducerServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
+  var apiProducerMock: WireMock = _
 
-  val apiScopePort: Int = sys.env.getOrElse("WIREMOCK", "9690").toInt
-  val apiScopeHost = "localhost"
-  var apiScopeUrl = s"http://$apiScopeHost:$apiScopePort"
-  val apiScopeServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiScopePort))
-  var apiScopeMock : WireMock = _
+  val apiScopePort: Int      = sys.env.getOrElse("WIREMOCK", "9690").toInt
+  val apiScopeHost           = "localhost"
+  var apiScopeUrl            = s"http://$apiScopeHost:$apiScopePort"
+  val apiScopeServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiScopePort))
+  var apiScopeMock: WireMock = _
 
-  val apiSubscriptionFieldsPort: Int = sys.env.getOrElse("WIREMOCK", "9650").toInt
-  val apiSubscriptionFieldsHost = "localhost"
-  var apiSubscriptionFieldsUrl = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
-  val apiSubscriptionFieldsServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
-  var apiSubscriptionFieldsMock : WireMock = _
+  val apiSubscriptionFieldsPort: Int      = sys.env.getOrElse("WIREMOCK", "9650").toInt
+  val apiSubscriptionFieldsHost           = "localhost"
+  var apiSubscriptionFieldsUrl            = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
+  val apiSubscriptionFieldsServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
+  var apiSubscriptionFieldsMock: WireMock = _
 
   override def beforeEach(): Unit = {
     apiSubscriptionFieldsServer.start()

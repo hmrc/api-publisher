@@ -94,17 +94,25 @@ class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFo
   }
 
   "FieldDefinition" should {
-    val FakeFieldDefinitionWithAccess: FieldDefinition = FieldDefinition(name = "name", description= "description",
-                                      hint=Some("hint"), `type` = FieldDefinitionType.STRING, shortDescription = Some("shortDescription"), validation = None,
-                                      access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly)))
+    val FakeFieldDefinitionWithAccess: FieldDefinition = FieldDefinition(
+      name = "name",
+      description = "description",
+      hint = Some("hint"),
+      `type` = FieldDefinitionType.STRING,
+      shortDescription = Some("shortDescription"),
+      validation = None,
+      access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly))
+    )
 
     "marshal json with non default access" in {
       objectAsJsonString(FakeFieldDefinitionWithAccess) should include(""","access":{"devhub":{"read":"adminOnly","write":"adminOnly"}}""")
     }
 
     "marshal json without mention of default access" in {
-      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include(""""access":{"devhub":{"read":"adminOnly", "write":"adminOnly"}}""")
-      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include(""""access"""")
+      objectAsJsonString(
+        FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)
+      ) should not include (""""access":{"devhub":{"read":"adminOnly", "write":"adminOnly"}}""")
+      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include (""""access"""")
     }
   }
 }

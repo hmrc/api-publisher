@@ -36,10 +36,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
   SharedMetricRegistries.clear()
 
-
-  val apiScopePort = sys.env.getOrElse("WIREMOCK", "21113").toInt
-  val apiScopeHost = "localhost"
-  val apiScopeUrl = s"http://$apiScopeHost:$apiScopePort"
+  val apiScopePort   = sys.env.getOrElse("WIREMOCK", "21113").toInt
+  val apiScopeHost   = "localhost"
+  val apiScopeUrl    = s"http://$apiScopeHost:$apiScopePort"
   val wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiScopePort))
 
   val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json"))
@@ -79,7 +78,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
       val caught = intercept[UpstreamErrorResponse] {
         await(connector.publishScopes(scopes))
       }
-      
+
       assert(caught.statusCode == INTERNAL_SERVER_ERROR)
       assert(caught.getMessage.contains("/scope' returned 500"))
     }

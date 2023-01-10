@@ -23,28 +23,30 @@ import uk.gov.hmrc.apipublisher.models.ApiAndScopes
 import io.swagger.v3.oas.models.OpenAPI
 
 trait MicroserviceConnectorMockModule {
-  self : MockitoSugar with ArgumentMatchersSugar  =>
+  self: MockitoSugar with ArgumentMatchersSugar =>
 
   trait BaseMicroserviceConnectorMock {
     def aMock: MicroserviceConnector
 
     object GetAPIAndScopes {
-      def findsNone = 
+
+      def findsNone =
         when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(None))
 
       def fails = {
         val errorMessage = "something went wrong"
         when(aMock.getAPIAndScopes(*)(*)).thenReturn(failed(new RuntimeException(errorMessage)))
       }
-      
+
       def returns(in: ApiAndScopes) = {
         when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Some(in)))
       }
     }
 
     object GetOAS {
+
       def findsNoValidFile =
-        when(aMock.getOAS(*,*)).thenReturn(failed(new IllegalArgumentException("Cannot find valid OAS file")))
+        when(aMock.getOAS(*, *)).thenReturn(failed(new IllegalArgumentException("Cannot find valid OAS file")))
 
       def findsValid(openAPI: OpenAPI) =
         when(aMock.getOAS(*, *)).thenReturn(successful(openAPI))
@@ -53,5 +55,5 @@ trait MicroserviceConnectorMockModule {
 
   object MicroserviceConnectorMock extends BaseMicroserviceConnectorMock {
     val aMock = mock[MicroserviceConnector](withSettings.lenient())
-    }
   }
+}

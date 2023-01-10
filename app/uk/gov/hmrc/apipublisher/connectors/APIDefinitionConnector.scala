@@ -30,16 +30,16 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 @Singleton
-class APIDefinitionConnector @Inject()(config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext)
-  extends ConnectorRecovery with ApplicationLogger {
+class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+    extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/api-definition", api, Seq.empty).map {
-      case Right(_) => (())
+      case Right(_)                                                         => (())
       case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-      case Left(err) => throw err
+      case Left(err)                                                        => throw err
     }
   }
 
@@ -47,11 +47,11 @@ class APIDefinitionConnector @Inject()(config: ApiDefinitionConfig, http: HttpCl
     val url = s"$serviceBaseUrl/api-definition/validate"
     http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](url, definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
       .map {
-        case Right(_) => None
+        case Right(_)                                                => None
         case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>
           logger.debug(s"Failed request. POST url=$url: $message")
           Some(JsString(message))
-        case Left(err) => throw err
+        case Left(err)                                               => throw err
       }
   }
 }

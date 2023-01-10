@@ -21,9 +21,9 @@ import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
 
 @Singleton
-class DocumentationUrlRewriter @Inject()(appContext: AppContext) extends UrlRewriter {
+class DocumentationUrlRewriter @Inject() (appContext: AppContext) extends UrlRewriter {
   lazy val rewrites = appContext.ramlLoaderRewrites
 }
 
 @Singleton
-class DocumentationRamlLoader @Inject()(urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)
+class DocumentationRamlLoader @Inject() (urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)

@@ -26,37 +26,37 @@ import scala.util.control.NonFatal
 
 @Singleton
 class OasParserImpl() extends OasVersionDefinitionService.OasParser with ApplicationLogger {
-     
+
   def trimContext(context: Option[String])(urlPattern: String): String = {
     context.fold(urlPattern)(c => {
-      val leading = s"/$c/".replace("//","/")
-      if(urlPattern.startsWith(leading)) urlPattern.replaceFirst(leading, "/") else urlPattern
+      val leading = s"/$c/".replace("//", "/")
+      if (urlPattern.startsWith(leading)) urlPattern.replaceFirst(leading, "/") else urlPattern
     })
   }
-  
+
   def apply(context: Option[String])(openAPI: OpenAPI): List[Endpoint] = {
     try {
       logger.info("Starting OpenAPI to Endpoints processing...")
       val sopenAPI = SOpenAPI(openAPI)
-    
+
       val result = sopenAPI.paths.pathItems.flatMap {
         case (urlPattern, sPathItem) =>
           sPathItem.ops.map {
             case (method, operation) =>
-              val endpointName : String = operation.summary.getOrElse("no endpoint name provided")
-              
-              val queryParameters : Option[List[QueryParam]] = 
+              val endpointName: String = operation.summary.getOrElse("no endpoint name provided")
+
+              val queryParameters: Option[List[QueryParam]] =
                 operation.queryParameters.map {
                   case (name, param) => QueryParam(name.value, param.required)
                 }
-                .toList match {
-                  case Nil => None
+                  .toList match {
+                  case Nil  => None
                   case list => Some(list)
                 }
 
-              val (authType: String, scope: Option[String]) = 
+              val (authType: String, scope: Option[String]) =
                 operation.securityRequirement match {
-                  case OpenSSecurityRequirement => ("NONE", None)
+                  case OpenSSecurityRequirement                              => ("NONE", None)
                   case OauthSSecurityRequirement(schemaName, scheme, oscope) => {
                     scheme match {
                       case _: OAuth2AuthorizationCodeSecurityScheme => ("USER", oscope)
@@ -66,24 +66,23 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
                 }
 
               Endpoint(
-                trimContext(context)(urlPattern), 
-                endpointName, 
-                method, 
+                trimContext(context)(urlPattern),
+                endpointName,
+                method,
                 authType,
-                throttlingTier = "UNLIMITED", 
+                throttlingTier = "UNLIMITED",
                 scope,
                 queryParameters
               )
           }.toList
       }
-      .toList
+        .toList
 
       logger.info("Completed OpenAPI to Endpoints processing.")
 
       result
-    }
-    catch {
-      case NonFatal(e) => 
+    } catch {
+      case NonFatal(e) =>
         logger.error(s"Failed to convert OpenAPI Specification to Endpoints $e")
         throw e
     }

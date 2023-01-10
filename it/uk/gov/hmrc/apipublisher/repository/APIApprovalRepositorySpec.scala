@@ -23,7 +23,7 @@ import play.api.Application
 import utils.AsyncHmrcSpec
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
-  with BeforeAndAfterEach with BeforeAndAfterAll {
+    with BeforeAndAfterEach with BeforeAndAfterAll {
 
   protected def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -32,7 +32,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
         "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
       )
   }
-  implicit lazy val app: Application = appBuilder.build()
+  implicit lazy val app: Application                = appBuilder.build()
 
   private val repository: APIApprovalRepository = app.injector.instanceOf[APIApprovalRepository]
 

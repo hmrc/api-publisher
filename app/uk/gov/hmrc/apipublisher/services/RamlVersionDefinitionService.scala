@@ -27,7 +27,7 @@ import uk.gov.hmrc.apipublisher.models.ServiceLocation
 import scala.util.Try
 
 @Singleton
-class RamlVersionDefinitionService @Inject()(microserviceConnector: MicroserviceConnector) extends DefinitionService.VersionDefinitionService {
+class RamlVersionDefinitionService @Inject() (microserviceConnector: MicroserviceConnector) extends DefinitionService.VersionDefinitionService {
 
   override def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
     Future.fromTry(

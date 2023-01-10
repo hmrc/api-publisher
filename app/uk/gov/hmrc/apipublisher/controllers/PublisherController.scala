@@ -25,7 +25,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services.{ApprovalService, PublisherService, DefinitionService}
+import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
@@ -35,17 +35,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class PublisherController @Inject()(definitionService: DefinitionService,
-                                    publisherService: PublisherService,
-                                    approvalService: ApprovalService,
-                                    appContext: AppContext,
-                                    cc: ControllerComponents)
-                                   (implicit val ec: ExecutionContext) extends BackendController(cc) with ApplicationLogger {
+class PublisherController @Inject() (
+    definitionService: DefinitionService,
+    publisherService: PublisherService,
+    approvalService: ApprovalService,
+    appContext: AppContext,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with ApplicationLogger {
 
-  val FAILED_TO_PUBLISH = "FAILED_TO_PUBLISH_SERVICE"
-  val FAILED_TO_VALIDATE = "FAILED_TO_VALIDATE"
+  val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
+  val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
   val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
-  val FAILED_TO_APPROVE_SERVICES = "FAILED_TO_APPROVE_SERVICES"
+  val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
   def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
     handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
@@ -59,7 +61,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     import cats.data.{OptionT, EitherT}
     import cats.implicits._
 
-    type Over[A] = EitherT[Future,Result, A]
+    type Over[A] = EitherT[Future, Result, A]
 
     def getDefinition: Over[ApiAndScopes] = {
       EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
@@ -67,14 +69,14 @@ class PublisherController @Inject()(definitionService: DefinitionService,
 
     def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
       EitherT.fromOptionF(
-        OptionT(publisherService.validation(apiAndScopes, validateApiDefinition=false)).map(BadRequest(_)).value
-        , ()
+        OptionT(publisherService.validation(apiAndScopes, validateApiDefinition = false)).map(BadRequest(_)).value,
+        ()
       ).swap
     }
 
     def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
-        case true =>
+        case true  =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
           NoContent
         case false =>
@@ -94,7 +96,7 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
       publisherService.validateAPIDefinitionAndScopes(requestBody).map {
         case Some(errors) => BadRequest(errors)
-        case None => NoContent
+        case None         => NoContent
       } recover recovery(FAILED_TO_VALIDATE)
     }
   }
@@ -111,10 +113,11 @@ class PublisherController @Inject()(definitionService: DefinitionService,
       .recover(recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES))
   }
 
-  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request => ({
+  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
+    ({
       for {
         serviceLocation <- approvalService.approveService(serviceName)
-        result <- publishService(serviceLocation)
+        result          <- publishService(serviceLocation)
       } yield result
     }) recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
@@ -126,10 +129,10 @@ class PublisherController @Inject()(definitionService: DefinitionService,
     } else {
       Try(request.body.validate[T]) match {
         case Success(JsSuccess(payload, _)) => f(payload)
-        case Success(JsError(errs)) => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
-        case Failure(e) =>
-        logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
-        Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
+        case Success(JsError(errs))         => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
+        case Failure(e)                     =>
+          logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
+          Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
       }
     }
   }
@@ -140,22 +143,22 @@ class PublisherController @Inject()(definitionService: DefinitionService,
 
   private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {
     Json.obj(
-      "code" -> errorCode.toString,
+      "code"    -> errorCode.toString,
       "message" -> message
     )
   }
 
   private def recovery(prefix: String): PartialFunction[Throwable, Result] = {
-    case e: ValidationException =>
+    case e: ValidationException          =>
       logger.error(s"$prefix - Validation of API definition failed: ${e.toJSON.toString(2)}", e)
       UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.parse(e.toJSON.toString)))
     case e: UnprocessableEntityException =>
       logger.error(s"$prefix - Unprocessable request received: ${e.getMessage}", e)
       UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
-    case e: UnknownApiServiceException =>
+    case e: UnknownApiServiceException   =>
       logger.warn(s"$prefix - Unknown Service: ${e.getMessage}")
       NotFound
-    case e =>
+    case e                               =>
       logger.error(s"$prefix - An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.UNKNOWN_ERROR, s"An unexpected error occurred: ${e.getMessage}"))
   }

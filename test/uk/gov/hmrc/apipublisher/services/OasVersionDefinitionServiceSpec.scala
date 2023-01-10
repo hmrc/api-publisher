@@ -29,27 +29,25 @@ import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
-  implicit val hc = HeaderCarrier()
+  implicit val hc      = HeaderCarrier()
 
-
-
-  trait Setup 
-      extends MicroserviceConnectorMockModule 
-      with MockitoSugar 
+  trait Setup
+      extends MicroserviceConnectorMockModule
+      with MockitoSugar
       with ArgumentMatchersSugar {
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
 
     val mockParser = mock[OasVersionDefinitionService.OasParser]
-    val context = None
-    val version = "1.0"
-    val service = new OasVersionDefinitionService(MicroserviceConnectorMock.aMock, mockParser)
+    val context    = None
+    val version    = "1.0"
+    val service    = new OasVersionDefinitionService(MicroserviceConnectorMock.aMock, mockParser)
   }
 
   "OasDefinitionService" should {
     "handle if microservice has no OAS" in new Setup {
       MicroserviceConnectorMock.GetOAS.findsNoValidFile
-      
+
       intercept[RuntimeException] {
         await(service.getDetailForVersion(aServiceLocation, context, version))
       }
@@ -67,10 +65,10 @@ class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
     "returns the endpoints for the version" in new Setup {
       val openAPI = mock[OpenAPI]
       MicroserviceConnectorMock.GetOAS.findsValid(openAPI)
-      when(mockParser.apply(context)(openAPI)).thenReturn(List(Endpoint("u","e","m","a","t", None, None)))
+      when(mockParser.apply(context)(openAPI)).thenReturn(List(Endpoint("u", "e", "m", "a", "t", None, None)))
 
       val result = await(service.getDetailForVersion(aServiceLocation, context, "99.99"))
-      result should have size(1)      
+      result should have size (1)
     }
   }
 }

@@ -27,18 +27,21 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PublisherService @Inject()(apiDefinitionConnector: APIDefinitionConnector,
-                                 apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
-                                 apiScopeConnector: APIScopeConnector,
-                                 approvalService: ApprovalService)(implicit val ec: ExecutionContext)
-extends ApplicationLogger {
+class PublisherService @Inject() (
+    apiDefinitionConnector: APIDefinitionConnector,
+    apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
+    apiScopeConnector: APIScopeConnector,
+    approvalService: ApprovalService
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Boolean] = {
 
     def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
         "serviceBaseUrl" -> serviceLocation.serviceUrl,
-        "serviceName" -> serviceLocation.serviceName)
+        "serviceName"    -> serviceLocation.serviceName
+      )
     }
 
     def publish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
@@ -60,7 +63,7 @@ extends ApplicationLogger {
     def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        result <- if (isApproved) publish(apiAndScopes) else successful(false)
+        result     <- if (isApproved) publish(apiAndScopes) else successful(false)
       } yield result
     }
 
@@ -80,12 +83,12 @@ extends ApplicationLogger {
         successful(None)
     }
 
-    def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] ={
+    def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] = {
       for {
-        scopeErrors <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
+        scopeErrors        <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
         scopeChangedErrors <- successful(scopesRemainUnchanged(scopeServiceScopes, scopeSeq))
-        apiErrors <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-        fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
+        apiErrors          <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
+        fieldDefnErrors    <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
       } yield {
         if (scopeErrors.isEmpty && scopeChangedErrors.isEmpty && apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
           None
@@ -104,29 +107,30 @@ extends ApplicationLogger {
     }
 
     def scopesRemainUnchanged(serviceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Option[JsValue] = {
-        if(scopeSeq.forall(serviceScopes.contains)) {
-          None
-        } else {
-          logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
-          Some(JsString("Updating scopes while publishing is no longer supported. " +
-            "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
-        }
+      if (scopeSeq.forall(serviceScopes.contains)) {
+        None
+      } else {
+        logger.error(s"API name: ${apiAndScopes.apiName}, declared scopes: $scopeSeq,\nretrieved scopes: $serviceScopes")
+        Some(JsString("Updating scopes while publishing is no longer supported. " +
+          "See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"))
+      }
     }
 
-    val scopeSeq: Seq[Scope] = apiAndScopes.scopes.as[Seq[Scope]]
+    val scopeSeq: Seq[Scope]      = apiAndScopes.scopes.as[Seq[Scope]]
     val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
 
     apiScopeConnector.retrieveScopes(scopesSearch) flatMap {
-     scopeServiceScopes => {
-        ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
-          case ScopesDefinedOk => checkScopesForErrors(scopeServiceScopes, scopeSeq)
-          case ScopesNotDefined(msg) =>
-            val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
-            successful(Some(undefinedScopesErrorJson))
+      scopeServiceScopes =>
+        {
+          ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
+            case ScopesDefinedOk       => checkScopesForErrors(scopeServiceScopes, scopeSeq)
+            case ScopesNotDefined(msg) =>
+              val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
+              successful(Some(undefinedScopesErrorJson))
+          }
         }
-        }
-      }
     }
+  }
 
   def checkApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription)

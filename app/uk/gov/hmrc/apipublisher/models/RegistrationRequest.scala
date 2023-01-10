@@ -18,9 +18,7 @@ package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class RegistrationRequest(serviceName: String,
-                               serviceUrl: String,
-                               serviceVersions: Seq[String])
+case class RegistrationRequest(serviceName: String, serviceUrl: String, serviceVersions: Seq[String])
 
 object RegistrationRequest {
   implicit val format: OFormat[RegistrationRequest] = Json.format[RegistrationRequest]
