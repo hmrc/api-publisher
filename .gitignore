@@ -1,4 +1,8 @@
+.*
 
+!.gitignore
+!.scalafmt.conf
+!.scalafix.conf
 logs
 project/project
 project/target
@@ -28,5 +32,4 @@ yarn-error.log
 .metals
 .vscode
 project/metals.sbt
-.DS_Store
 /.bsp/sbt.json
