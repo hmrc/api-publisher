@@ -21,7 +21,6 @@ lazy val microservice = Project(appName, file("."))
     name := appName,
     majorVersion := 0,
     scalaVersion := "2.12.12",
-    targetJvm := "jvm-1.8",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
