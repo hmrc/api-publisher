@@ -16,31 +16,33 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import utils.AsyncHmrcSpec
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
-import uk.gov.hmrc.http.HeaderCarrier
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models.ApiAndScopes
-import uk.gov.hmrc.ramltools.domain.Endpoint
 import scala.concurrent.Future.successful
 
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import utils.AsyncHmrcSpec
+
+import play.api.libs.json._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.ramltools.domain.Endpoint
+
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+
 class DefinitionServiceSpec extends AsyncHmrcSpec {
-  
+
   implicit val hc = HeaderCarrier()
 
-  trait Setup 
-      extends MicroserviceConnectorMockModule 
-      with MockitoSugar 
+  trait Setup
+      extends MicroserviceConnectorMockModule
+      with MockitoSugar
       with ArgumentMatchersSugar {
 
     val ramlVDS = mock[RamlVersionDefinitionService]
-    val oasVDS = mock[OasVersionDefinitionService]
+    val oasVDS  = mock[OasVersionDefinitionService]
     val service = new DefinitionService(MicroserviceConnectorMock.aMock, ramlVDS, oasVDS)
 
-    val helloEndpoint = Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
+    val helloEndpoint   = Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
     val goodbyeEndpoint = Endpoint("/goodbye", "Say Goodbye", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
 
     val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
@@ -73,10 +75,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val result = await(service.getDefinition(aServiceLocation))
 
       result shouldBe None
-    }  
+    }
 
     "handle api and scopes with no data" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
@@ -86,11 +88,11 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       intercept[IllegalStateException] {
         await(service.getDefinition(aServiceLocation))
       }
-      .getMessage startsWith "No endpoints defined for"
+        .getMessage startsWith "No endpoints defined for"
     }
 
     "handle api and scopes with RAML data only" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
@@ -101,9 +103,9 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val expected = json[JsObject]("/expected/api-simple-raml.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
-  
+
     "handle api and scopes with OAS data only" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
@@ -114,9 +116,9 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val expected = json[JsObject]("/expected/api-simple-oas.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
-  
+
     "handle api and scopes with both RAML and OS data that matches" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
@@ -130,7 +132,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "handle api and scopes with both RAML and OS data that matches except for ordering" in new Setup {
-       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 
@@ -142,9 +144,9 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val expected = json[JsObject]("/expected/api-simple-hello-goodbye.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
     }
-    
+
     "handle api and scopes with both RAML and OAS data but that do not match by publishing RAML" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
       val scopes = json[JsArray]("/input/scopes.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import play.api.Application
 import utils.AsyncHmrcSpec
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
-  with BeforeAndAfterEach with BeforeAndAfterAll {
+    with BeforeAndAfterEach with BeforeAndAfterAll {
 
   protected def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -32,7 +32,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
         "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
       )
   }
-  implicit lazy val app: Application = appBuilder.build()
+  implicit lazy val app: Application                = appBuilder.build()
 
   private val repository: APIApprovalRepository = app.injector.instanceOf[APIApprovalRepository]
 

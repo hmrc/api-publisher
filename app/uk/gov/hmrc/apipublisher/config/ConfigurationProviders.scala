@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.config
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.duration.FiniteDuration
+
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.apipublisher.connectors._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+
+import uk.gov.hmrc.apipublisher.connectors._
 
 class ConfigurationModule extends Module {
 
@@ -37,12 +39,10 @@ class ConfigurationModule extends Module {
 }
 
 @Singleton
-class ApiDefinitionConfigProvider @Inject()(val runModeConfiguration: Configuration,
-                                            environment: Environment,
-                                            servicesConfig: ServicesConfig)
-  extends Provider[ApiDefinitionConfig] {
+class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+    extends Provider[ApiDefinitionConfig] {
 
-   protected def mode: Mode = environment.mode
+  protected def mode: Mode = environment.mode
 
   override def get(): ApiDefinitionConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
@@ -51,10 +51,8 @@ class ApiDefinitionConfigProvider @Inject()(val runModeConfiguration: Configurat
 }
 
 @Singleton
-class ApiScopeConfigProvider @Inject()(val runModeConfiguration: Configuration,
-                                       environment: Environment,
-                                       servicesConfig: ServicesConfig)
-  extends Provider[ApiScopeConfig] {
+class ApiScopeConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+    extends Provider[ApiScopeConfig] {
 
   protected def mode: Mode = environment.mode
 
@@ -65,12 +63,10 @@ class ApiScopeConfigProvider @Inject()(val runModeConfiguration: Configuration,
 }
 
 @Singleton
-class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: Configuration,
-                                                     environment: Environment,
-                                                     servicesConfig: ServicesConfig)
-  extends Provider[ApiSSubscriptionFieldsConfig] {
+class ApiSSubscriptionFieldsConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+    extends Provider[ApiSSubscriptionFieldsConfig] {
 
- protected def mode: Mode = environment.mode
+  protected def mode: Mode = environment.mode
 
   override def get(): ApiSSubscriptionFieldsConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-subscription-fields")
@@ -79,16 +75,14 @@ class ApiSSubscriptionFieldsConfigProvider @Inject()(val runModeConfiguration: C
 }
 
 @Singleton
-class MicroserviceConnectorConfigProvider @Inject()(val runModeConfiguration: Configuration,
-                                           environment: Environment,
-                                           servicesConfig: ServicesConfig)
-  extends Provider[MicroserviceConnector.Config]{
+class MicroserviceConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+    extends Provider[MicroserviceConnector.Config] {
 
   protected def mode: Mode = environment.mode
 
   override def get(): MicroserviceConnector.Config = {
     val validateApiDefinition = runModeConfiguration.getOptional[Boolean]("validateApiDefinition").getOrElse(true)
-    val oasParserMaxDuration = FiniteDuration(runModeConfiguration.getMillis("oasParserMaxDuration"), TimeUnit.MILLISECONDS)
+    val oasParserMaxDuration  = FiniteDuration(runModeConfiguration.getMillis("oasParserMaxDuration"), TimeUnit.MILLISECONDS)
 
     MicroserviceConnector.Config(validateApiDefinition, oasParserMaxDuration)
   }

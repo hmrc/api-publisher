@@ -16,23 +16,26 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import uk.gov.hmrc.apipublisher.wiring.AppContext
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.successful
+
+import utils.AsyncHmrcSpec
+
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
-import utils.AsyncHmrcSpec
-import scala.concurrent.Future.successful
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 class ApprovalServiceSpec extends AsyncHmrcSpec {
 
   trait Setup {
     val mockApiApprovalRepository = mock[APIApprovalRepository]
-    val mockAppContext = mock[AppContext]
+    val mockAppContext            = mock[AppContext]
 
     val underTest = new ApprovalService(mockApiApprovalRepository, mockAppContext)
 
-    val unapprovedServices = Seq(APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
+    val unapprovedServices = Seq(
+      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
       APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), Some(false))
     )
   }

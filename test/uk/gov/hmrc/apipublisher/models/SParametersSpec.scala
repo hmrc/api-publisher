@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import utils.HmrcSpec
 import io.swagger.v3.oas.models.parameters._
+import utils.HmrcSpec
+
 import uk.gov.hmrc.apipublisher.models.oas._
 
 class SParametersSpec extends HmrcSpec {
-  
+
   def process(p: Parameter): (String, String) = {
     SParameters.apply(List(p)).map(tuple => tuple._1).map(paramKey => (paramKey.name.value, paramKey.in.value)).head
   }
-  
+
   "SParametersSpec" should {
     val paramName = "myName"
 
@@ -35,11 +36,10 @@ class SParametersSpec extends HmrcSpec {
       }.getMessage() should include("(NULL)")
     }
 
-    
     "fail on a require for an generic parameter with invalid `in`" in {
       intercept[IllegalArgumentException] {
         process(new Parameter().in("bobbins").name(paramName))
-      }.getMessage() should include ("bobbins")
+      }.getMessage() should include("bobbins")
     }
   }
 }

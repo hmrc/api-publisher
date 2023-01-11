@@ -18,9 +18,7 @@ package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json.Json
 
-case class Subscription(serviceName: String,
-                        callbackUrl: String,
-                        criteria: Option[Map[String,String]] = None)
+case class Subscription(serviceName: String, callbackUrl: String, criteria: Option[Map[String, String]] = None)
 
 object Subscription {
   implicit val format = Json.format[Subscription]

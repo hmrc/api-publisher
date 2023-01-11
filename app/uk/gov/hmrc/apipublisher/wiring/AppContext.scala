@@ -17,20 +17,19 @@
 package uk.gov.hmrc.apipublisher.wiring
 
 import javax.inject.Inject
+
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-class AppContext @Inject()(val runModeConfiguration: Configuration,
-                           environment: Environment,
-                           servicesConfig: ServicesConfig){
+class AppContext @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
 
-  lazy val appName = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
-  lazy val publisherUrl = s"$appUrl/publish"
+  lazy val appName                    = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl                     = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  lazy val publisherUrl               = s"$appUrl/publish"
   lazy val preventAutoDeploy: Boolean = runModeConfiguration.getOptional[Boolean]("features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites(runModeConfiguration)
-  lazy val publishToken = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
-  lazy val publishingKey = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
+  lazy val ramlLoaderRewrites         = buildRamlLoaderRewrites(runModeConfiguration)
+  lazy val publishToken               = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
+  lazy val publishingKey              = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 
   private def buildRamlLoaderRewrites(runModeConfiguration: Configuration): Map[String, String] = {
 

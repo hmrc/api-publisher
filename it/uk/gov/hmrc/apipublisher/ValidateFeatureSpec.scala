@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import play.api.http.Status.BAD_REQUEST
 
 class ValidateFeatureSpec extends BaseFeatureSpec {
 
-  val publishingKey: String = UUID.randomUUID().toString
+  val publishingKey: String        = UUID.randomUUID().toString
   val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
 
   var server: TestServer = _
@@ -46,7 +46,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       val response: http.HttpResponse[String] = Http(s"$serverUrl/validate").header(CONTENT_TYPE, JSON).postData(malformedJson).asString
       Then("The controller should return 400 with a Malformed Json error message")
       response.code shouldBe BAD_REQUEST
-      val body = Json.parse( response.body )
+      val body                                = Json.parse(response.body)
       (body \ "statusCode").as[Int] shouldBe BAD_REQUEST
       (body \ "message").as[String] should startWith("Invalid Json")
     }

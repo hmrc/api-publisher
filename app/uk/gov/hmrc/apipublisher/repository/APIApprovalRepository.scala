@@ -17,34 +17,36 @@
 package uk.gov.hmrc.apipublisher.repository
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.mongo.MongoComponent
-import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Filters.{or, equal, exists}
-import uk.gov.hmrc.apipublisher.models.APIApproval
-import uk.gov.hmrc.apipublisher.models.APIApproval._
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import com.mongodb.client.model.ReplaceOptions
 import scala.concurrent.{ExecutionContext, Future}
 
+import com.mongodb.client.model.ReplaceOptions
+import org.mongodb.scala.model.Filters.{equal, exists, or}
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
+import uk.gov.hmrc.apipublisher.models.APIApproval
+import uk.gov.hmrc.apipublisher.models.APIApproval._
 
 @Singleton
-class APIApprovalRepository @Inject()(mongo: MongoComponent)(implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[APIApproval](
-    collectionName = "apiapproval", 
-    mongoComponent = mongo,
-    domainFormat = apiApprovalFormat, 
-    indexes = Seq(
-      IndexModel(
-        ascending("serviceName"),
-        IndexOptions()
-          .name("serviceNameIndex")
-          .unique(true)
-          .background(true)
-      )
-    ),
-    replaceIndexes = true
-  ) {
+class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[APIApproval](
+      collectionName = "apiapproval",
+      mongoComponent = mongo,
+      domainFormat = apiApprovalFormat,
+      indexes = Seq(
+        IndexModel(
+          ascending("serviceName"),
+          IndexOptions()
+            .name("serviceNameIndex")
+            .unique(true)
+            .background(true)
+        )
+      ),
+      replaceIndexes = true
+    ) {
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
     val query = equal("serviceName", Codecs.toBson(apiApproval.serviceName))

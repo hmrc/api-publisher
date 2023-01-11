@@ -17,28 +17,27 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import javax.inject.{Inject, Singleton}
-import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import play.api.libs.json.{JsString, JsValue}
-import uk.gov.hmrc.apipublisher.models.Scope
-import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
-import uk.gov.hmrc.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
 
+import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
+import play.api.libs.json.{JsString, JsValue}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http._
+
+import uk.gov.hmrc.apipublisher.models.Scope
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext)
-  extends ConnectorRecovery with ApplicationLogger {
+class APIScopeConnector @Inject() (config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+    extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/scope", scopes).map {
-      case Right(_) => (())
+      case Right(_)                                                         => (())
       case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-      case Left(err) => throw err
+      case Left(err)                                                        => throw err
     }
   }
 
@@ -46,11 +45,11 @@ class APIScopeConnector @Inject()(config: ApiScopeConfig, http: HttpClient)(impl
     val url = s"$serviceBaseUrl/scope/validate"
     http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](url, scopes)
       .map {
-        case Right(_) => None
+        case Right(_)                                                => None
         case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>
           logger.debug(s"Failed request. POST url=$url: $message")
           Some(JsString(message))
-        case Left(err) => throw err
+        case Left(err)                                               => throw err
       }
   }
 

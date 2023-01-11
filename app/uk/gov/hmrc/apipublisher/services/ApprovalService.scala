@@ -17,17 +17,17 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.wiring.AppContext
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 @Singleton
-class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext)
-                                extends ApplicationLogger {
+class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext)
+    extends ApplicationLogger {
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices()
 
@@ -35,22 +35,22 @@ class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, ap
 
     def calculateApiApprovalStatus(existingApiApproval: Option[APIApproval]): Boolean =
       (appContext.preventAutoDeploy, existingApiApproval) match {
-        case (false, _) => true
+        case (false, _)   => true
         case (_, Some(e)) => e.isApproved
-        case (_, _) => false
+        case (_, _)       => false
       }
 
     for {
       existingApiApproval <- apiApprovalRepository.fetch(apiApproval.serviceName)
-      isApproved = calculateApiApprovalStatus(existingApiApproval)
-      _ <- apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved)))
+      isApproved           = calculateApiApprovalStatus(existingApiApproval)
+      _                   <- apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved)))
     } yield isApproved
   }
 
   def approveService(serviceName: String): Future[ServiceLocation] =
     for {
       approval <- fetchServiceApproval(serviceName)
-      _ <- apiApprovalRepository.save(approval.copy(approved = Some(true)))
+      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true)))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
@@ -59,6 +59,6 @@ class ApprovalService @Inject()(apiApprovalRepository: APIApprovalRepository, ap
   def fetchServiceApproval(serviceName: String): Future[APIApproval] =
     apiApprovalRepository.fetch(serviceName).flatMap {
       case Some(a) => Future.successful(a)
-      case None => Future.failed(UnknownApiServiceException(s"Unable to Find Service. Unknown Service Name: $serviceName"))
+      case None    => Future.failed(UnknownApiServiceException(s"Unable to Find Service. Unknown Service Name: $serviceName"))
     }
 }

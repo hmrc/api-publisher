@@ -18,24 +18,19 @@ package uk.gov.hmrc.apipublisher.connectors
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import uk.gov.hmrc.http.HttpReads.Implicits._
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.apipublisher.models.FieldDefinition
-import play.api.libs.json.JsString
-import play.api.libs.json.JsValue
-import uk.gov.hmrc.http.UpstreamErrorResponse
+
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.http.UnprocessableEntityException
+import play.api.libs.json.{JsString, JsValue}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UnprocessableEntityException, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
-  extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+    extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = config.baseUrl
 
@@ -43,32 +38,32 @@ class APISubscriptionFieldsConnector @Inject()(config: ApiSSubscriptionFieldsCon
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
         val urlEncodedApiContext = URLEncoder.encode(apiContext, StandardCharsets.UTF_8.name)
-        val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-        val putUrl = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
+        val request              = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
+        val putUrl               = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
         http.PUT[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
-        .map {
-          case Right(_) => (())
-          case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-          case Left(err) => throw err
-        }
+          .map {
+            case Right(_)                                                         => (())
+            case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+            case Left(err)                                                        => throw err
+          }
     }
-    
+
     Future.sequence(putFutures).map(_ => ())
   }
 
   def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    if(fieldDefinitions.isEmpty)
+    if (fieldDefinitions.isEmpty) {
       Future.successful(None)
-    else {
+    } else {
       val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-      val putUrl = s"$serviceBaseUrl/validate"
+      val putUrl  = s"$serviceBaseUrl/validate"
 
       http.POST[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
         .map {
-          case Right(_) => None
+          case Right(_)                                                         => None
           case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Some(JsString("Field definitions are invalid"))
           case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _))          => Some(JsString("Field definitions are invalid"))
-          case Left(err) => throw err
+          case Left(err)                                                        => throw err
         }
     }
   }

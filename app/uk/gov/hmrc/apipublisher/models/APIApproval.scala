@@ -18,11 +18,7 @@ package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json.Json
 
-case class APIApproval(serviceName: String,
-                       serviceUrl: String,
-                       name: String,
-                       description: Option[String] = None,
-                       approved: Option[Boolean] = Some(false)) {
+case class APIApproval(serviceName: String, serviceUrl: String, name: String, description: Option[String] = None, approved: Option[Boolean] = Some(false)) {
   def isApproved: Boolean = approved.getOrElse(false)
 }
 

@@ -17,24 +17,28 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+
 import io.swagger.v3.oas.models.OpenAPI
+
 import uk.gov.hmrc.ramltools.domain.Endpoint
 
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
+
 object OasVersionDefinitionService {
+
   trait OasParser {
     def apply(context: Option[String])(openAPI: OpenAPI): List[Endpoint]
   }
 }
 
 @Singleton
-class OasVersionDefinitionService @Inject()(
-  microserviceConnector: MicroserviceConnector,
-  oasParser: OasVersionDefinitionService.OasParser
-)(implicit ec: ExecutionContext) extends DefinitionService.VersionDefinitionService {
+class OasVersionDefinitionService @Inject() (
+    microserviceConnector: MicroserviceConnector,
+    oasParser: OasVersionDefinitionService.OasParser
+  )(implicit ec: ExecutionContext
+  ) extends DefinitionService.VersionDefinitionService {
 
   override def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {
     microserviceConnector.getOAS(serviceLocation, version).map(oasParser(context))

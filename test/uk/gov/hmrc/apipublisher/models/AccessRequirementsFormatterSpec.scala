@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import uk.gov.hmrc.apipublisher.models.AccessRequirementsFormatters
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
-import uk.gov.hmrc.apipublisher.models.FieldDefinition
-import uk.gov.hmrc.apipublisher.models.FieldDefinitionType
 import utils.HmrcSpec
+
+import play.api.libs.json._
+
+import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
+import uk.gov.hmrc.apipublisher.models.{AccessRequirementsFormatters, FieldDefinition, FieldDefinitionType, _}
 
 class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFormatters {
 
@@ -94,17 +93,25 @@ class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFo
   }
 
   "FieldDefinition" should {
-    val FakeFieldDefinitionWithAccess: FieldDefinition = FieldDefinition(name = "name", description= "description",
-                                      hint=Some("hint"), `type` = FieldDefinitionType.STRING, shortDescription = Some("shortDescription"), validation = None,
-                                      access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly)))
+    val FakeFieldDefinitionWithAccess: FieldDefinition = FieldDefinition(
+      name = "name",
+      description = "description",
+      hint = Some("hint"),
+      `type` = FieldDefinitionType.STRING,
+      shortDescription = Some("shortDescription"),
+      validation = None,
+      access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly))
+    )
 
     "marshal json with non default access" in {
       objectAsJsonString(FakeFieldDefinitionWithAccess) should include(""","access":{"devhub":{"read":"adminOnly","write":"adminOnly"}}""")
     }
 
     "marshal json without mention of default access" in {
-      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include(""""access":{"devhub":{"read":"adminOnly", "write":"adminOnly"}}""")
-      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include(""""access"""")
+      objectAsJsonString(
+        FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)
+      ) should not include (""""access":{"devhub":{"read":"adminOnly", "write":"adminOnly"}}""")
+      objectAsJsonString(FakeFieldDefinitionWithAccess.copy(access = AccessRequirements.Default)) should not include (""""access"""")
     }
   }
 }

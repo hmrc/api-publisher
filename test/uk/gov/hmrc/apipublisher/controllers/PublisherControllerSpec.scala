@@ -18,47 +18,50 @@ package uk.gov.hmrc.apipublisher.controllers
 
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
-import akka.stream.Materializer
-import org.mockito.BDDMockito.given
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.libs.json._
-import play.api.mvc._
-import play.api.test.{FakeRequest, StubControllerComponentsFactory}
-import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
-import uk.gov.hmrc.apipublisher.services._
-import uk.gov.hmrc.apipublisher.wiring.AppContext
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
-import utils.AsyncHmrcSpec
-import play.api.test.Helpers._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory{
+import akka.stream.Materializer
+import org.mockito.BDDMockito.given
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import utils.AsyncHmrcSpec
 
-  val serviceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
+import play.api.libs.json._
+import play.api.mvc._
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
+
+import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.services._
+import uk.gov.hmrc.apipublisher.wiring.AppContext
+
+class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
+
+  val serviceLocation              = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
   implicit val mat: Materializer = app.materializer
 
   private val sharedSecret = UUID.randomUUID().toString
 
-  private val api = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
-  private val scopes = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
+  private val api          = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  private val scopes       = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
   private val apiAndScopes = ApiAndScopes(api, scopes)
 
   private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
+
   private val marriageAllowanceApproval =
-      APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
+    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
 
   trait BaseSetup {
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockPublisherService = mock[PublisherService]
-    val mockApprovalService = mock[ApprovalService]
-    val mockAppContext = mock[AppContext]
+    implicit val hc           = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val mockPublisherService  = mock[PublisherService]
+    val mockApprovalService   = mock[ApprovalService]
+    val mockAppContext        = mock[AppContext]
     val mockDefinitionService = mock[DefinitionService]
 
     val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
@@ -66,7 +69,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
   trait Setup extends BaseSetup {
     when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
-    when(mockPublisherService.validation(eqTo(apiAndScopes),eqTo(false))(*)).thenReturn(successful(None))
+    when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
     when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(true))
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
   }
@@ -84,7 +87,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
       when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
-      when(mockPublisherService.validation(eqTo(apiAndScopes),eqTo(false))(*)).thenReturn(successful(Some(JsString("Bang"))))
+      when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(Some(JsString("Bang"))))
 
       val result = underTest.publish(validRequest)
 
@@ -113,7 +116,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "return 500 (internal server error) when publisher service fails with an unexpected exception" in new Setup {
-      val errorMessage = "Test error"
+      val errorMessage         = "Test error"
       val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
       given(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(errorServiceLocation), *)(*))
@@ -167,7 +170,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     "fail when given an invalid payload" in new Setup {
 
       val errorString = """{"error":"invalid-scope"}"""
-      val input = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
+      val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
       when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
         .thenReturn(successful(Some(Json.parse(errorString))))
 
@@ -180,7 +183,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     "fail when an UnprocessableEntityException is thrown" in new Setup {
 
       val errorString = "TESTING! Scope blah has not been defined"
-      val input = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
+      val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
       when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 

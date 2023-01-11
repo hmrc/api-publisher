@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement
-import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirements
+import utils.HmrcSpec
+
 import uk.gov.hmrc.apipublisher.models.DevhubAccessLevel._
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
-import utils.HmrcSpec
+import uk.gov.hmrc.apipublisher.models.{DevhubAccessRequirement, DevhubAccessRequirements}
 
 class AccessRequirementsSpec extends HmrcSpec {
 

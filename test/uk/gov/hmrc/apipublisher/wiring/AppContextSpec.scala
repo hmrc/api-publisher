@@ -16,18 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.wiring
 
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import utils.AsyncHmrcSpec
 
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 class AppContextSpec extends AsyncHmrcSpec {
 
   "AppContext" must {
     "Correctly rewrite URLs for an environment" in {
-      val mockConfiguration = mock[Configuration]
-      val mockEnvironment = mock[Environment]
-      val mockServicesConfig =mock[ServicesConfig]
+      val mockConfiguration  = mock[Configuration]
+      val mockEnvironment    = mock[Environment]
+      val mockServicesConfig = mock[ServicesConfig]
 
       when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.from")).thenReturn(Option("mockFrom"))
       when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.to")).thenReturn(Option("moTo"))
