@@ -128,6 +128,7 @@ class MicroserviceConnector @Inject() (
     }
 
     def handleFailure(err: List[String]): Future[OpenAPI] = {
+      println(s"ERROR : ${err.mkString}")
       logger.warn(s"Failed to load OAS file from ${serviceLocation.serviceUrl} due to [${err.mkString}]")
       Future.failed(new IllegalArgumentException("Cannot find valid OAS file"))
     }

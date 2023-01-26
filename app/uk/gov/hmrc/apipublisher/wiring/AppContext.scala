@@ -27,7 +27,7 @@ class AppContext @Inject() (val runModeConfiguration: Configuration, environment
   lazy val appUrl                     = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl               = s"$appUrl/publish"
   lazy val preventAutoDeploy: Boolean = runModeConfiguration.getOptional[Boolean]("features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites         = buildRamlLoaderRewrites(runModeConfiguration)
+  lazy val ramlLoaderRewrites         = Map("https://developer.service.hmrc.gov.uk" -> "http://localhost:9680")
   lazy val publishToken               = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
   lazy val publishingKey              = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 
