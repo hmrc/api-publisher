@@ -34,7 +34,7 @@ import uk.gov.hmrc.apipublisher.wiring.AppContext
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.ramltools.domain.Endpoints
+import uk.gov.hmrc.ramltools.domain.{Endpoint, Endpoints}
 import uk.gov.hmrc.ramltools.loaders.UrlRewritingRamlLoader
 import utils.AsyncHmrcSpec
 
@@ -49,7 +49,7 @@ class MTDRamlToOasMigrationChecksSpec extends AsyncHmrcSpec with BeforeAndAfterA
   val apiProducerUrl  = s"http://$apiProducerHost:$apiProducerPort"
   val wireMockServer  = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
 
-  val testService = ServiceLocation("test.example.com", "http://localhost:7793")
+  val testService = ServiceLocation("test.example.com", "http://localhost:7798")
 
   trait BaseSetup {
     WireMock.reset()
@@ -86,28 +86,35 @@ class MTDRamlToOasMigrationChecksSpec extends AsyncHmrcSpec with BeforeAndAfterA
 
   "Check OAS and RAML specs are in sync" should {
 
+    val sort = (ep: Endpoint) => ep.endpointName + ep.method
+
     "Load both RAML and OAS specs and make sure they are in sync " in new Setup {
-      val context = Some("individuals/state-benefits")
-      val port = "7789"
-      val version = "1.0"
-      val mockConfiguration = mock[Configuration]
-      val mockEnvironment = mock[Environment]
+      val context            = Some("individuals/state-benefits")
+      val port               = "7798"
+      val version            = "2.0"
+      val mockConfiguration  = mock[Configuration]
+      val mockEnvironment    = mock[Environment]
       val mockServicesConfig = mock[ServicesConfig]
 
       when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.from")).thenReturn(Option("mockFrom"))
       when(mockConfiguration.getOptional[String]("ramlLoaderUrlRewrite.to")).thenReturn(Option("moTo"))
 
       val appContext = new AppContext(mockConfiguration, mockEnvironment, mockServicesConfig)
-      val urlWriter = new DocumentationUrlRewriter(appContext)
+      val urlWriter  = new DocumentationUrlRewriter(appContext)
       val ramlLoader = new UrlRewritingRamlLoader(urlWriter)
 
       when(mockRamlLoader.load(*)).thenReturn(ramlLoader.load(s"http://localhost:$port/api/conf/$version/application.raml"))
 
-      val parser = new OasParserImpl()
-      val ramlEndPoints = connector.getRaml(ServiceLocation("localhost", s"http://localhost:$port"), version).map(raml => Endpoints(raml, context).toList).get
+      val parser        = new OasParserImpl()
+      val ramlEndPoints =
+        connector
+          .getRaml(ServiceLocation("localhost", s"http://localhost:$port"), version).map(raml => Endpoints(raml, context).toList).get
+          .sortBy(sort)
 
       when(oasFileLocator.locationOf(*, *)).thenReturn(s"http://localhost:$port/api/conf/$version/application.yaml")
-      val oasEndpoints = await(connector.getOAS(testService, version).map(parser.apply(context)(_)))
+      val oasEndpoints =
+        await(connector.getOAS(testService, version).map(parser.apply(context)(_)))
+          .sortBy(sort)
 
       val mismatch = ramlEndPoints.filterNot(e => oasEndpoints.contains(e))
       if (mismatch.isEmpty) {
@@ -117,14 +124,21 @@ class MTDRamlToOasMigrationChecksSpec extends AsyncHmrcSpec with BeforeAndAfterA
         mismatch.foreach(println)
       }
 
-      println("\nRAML Endpoints: \n========= ")
-      ramlEndPoints.foreach(println)
+      withClue(
+        s"RAML endpoints:\n  ${ramlEndPoints.map(_.endpointName).mkString("\n  ")}\n" +
+          s"OAS endpoints:\n  ${oasEndpoints.map(_.endpointName).mkString("\n  ")}\n"
+      ) {
+        ramlEndPoints.size shouldBe oasEndpoints.size
+      }
 
-      println("\nOAS Endpoints: \n=========")
-      oasEndpoints.foreach(println)
+      val endpointTuples = ramlEndPoints.zip(oasEndpoints)
 
+      endpointTuples.foreach { case (ramlEndpoint, oasEndpoint) =>
+        withClue(ramlEndpoint.endpointName + ":\n") {
+          ramlEndpoint shouldBe oasEndpoint
+        }
+      }
 
-      ramlEndPoints.toSet shouldBe oasEndpoints.toSet
       ok("Done")
     }
 
