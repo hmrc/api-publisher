@@ -50,7 +50,6 @@ lazy val microservice = Project(appName, file("."))
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution:= false
   )
-  // .settings(scalacOptions ++= Seq("-Ypartial-unification"))
   .settings(
     scalacOptions ++= Seq(
       "-Wconf:cat=unused&src=views/.*\\.scala:s",
