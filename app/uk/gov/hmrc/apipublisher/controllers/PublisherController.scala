@@ -105,7 +105,7 @@ class PublisherController @Inject() (
 
   def fetchUnapprovedServices(): Action[AnyContent] = Action.async { _ =>
     approvalService.fetchUnapprovedServices().map {
-      result => Ok(Json.toJson(result.seq))
+      result => Ok(Json.toJson(result))
     } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
   }
 

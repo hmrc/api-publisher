@@ -53,12 +53,12 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClient])
   }
 
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(apiScopeHost, apiScopePort)
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
     wireMockServer.stop()
   }
 

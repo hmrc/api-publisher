@@ -36,12 +36,12 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
   private val repository: APIApprovalRepository = app.injector.instanceOf[APIApprovalRepository]
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
     await(repository.ensureIndexes)
   }
 
-  override protected def afterAll() {
+  override protected def afterAll(): Unit = {
     await(repository.collection.drop().toFuture())
   }
 

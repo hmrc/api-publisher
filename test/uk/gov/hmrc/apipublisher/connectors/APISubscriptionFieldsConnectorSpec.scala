@@ -76,12 +76,12 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
       connector.publishFieldDefinitions(definitions)
   }
 
-  override protected def beforeAll() {
+  override protected def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
   }
 
-  override protected def afterAll() {
+  override protected def afterAll(): Unit = {
     wireMockServer.stop()
   }
 
@@ -106,7 +106,7 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
     "don't call api-subscription-fields Service when there's no field definitions to publish" in new Setup {
       publishFieldDefinitions(definitions = Nil)
 
-      getAllWiremockRequests shouldBe 'empty
+      getAllWiremockRequests shouldBe empty
     }
 
     "return a failed future with response body if the api-subscription-fields endpoint returns 500" in new Setup {
