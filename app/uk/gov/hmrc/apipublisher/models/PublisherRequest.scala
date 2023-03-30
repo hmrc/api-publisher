@@ -55,14 +55,14 @@ object ApiVersionSource {
 }
 
 case class ApiAndScopes(api: JsObject, scopes: JsArray) {
-  private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String])
+  private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String]).toSeq
 
-  lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String])
+  lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String]).toSeq
 
   private lazy val versions: JsArray = (api \ "versions").as[JsArray]
 
   private lazy val versionsWithoutFieldDefinitions: JsArray = {
-    val pruneFieldDefinitions = (__ \ 'fieldDefinitions).json.prune
+    val pruneFieldDefinitions = (__ \ "fieldDefinitions").json.prune
     val newJsArrayValue       = versions.value map { versionJs =>
       lazy val versionNo = (versionJs \ "version").asOpt[String].getOrElse("N/A")
       transformJson(versionJs, pruneFieldDefinitions, s"Could not prune field definitions from version $versionNo")
@@ -71,8 +71,8 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
   }
 
   lazy val apiWithoutFieldDefinitions: JsObject = {
-    val prune           = (__ \ 'versions).json.prune
-    val putNew          = __.json.update((__ \ 'versions).json.put(versionsWithoutFieldDefinitions))
+    val prune           = (__ \ "versions").json.prune
+    val putNew          = __.json.update((__ \ "versions").json.put(versionsWithoutFieldDefinitions))
     val replaceVersions = prune andThen putNew
     transformJson(api, replaceVersions, "Could not put versions without field definitions in api")
   }
@@ -93,10 +93,10 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     (api \ "categories").asOpt[Seq[APICategory]].getOrElse(Seq.empty)
   }
 
-  lazy val versionNumbers: Seq[String] = versions.value.map(v => (v \ "version").as[String])
+  lazy val versionNumbers: scala.collection.Seq[String] = versions.value.map(v => (v \ "version").as[String])
 
   lazy val fieldDefinitions: Seq[ApiFieldDefinitions] = {
-    versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs))
+    versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs)).toSeq
   }
 
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {

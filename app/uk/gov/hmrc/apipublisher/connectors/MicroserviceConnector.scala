@@ -19,7 +19,7 @@ package uk.gov.hmrc.apipublisher.connectors
 import java.io.{FileNotFoundException, InputStream}
 import java.nio.charset.StandardCharsets.UTF_8
 import javax.inject.{Inject, Singleton}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.Try

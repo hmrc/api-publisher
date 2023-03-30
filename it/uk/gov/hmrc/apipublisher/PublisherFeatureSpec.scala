@@ -118,7 +118,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The validation errors are present in the response body")
       val responseBody: JsValue      = Json.parse(publishResponse.body)
       (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
-      val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String])
+      val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
       errorMessages should contain only (
         """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
         """string [c] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
@@ -126,13 +126,13 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
     }
   }
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     server = TestServer.apply(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
     server.start()
   }
 
-  override def afterEach() {
+  override def afterEach(): Unit = {
     super.afterEach()
     server.stop()
   }

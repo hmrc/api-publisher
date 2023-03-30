@@ -55,12 +55,12 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
     val connector = new APIDefinitionConnector(apiDefinitionConfig, app.injector.instanceOf[HttpClient])
   }
 
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(apiDefinitionHost, apiDefinitionPort)
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
     wireMockServer.stop()
   }
 

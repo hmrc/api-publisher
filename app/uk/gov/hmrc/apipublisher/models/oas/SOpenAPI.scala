@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apipublisher.models.oas
 
 import java.util.function.BiConsumer
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.Buffer
 
@@ -50,7 +50,7 @@ object SOpenAPI {
         }
         wrap.forEach(bc)
 
-        ListMap.apply(buffer: _*)
+        ListMap.apply(buffer.toSeq: _*)
       }
     }
   }
