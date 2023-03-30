@@ -93,7 +93,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
     (api \ "categories").asOpt[Seq[APICategory]].getOrElse(Seq.empty)
   }
 
-  lazy val versionNumbers: scala.collection.Seq[String] = versions.value.map(v => (v \ "version").as[String])
+  lazy val versionNumbers: Seq[String] = versions.value.map(v => (v \ "version").as[String]).toSeq
 
   lazy val fieldDefinitions: Seq[ApiFieldDefinitions] = {
     versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs)).toSeq
