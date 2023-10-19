@@ -9,7 +9,7 @@
         "type" : "PRIVATE",
         "whitelistApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
       },
-      "status" : "PUBLISHED",
+      "status" : "STABLE",
       "endpoints" : [
         {
           "uriPattern" : "/hello",
@@ -64,7 +64,7 @@
       "access" : {
         "type" : "PUBLIC"
       },
-      "status" : "PUBLISHED",
+      "status" : "STABLE",
       "endpoints" : [
         {
           "uriPattern" : "/hello",
@@ -89,7 +89,7 @@
       "access": {
         "type" : "PUBLIC"
       },
-      "status" : "PUBLISHED",
+      "status" : "STABLE",
       "endpoints" : [
         {
           "uriPatter" : "/hello",
@@ -117,7 +117,7 @@
     },
     { 
       "version" : "3.0",
-      "status" : "PROTOTYPED",
+      "status" : "BETA",
       "endpoints" : [
         {
           "uriPattern" : "/hello",

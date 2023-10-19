@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, PublicationResult, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
@@ -53,11 +53,11 @@ class PublisherController @Inject() (
 
   def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
     handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
-      requestBody => publishService(requestBody)
+      requestBody => publishService(requestBody, includeDefinition = true)
     }
   }
 
-  private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
+  private def publishService(serviceLocation: ServiceLocation, includeDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
     import cats.data.{OptionT, EitherT}
@@ -78,10 +78,10 @@ class PublisherController @Inject() (
 
     def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
-        case true  =>
+        case PublicationResult(true, publisherResponse) =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
-          NoContent
-        case false =>
+          if (includeDefinition) Ok(Json.toJson(publisherResponse)) else NoContent
+        case PublicationResult(false, _)                =>
           logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
           Accepted
       }
@@ -119,7 +119,7 @@ class PublisherController @Inject() (
     ({
       for {
         serviceLocation <- approvalService.approveService(serviceName)
-        result          <- publishService(serviceLocation)
+        result          <- publishService(serviceLocation, includeDefinition = false)
       } yield result
     }) recover recovery(FAILED_TO_APPROVE_SERVICES)
   }

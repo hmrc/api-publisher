@@ -35,7 +35,8 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.ApiStatus._
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services._
 import uk.gov.hmrc.apipublisher.wiring.AppContext
 
@@ -57,6 +58,18 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   private val marriageAllowanceApproval =
     APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
 
+  private val publisherResponse = PublisherResponse(
+    name = "Example API",
+    serviceName = "example-api",
+    context = "test/example",
+    description = "An example of an API",
+    versions = List(PartialApiVersion(
+      version = "1.0",
+      status = STABLE,
+      endpointsEnabled = Some(true)
+    ))
+  )
+
   trait BaseSetup {
     implicit val hc           = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService  = mock[PublisherService]
@@ -70,7 +83,10 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   trait Setup extends BaseSetup {
     when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
     when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
-    when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(true))
+    when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+      approved = true,
+      Some(publisherResponse)
+    )))
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
   }
 
@@ -95,17 +111,18 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       contentAsString(result).contains("Bang") shouldBe true
     }
 
-    "respond with 204 (NO_CONTENT) when service APIs successfully published" in new Setup {
+    "respond with 200 (OK) when service APIs successfully published" in new Setup {
       val validRequest = request(serviceLocation, sharedSecret)
 
       val result = underTest.publish(validRequest)
 
-      status(result) shouldEqual NO_CONTENT
+      status(result) shouldEqual OK
+      contentAsJson(result) shouldBe Json.toJson(publisherResponse)
       verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
     }
 
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(false))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, None)))
 
       val validRequest = request(serviceLocation, sharedSecret)
 
@@ -253,14 +270,16 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "approve a known service" in new Setup {
 
-      private val testServiceLocation = ServiceLocation("employee-paye", "http://localhost/employee-paye")
-      when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(testServiceLocation))
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(testServiceLocation), *)(*)).thenReturn(successful(true))
+      when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(serviceLocation))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+        approved = true,
+        Some(publisherResponse)
+      )))
 
       val result = underTest.approve("employee-paye")(FakeRequest())
 
       status(result) shouldBe NO_CONTENT
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(testServiceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {

@@ -19,46 +19,70 @@ then publish its definition to the API Definition service and its scope to the A
 ### POST /publish
 Jenkins uses this endpoint to notify of a new microservice
 ### Request Payload Example
-```
+```json
 {
-   "serviceName":"hello-world",
-   "serviceUrl":"http://hello-world.example.com",
-   "metadata":{
-      "key1": "value1",
-      "key2": "value2"
-   }
+  "serviceName": "hello-world",
+  "serviceUrl": "http://hello-world.example.com",
+  "metadata": {
+    "key1": "value1",
+    "key2": "value2"
+  }
 }
 ```
 
 ### Responses
+#### 200 OK
+The request was successful and the API Definition and Scopes have been published
+##### Response Payload Example
+```json
+{
+  "name": "Hello World",
+  "serviceName": "hello-world",
+  "context": "test/hello",
+  "description": "A 'hello world' example API",
+  "versions": [
+    {
+      "version": "1.0",
+      "status": "STABLE",
+      "endpointsEnabled": true
+    },
+    {
+      "version": "2.0",
+      "status": "ALPHA",
+      "endpointsEnabled": false
+    }
+  ]
+}
+```
+Possible statuses: ALPHA, BETA, STABLE, DEPRECATED, RETIRED
+
 #### 202 Accepted
-No response as the request was successful and the API has been published and is awaiting approval
-#### 204 No Content
-No response as the request was successful and the API Definition and Scopes have been published
+No response as the request was successful but the API is awaiting approval in Gatekeeper and has not been published
+
 #### 400 Bad Request
 The response will contain information regarding why the request could not be understood
-```
+```json
 {
   "statusCode": 400,
   "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (akka.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
 }
 ```
 #### 401 Unauthorized
-```
+```json
 {
   "code": "UNAUTHORIZED",
   "message": "Agent must be authorised to perform Publish or Validate actions"
 }
 ```
 #### 415 Unsupported Media Type
-```
+```json
 {
   "statusCode": 415,
   "message": "Expecting text/json or application/json body"
 }
 ```
 #### 422 Unprocessable Entity - Invalid Request Payload
-```
+```json
 {
   "code": "API_PUBLISHER_INVALID_REQUEST_PAYLOAD",
   "message": {
@@ -74,7 +98,7 @@ The response will contain information regarding why the request could not be und
 }
 ```
 #### 500 Internal Server Error
-```
+```json
 {
   "code": "API_PUBLISHER_UNKNOWN_ERROR",
   "message": "An unexpected error occurred: GET of 'http://localhost/api/definition' failed. Caused by: 'Connection refused: localhost/127.0.0.1:80'"
@@ -83,7 +107,7 @@ The response will contain information regarding why the request could not be und
 
 ### POST /validate
 ### Request Payload Example
-```
+```json
 {
   "api": {
     "name":"Exmaple API",
@@ -127,7 +151,7 @@ The response will contain information regarding why the request could not be und
 #### 204 No Content
 No response as the request was successful
 #### 400 Bad Request - Missing Payload
-```
+```json
 {
   "statusCode": 400,
   "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (akka.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
@@ -135,28 +159,28 @@ No response as the request was successful
 ```
 #### 400 Bad Request - Scope Changed Error
 This response is related to the inability to change scopes when publishing.
-```
+```json
 {
   "scopeChangedErrors": "Updating scopes while publishing is no longer supported. See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"
 }
 ```
 #### 400 Bad Request - API Publisher Unknown Error
 The message in this response could contain any number of errors related to problems in the request payload. An example is shown below.
-```
+```json
 {
   "code": "API_PUBLISHER_UNKNOWN_ERROR",
   "message": "An unexpected error occurred: POST of 'http://localhost:9604/api-definition/validate' returned 422. Response body: '{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"messages\":[\"Field 'categories' should exist and not be empty for API 'Exmaple API'\"]}'"
 }
 ```
 #### 401 Unauthorized
-```
+```json
 {
   "code": "UNAUTHORIZED",
   "message": "Agent must be authorised to perform Publish or Validate actions"
 }
 ```
 #### 415 Unsupported Media Type
-```
+```json
 {
   "statusCode": 415,
   "message": "Expecting text/json or application/json body"

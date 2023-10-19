@@ -21,12 +21,12 @@ import scala.jdk.CollectionConverters._
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
+import org.scalatest.Inside
 import utils.HmrcSpec
 
 import uk.gov.hmrc.ramltools.domain.QueryParam
 
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import org.scalatest.Inside
 
 class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
 
@@ -94,7 +94,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
                                        |""".stripMargin)
 
       inside(parser.apply(None)(sample)) {
-        case (result :: Nil) => 
+        case (result :: Nil) =>
           result.uriPattern shouldBe "/hello/world"
           result.method shouldBe "GET"
           result.endpointName shouldBe "no endpoint name provided"

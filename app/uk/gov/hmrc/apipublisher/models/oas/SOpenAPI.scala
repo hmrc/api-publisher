@@ -17,9 +17,9 @@
 package uk.gov.hmrc.apipublisher.models.oas
 
 import java.util.function.BiConsumer
-import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.Buffer
+import scala.jdk.CollectionConverters._
 
 import io.swagger.models.Method
 import io.swagger.v3.oas.models._
