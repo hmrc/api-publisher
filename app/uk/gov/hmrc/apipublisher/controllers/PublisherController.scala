@@ -53,11 +53,11 @@ class PublisherController @Inject() (
 
   def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
     handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
-      requestBody => publishService(requestBody, includeDefinition = true)
+      requestBody => publishService(requestBody)
     }
   }
 
-  private def publishService(serviceLocation: ServiceLocation, includeDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Result] = {
+  private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
     import cats.data.{OptionT, EitherT}
@@ -80,7 +80,7 @@ class PublisherController @Inject() (
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
         case PublicationResult(true, publisherResponse) =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
-          if (includeDefinition) Ok(Json.toJson(publisherResponse)) else NoContent
+          Ok(Json.toJson(publisherResponse))
         case PublicationResult(false, _)                =>
           logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
           Accepted
@@ -116,12 +116,15 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    ({
+    {
       for {
         serviceLocation <- approvalService.approveService(serviceName)
-        result          <- publishService(serviceLocation, includeDefinition = false)
+        result          <- publishService(serviceLocation).map {
+                             case Result(ResponseHeader(OK, _, _), _, _, _, _) => NoContent
+                             case other                                        => other
+                           }
       } yield result
-    }) recover recovery(FAILED_TO_APPROVE_SERVICES)
+    } recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {
