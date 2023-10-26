@@ -41,6 +41,7 @@ object ApiStatus {
   case object DEPRECATED extends ApiStatus
   case object RETIRED    extends ApiStatus
 
+  // When the api-definition service stops returning PROTOTYPED and PUBLISHED, the conversions below can be removed
   def apply(text: String): Option[ApiStatus] = text.toUpperCase() match {
     case "ALPHA"                => Some(ALPHA)
     case "PROTOTYPED" | "BETA"  => Some(BETA)
