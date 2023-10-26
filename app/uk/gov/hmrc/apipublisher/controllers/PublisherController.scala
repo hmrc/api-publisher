@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, PublicationResult, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.apipublisher.wiring.AppContext
@@ -78,10 +78,10 @@ class PublisherController @Inject() (
 
     def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
-        case true  =>
+        case PublicationResult(true, publisherResponse) =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
-          NoContent
-        case false =>
+          Ok(Json.toJson(publisherResponse))
+        case PublicationResult(false, _)                =>
           logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
           Accepted
       }
@@ -116,12 +116,15 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    ({
+    {
       for {
         serviceLocation <- approvalService.approveService(serviceName)
-        result          <- publishService(serviceLocation)
+        result          <- publishService(serviceLocation).map {
+                             case Result(ResponseHeader(OK, _, _), _, _, _, _) => NoContent
+                             case other                                        => other
+                           }
       } yield result
-    }) recover recovery(FAILED_TO_APPROVE_SERVICES)
+    } recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {

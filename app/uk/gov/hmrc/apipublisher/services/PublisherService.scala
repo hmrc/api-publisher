@@ -36,7 +36,7 @@ class PublisherService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def publishAPIDefinitionAndScopes(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
 
     def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
@@ -45,12 +45,13 @@ class PublisherService @Inject() (
       )
     }
 
-    def publish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
+    def publish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
       for {
-        _ <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
-        _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation(apiAndScopes))
-        _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
-      } yield true
+        _  <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
+        api = apiDetailsWithServiceLocation(apiAndScopes)
+        _  <- apiDefinitionConnector.publishAPI(api)
+        _  <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
+      } yield PublicationResult(approved = true, Some(api.as[PublisherResponse]))
     }
 
     def publishFieldDefinitions(fieldDefinitions: Seq[ApiFieldDefinitions]): Future[Unit] = {
@@ -61,10 +62,10 @@ class PublisherService @Inject() (
       }
     }
 
-    def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[Boolean] = {
+    def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        result     <- if (isApproved) publish(apiAndScopes) else successful(false)
+        result     <- if (isApproved) publish(apiAndScopes) else successful(PublicationResult(approved = false, None))
       } yield result
     }
 

@@ -27,6 +27,7 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
+import uk.gov.hmrc.apipublisher.models.ApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 
 class PublisherServiceSpec extends AsyncHmrcSpec {
@@ -56,6 +57,19 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
   val emulatedServiceError = new UnsupportedOperationException("Emulating a failure")
 
+  val publisherResponse = PublisherResponse(
+    name = "Test",
+    serviceName = "test",
+    context = "test",
+    description = "Test API",
+    versions = List(
+      PartialApiVersion(version = "1.0", status = STABLE, endpointsEnabled = None),
+      PartialApiVersion(version = "2.0", status = STABLE, endpointsEnabled = None),
+      PartialApiVersion(version = "2.1", status = STABLE, endpointsEnabled = None),
+      PartialApiVersion(version = "3.0", status = BETA, endpointsEnabled = None)
+    )
+  )
+
   trait Setup {
     implicit val hc: HeaderCarrier                                         = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockApiDefinitionConnector: APIDefinitionConnector                 = mock[APIDefinitionConnector]
@@ -80,7 +94,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
     "Retrieve the api from the microservice and Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is allowed" in new Setup {
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe true
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = true, Some(publisherResponse))
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
@@ -91,7 +105,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
       when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(false))
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe false
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = false, None)
 
       verifyZeroInteractions(mockApiDefinitionConnector)
       verifyZeroInteractions(mockApiScopeConnector)
@@ -99,7 +113,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     }
 
     "When publication allowed and api does not have subscription fields, publish API to api-definition, api-scope and api-documentation only" in new Setup {
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopesWithoutFieldDefinitions)) shouldBe true
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopesWithoutFieldDefinitions)) shouldBe PublicationResult(approved = true, Some(publisherResponse))
 
       verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
