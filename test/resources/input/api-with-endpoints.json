@@ -42,7 +42,7 @@
       "access": {
         "type" : "PUBLIC"
       },
-      "status" : "STABLE",
+      "status" : "PUBLISHED",
       "endpoints" : [
         {
           "uriPatter" : "/hello",
@@ -56,7 +56,7 @@
     },
     {
       "version" : "3.0",
-      "status" : "BETA",
+      "status" : "PROTOTYPED",
       "endpoints" : [
         {
           "uriPattern" : "/hello",

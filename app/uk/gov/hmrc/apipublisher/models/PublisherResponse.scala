@@ -42,12 +42,12 @@ object ApiStatus {
   case object RETIRED    extends ApiStatus
 
   def apply(text: String): Option[ApiStatus] = text.toUpperCase() match {
-    case "ALPHA"      => Some(ALPHA)
-    case "BETA"       => Some(BETA)
-    case "STABLE"     => Some(STABLE)
-    case "DEPRECATED" => Some(DEPRECATED)
-    case "RETIRED"    => Some(RETIRED)
-    case _            => None
+    case "ALPHA"                => Some(ALPHA)
+    case "PROTOTYPED" | "BETA"  => Some(BETA)
+    case "PUBLISHED" | "STABLE" => Some(STABLE)
+    case "DEPRECATED"           => Some(DEPRECATED)
+    case "RETIRED"              => Some(RETIRED)
+    case _                      => None
   }
 
   private val convert: String => JsResult[ApiStatus] = s => ApiStatus(s).fold[JsResult[ApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))

@@ -160,7 +160,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "STABLE"
+       |        "status": "PUBLISHED"
        |      }
        |    ]
        |  }
@@ -184,7 +184,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "STABLE",
+       |        "status": "PUBLISHED",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -202,11 +202,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |      },
        |      {
        |        "version": "2.0",
-       |        "status": "STABLE"
+       |        "status": "PUBLISHED"
        |      },
        |      {
        |        "version": "3.0",
-       |        "status": "STABLE",
+       |        "status": "PUBLISHED",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrlOnly",
@@ -266,7 +266,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |  "versions" : [
        |    {
        |      "version" : "1.0",
-       |      "status" : "STABLE",
+       |      "status" : "PUBLISHED",
        |        "endpoints": [
        |          {
        |            "uriPattern": "/hello",
@@ -279,7 +279,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |    },
        |    {
        |      "version" : "2.0",
-       |      "status" : "STABLE",
+       |      "status" : "PUBLISHED",
        |        "endpoints": [
        |          {
        |            "uriPattern": "/hello",
@@ -293,7 +293,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |    },
        |    {
        |      "version" : "3.0",
-       |      "status" : "STABLE",
+       |      "status" : "PUBLISHED",
        |        "endpoints": [
        |          {
        |            "uriPattern": "/hello",
