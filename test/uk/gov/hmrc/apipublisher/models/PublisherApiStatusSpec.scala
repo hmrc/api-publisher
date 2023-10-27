@@ -20,27 +20,29 @@ import utils.HmrcSpec
 
 import play.api.libs.json.{JsResultException, Json}
 
-class ApiStatusSpec extends HmrcSpec {
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.{BETA, STABLE}
+
+class PublisherApiStatusSpec extends HmrcSpec {
 
   "Parsing an ApiStatus" should {
     "parse STABLE correctly" in {
-      val partialApiVersion = parseStatus("STABLE")
-      partialApiVersion.status shouldBe ApiStatus.STABLE
+      val status = parseStatus("STABLE")
+      status shouldBe STABLE
     }
 
     "parse BETA correctly" in {
-      val partialApiVersion = parseStatus("BETA")
-      partialApiVersion.status shouldBe ApiStatus.BETA
+      val status = parseStatus("BETA")
+      status shouldBe BETA
     }
 
     "convert PUBLISHED to STABLE" in {
-      val partialApiVersion = parseStatus("PUBLISHED")
-      partialApiVersion.status shouldBe ApiStatus.STABLE
+      val status = parseStatus("PUBLISHED")
+      status shouldBe STABLE
     }
 
     "convert PROTOTYPED to BETA" in {
-      val partialApiVersion = parseStatus("PROTOTYPED")
-      partialApiVersion.status shouldBe ApiStatus.BETA
+      val status = parseStatus("PROTOTYPED")
+      status shouldBe BETA
     }
 
     "thrown an exception if the status is INVALID" in {
@@ -50,6 +52,8 @@ class ApiStatusSpec extends HmrcSpec {
   }
 
   private def parseStatus(status: String) = {
-    Json.parse(s"""{"status":"$status","version":"1.0","endpointsEnabled":true}""").as[PartialApiVersion]
+    Json.parse(s"""{"status":"$status","version":"1.0","endpointsEnabled":true}""")
+      .as[PublisherApiVersion]
+      .status
   }
 }

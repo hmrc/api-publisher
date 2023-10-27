@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APIScopeConnector, APISubscriptionFieldsConnector}
 import uk.gov.hmrc.apipublisher.models
-import uk.gov.hmrc.apipublisher.models.ApiStatus._
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 
 class PublisherServiceSpec extends AsyncHmrcSpec {
@@ -63,10 +63,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     context = "test",
     description = "Test API",
     versions = List(
-      PartialApiVersion(version = "1.0", status = STABLE, endpointsEnabled = None),
-      PartialApiVersion(version = "2.0", status = STABLE, endpointsEnabled = None),
-      PartialApiVersion(version = "2.1", status = STABLE, endpointsEnabled = None),
-      PartialApiVersion(version = "3.0", status = BETA, endpointsEnabled = None)
+      PublisherApiVersion(version = "1.0", status = STABLE, endpointsEnabled = None),
+      PublisherApiVersion(version = "2.0", status = STABLE, endpointsEnabled = None),
+      PublisherApiVersion(version = "2.1", status = STABLE, endpointsEnabled = None),
+      PublisherApiVersion(version = "3.0", status = BETA, endpointsEnabled = None)
     )
   )
 
