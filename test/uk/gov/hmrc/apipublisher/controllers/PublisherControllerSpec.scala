@@ -35,7 +35,7 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApiStatus._
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services._
 import uk.gov.hmrc.apipublisher.wiring.AppContext
@@ -63,7 +63,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     serviceName = "example-api",
     context = "test/example",
     description = "An example of an API",
-    versions = List(PartialApiVersion(
+    versions = List(PublisherApiVersion(
       version = "1.0",
       status = STABLE,
       endpointsEnabled = Some(true)

@@ -20,41 +20,42 @@ import play.api.libs.json._
 
 case class PublicationResult(approved: Boolean, publisherResponse: Option[PublisherResponse])
 
-case class PublisherResponse(name: String, serviceName: String, context: String, description: String, versions: List[PartialApiVersion])
+case class PublisherResponse(name: String, serviceName: String, context: String, description: String, versions: List[PublisherApiVersion])
 
 object PublisherResponse {
   implicit val format: OFormat[PublisherResponse] = Json.format[PublisherResponse]
 }
 
-case class PartialApiVersion(version: String, status: ApiStatus, endpointsEnabled: Option[Boolean])
+case class PublisherApiVersion(version: String, status: PublisherApiStatus, endpointsEnabled: Option[Boolean])
 
-object PartialApiVersion {
-  implicit val format: OFormat[PartialApiVersion] = Json.format[PartialApiVersion]
+object PublisherApiVersion {
+  implicit val format: OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]
 }
 
-sealed trait ApiStatus
+sealed trait PublisherApiStatus
 
-object ApiStatus {
-  case object ALPHA      extends ApiStatus
-  case object BETA       extends ApiStatus
-  case object STABLE     extends ApiStatus
-  case object DEPRECATED extends ApiStatus
-  case object RETIRED    extends ApiStatus
+object PublisherApiStatus {
+  case object ALPHA      extends PublisherApiStatus
+  case object BETA       extends PublisherApiStatus
+  case object STABLE     extends PublisherApiStatus
+  case object DEPRECATED extends PublisherApiStatus
+  case object RETIRED    extends PublisherApiStatus
 
-  def apply(text: String): Option[ApiStatus] = text.toUpperCase() match {
-    case "ALPHA"      => Some(ALPHA)
-    case "BETA"       => Some(BETA)
-    case "STABLE"     => Some(STABLE)
-    case "DEPRECATED" => Some(DEPRECATED)
-    case "RETIRED"    => Some(RETIRED)
-    case _            => None
+  // When the api-definition service stops returning PROTOTYPED and PUBLISHED, the conversions below can be removed
+  def apply(text: String): Option[PublisherApiStatus] = text.toUpperCase() match {
+    case "ALPHA"                => Some(ALPHA)
+    case "PROTOTYPED" | "BETA"  => Some(BETA)
+    case "PUBLISHED" | "STABLE" => Some(STABLE)
+    case "DEPRECATED"           => Some(DEPRECATED)
+    case "RETIRED"              => Some(RETIRED)
+    case _                      => None
   }
 
-  private val convert: String => JsResult[ApiStatus] = s => ApiStatus(s).fold[JsResult[ApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
+  private val convert: String => JsResult[PublisherApiStatus] = s => PublisherApiStatus(s).fold[JsResult[PublisherApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
 
-  implicit val reads: Reads[ApiStatus] = JsPath.read[String].flatMapResult(convert(_))
+  implicit val reads: Reads[PublisherApiStatus] = JsPath.read[String].flatMapResult(convert(_))
 
-  implicit val writes: Writes[ApiStatus] = Writes[ApiStatus](status => JsString(status.toString))
+  implicit val writes: Writes[PublisherApiStatus] = Writes[PublisherApiStatus](status => JsString(status.toString))
 
-  implicit val format: Format[ApiStatus] = Format(reads, writes)
+  implicit val format: Format[PublisherApiStatus] = Format(reads, writes)
 }
