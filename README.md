@@ -43,16 +43,10 @@ The request was successful and the API Definition and Scopes have been published
   "versions": [
     {
       "version": "1.0",
-      "status": "STABLE",
-      "endpointsEnabled": true
+      "status": "STABLE"
     },
     {
       "version": "2.0",
-      "status": "ALPHA",
-      "endpointsEnabled": false
-    },
-    {
-      "version": "2.1",
       "status": "ALPHA"
     }
   ]
