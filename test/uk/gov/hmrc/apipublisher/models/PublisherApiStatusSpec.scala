@@ -52,7 +52,7 @@ class PublisherApiStatusSpec extends HmrcSpec {
   }
 
   private def parseStatus(status: String) = {
-    Json.parse(s"""{"status":"$status","version":"1.0","endpointsEnabled":true}""")
+    Json.parse(s"""{"status":"$status","version":"1.0"}""")
       .as[PublisherApiVersion]
       .status
   }

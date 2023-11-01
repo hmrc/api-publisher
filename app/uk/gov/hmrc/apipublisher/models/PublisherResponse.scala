@@ -26,7 +26,7 @@ object PublisherResponse {
   implicit val format: OFormat[PublisherResponse] = Json.format[PublisherResponse]
 }
 
-case class PublisherApiVersion(version: String, status: PublisherApiStatus, endpointsEnabled: Option[Boolean])
+case class PublisherApiVersion(version: String, status: PublisherApiStatus)
 
 object PublisherApiVersion {
   implicit val format: OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]

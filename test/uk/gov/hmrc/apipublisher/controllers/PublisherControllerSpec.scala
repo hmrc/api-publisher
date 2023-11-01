@@ -65,8 +65,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     description = "An example of an API",
     versions = List(PublisherApiVersion(
       version = "1.0",
-      status = STABLE,
-      endpointsEnabled = Some(true)
+      status = STABLE
     ))
   )
 

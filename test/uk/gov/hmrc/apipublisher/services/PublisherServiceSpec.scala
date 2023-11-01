@@ -63,10 +63,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     context = "test",
     description = "Test API",
     versions = List(
-      PublisherApiVersion(version = "1.0", status = STABLE, endpointsEnabled = None),
-      PublisherApiVersion(version = "2.0", status = STABLE, endpointsEnabled = None),
-      PublisherApiVersion(version = "2.1", status = STABLE, endpointsEnabled = None),
-      PublisherApiVersion(version = "3.0", status = BETA, endpointsEnabled = None)
+      PublisherApiVersion(version = "1.0", status = STABLE),
+      PublisherApiVersion(version = "2.0", status = STABLE),
+      PublisherApiVersion(version = "2.1", status = STABLE),
+      PublisherApiVersion(version = "3.0", status = BETA)
     )
   )
 
