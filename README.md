@@ -55,7 +55,8 @@ The request was successful and the API Definition and Scopes have been published
 Possible statuses: ALPHA, BETA, STABLE, DEPRECATED, RETIRED
 
 #### 202 Accepted
-No response as the request was successful but the API is awaiting approval in Gatekeeper and has not been published
+The request was successful but the API is awaiting approval in Gatekeeper and has not been published.
+The response payload is the same as above when the API is published.
 
 #### 400 Bad Request
 The response will contain information regarding why the request could not be understood

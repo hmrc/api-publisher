@@ -18,7 +18,7 @@ package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.json._
 
-case class PublicationResult(approved: Boolean, publisherResponse: Option[PublisherResponse])
+case class PublicationResult(approved: Boolean, publisherResponse: PublisherResponse)
 
 case class PublisherResponse(name: String, serviceName: String, context: String, description: String, versions: List[PublisherApiVersion])
 
