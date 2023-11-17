@@ -65,7 +65,7 @@ class PublisherService @Inject() (
     def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        api        <- if (isApproved) publish(apiAndScopes) else successful(apiAndScopes.api)
+        api        <- if (isApproved) publish(apiAndScopes) else successful(apiDetailsWithServiceLocation(apiAndScopes))
       } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 
