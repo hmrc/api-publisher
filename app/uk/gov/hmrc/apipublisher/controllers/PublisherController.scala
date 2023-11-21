@@ -78,12 +78,12 @@ class PublisherController @Inject() (
 
     def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
-        case PublicationResult(true, publisherResponse) =>
+        case PublicationResult(true, publisherResponse)  =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
           Ok(Json.toJson(publisherResponse))
-        case PublicationResult(false, _)                =>
+        case PublicationResult(false, publisherResponse) =>
           logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
-          Accepted
+          Accepted(Json.toJson(publisherResponse))
       }
     }
 

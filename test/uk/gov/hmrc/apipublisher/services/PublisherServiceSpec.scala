@@ -94,7 +94,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
     "Retrieve the api from the microservice and Publish it to api-definition, api-subscription-fields, api-scope and api-documentation if publication is allowed" in new Setup {
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = true, Some(publisherResponse))
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = true, publisherResponse)
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
@@ -105,7 +105,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
       when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(false))
 
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = false, None)
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = false, publisherResponse)
 
       verifyZeroInteractions(mockApiDefinitionConnector)
       verifyZeroInteractions(mockApiScopeConnector)
@@ -113,7 +113,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     }
 
     "When publication allowed and api does not have subscription fields, publish API to api-definition, api-scope and api-documentation only" in new Setup {
-      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopesWithoutFieldDefinitions)) shouldBe PublicationResult(approved = true, Some(publisherResponse))
+      await(publisherService.publishAPIDefinitionAndScopes(testServiceLocation, apiAndScopesWithoutFieldDefinitions)) shouldBe PublicationResult(approved = true, publisherResponse)
 
       verify(mockApiScopeConnector).publishScopes(eqTo(scopes))(*)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)

@@ -45,13 +45,13 @@ class PublisherService @Inject() (
       )
     }
 
-    def publish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
+    def publish(apiAndScopes: ApiAndScopes): Future[JsObject] = {
       for {
         _  <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
         api = apiDetailsWithServiceLocation(apiAndScopes)
         _  <- apiDefinitionConnector.publishAPI(api)
         _  <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
-      } yield PublicationResult(approved = true, Some(api.as[PublisherResponse]))
+      } yield api
     }
 
     def publishFieldDefinitions(fieldDefinitions: Seq[ApiFieldDefinitions]): Future[Unit] = {
@@ -65,8 +65,8 @@ class PublisherService @Inject() (
     def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        result     <- if (isApproved) publish(apiAndScopes) else successful(PublicationResult(approved = false, None))
-      } yield result
+        api        <- if (isApproved) publish(apiAndScopes) else successful(apiDetailsWithServiceLocation(apiAndScopes))
+      } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 
     checkApprovedAndPublish(apiAndScopes)

@@ -84,7 +84,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
     when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
       approved = true,
-      Some(publisherResponse)
+      publisherResponse
     )))
     when(mockAppContext.publishingKey).thenReturn(sharedSecret)
   }
@@ -121,13 +121,14 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, None)))
+      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, publisherResponse)))
 
       val validRequest = request(serviceLocation, sharedSecret)
 
       val result = underTest.publish(validRequest)
 
       status(result) shouldEqual ACCEPTED
+      contentAsJson(result) shouldBe Json.toJson(publisherResponse)
       verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
     }
 
@@ -272,7 +273,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(serviceLocation))
       when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
         approved = true,
-        Some(publisherResponse)
+        publisherResponse
       )))
 
       val result = underTest.approve("employee-paye")(FakeRequest())
