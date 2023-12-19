@@ -6,6 +6,7 @@ object AppDependencies {
   lazy val bootstrapVersion = "7.23.0"
   lazy val jacksonVersion = "2.12.6"
   lazy val mongoVersion = "0.74.0"
+  val commonDomainVersion = "0.10.0"
 
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"               %% "bootstrap-backend-play-28"    % bootstrapVersion,
@@ -13,8 +14,9 @@ object AppDependencies {
     "uk.gov.hmrc.mongo"         %% "hmrc-mongo-play-28"           % mongoVersion,
     "org.json"                  %  "json"                         % "20210307",
     "com.damnhandy"             %  "handy-uri-templates"          % "2.1.8",
-    "org.julienrf"              %% "play-json-derived-codecs"     % "10.0.2",
-    "org.typelevel"             %% "cats-core"                    % "2.6.1",
+    "org.julienrf"              %% "play-json-derived-codecs"     % "10.1.0",
+    "org.typelevel"             %% "cats-core"                    % "2.10.0",
+    "uk.gov.hmrc"               %% "api-platform-common-domain"   % commonDomainVersion,
     "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
       excludeAll(
         ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),

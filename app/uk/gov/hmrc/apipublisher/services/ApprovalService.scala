@@ -19,14 +19,14 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 @Singleton
-class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext)
+class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
 
   def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)

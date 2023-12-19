@@ -34,11 +34,11 @@ import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services._
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 
@@ -73,10 +73,10 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockPublisherService       = mock[PublisherService]
     val mockApprovalService        = mock[ApprovalService]
-    val mockAppContext             = mock[AppContext]
+    val mockAppConfig              = mock[AppConfig]
     val mockDefinitionService      = mock[DefinitionService]
 
-    val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
+    val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppConfig, stubControllerComponents())
   }
 
   trait Setup extends BaseSetup {
@@ -86,7 +86,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       approved = true,
       publisherResponse
     )))
-    when(mockAppContext.publishingKey).thenReturn(sharedSecret)
+    when(mockAppConfig.publishingKey).thenReturn(sharedSecret)
   }
 
   "publish" should {

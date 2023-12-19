@@ -30,18 +30,18 @@ import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, PublicationResult, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 @Singleton
 class PublisherController @Inject() (
     definitionService: DefinitionService,
     publisherService: PublisherService,
     approvalService: ApprovalService,
-    appContext: AppContext,
+    appConfig: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
@@ -129,7 +129,7 @@ class PublisherController @Inject() (
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {
     val authHeader = request.headers.get("Authorization")
-    if (authHeader.isEmpty || appContext.publishingKey != base64Decode(authHeader.get)) {
+    if (authHeader.isEmpty || appConfig.publishingKey != base64Decode(authHeader.get)) {
       Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     } else {
       Try(request.body.validate[T]) match {
