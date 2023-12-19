@@ -70,11 +70,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   )
 
   trait BaseSetup {
-    implicit val hc           = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockPublisherService  = mock[PublisherService]
-    val mockApprovalService   = mock[ApprovalService]
-    val mockAppContext        = mock[AppContext]
-    val mockDefinitionService = mock[DefinitionService]
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val mockPublisherService       = mock[PublisherService]
+    val mockApprovalService        = mock[ApprovalService]
+    val mockAppContext             = mock[AppContext]
+    val mockDefinitionService      = mock[DefinitionService]
 
     val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
   }
@@ -231,7 +231,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "retrieve a list of unapproved services" in new Setup {
 
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(Seq(employeeServiceApproval, marriageAllowanceApproval)))
+      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List(employeeServiceApproval, marriageAllowanceApproval)))
       val result = underTest.fetchUnapprovedServices()(FakeRequest())
 
       status(result) shouldEqual OK
@@ -239,7 +239,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "retrieve an empty list when there are no unapproved services" in new Setup {
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(Seq.empty))
+      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List.empty))
       val result = underTest.fetchUnapprovedServices()(FakeRequest())
 
       status(result) shouldEqual OK

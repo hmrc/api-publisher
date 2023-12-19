@@ -29,7 +29,7 @@ import uk.gov.hmrc.apipublisher.wiring.AppContext
 class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppContext)(implicit val ec: ExecutionContext)
     extends ApplicationLogger {
 
-  def fetchUnapprovedServices(): Future[Seq[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices()
+  def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)
 
   def createOrUpdateServiceApproval(apiApproval: APIApproval): Future[Boolean] = {
 

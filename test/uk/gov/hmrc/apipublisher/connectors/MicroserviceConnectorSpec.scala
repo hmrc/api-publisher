@@ -69,9 +69,9 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   trait BaseSetup {
     WireMock.reset()
-    val mockRamlLoader  = mock[DocumentationRamlLoader]
-    implicit val hc     = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    implicit val system = app.injector.instanceOf[ActorSystem]
+    val mockRamlLoader               = mock[DocumentationRamlLoader]
+    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
     def oasFileLocator: MicroserviceConnector.OASFileLocator
     def oasParser: SwaggerParserExtension

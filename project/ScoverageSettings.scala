@@ -14,7 +14,7 @@ object ScoverageSettings {
   def apply() = Seq(
     // Semicolon-separated list of regexs matching classes to exclude
     coverageExcludedPackages := excludesRegexes.mkString(";"),
-    coverageMinimum := 90.00,
+    coverageMinimumStmtTotal := 90.00,
     coverageFailOnMinimum := true,
     coverageHighlighting := true
   )

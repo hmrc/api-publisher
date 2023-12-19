@@ -18,7 +18,8 @@ import com.google.inject.AbstractModule
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 
-import uk.gov.hmrc.play.bootstrap.http.{DefaultHttpClient, HttpClient}
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector._

@@ -31,7 +31,7 @@ import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends MicroserviceConnectorMockModule

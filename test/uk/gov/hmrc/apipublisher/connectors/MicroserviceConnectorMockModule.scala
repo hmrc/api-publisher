@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.connectors
 import scala.concurrent.Future.{failed, successful}
 
 import io.swagger.v3.oas.models.OpenAPI
+import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apipublisher.models.ApiAndScopes
@@ -55,6 +56,6 @@ trait MicroserviceConnectorMockModule {
   }
 
   object MicroserviceConnectorMock extends BaseMicroserviceConnectorMock {
-    val aMock = mock[MicroserviceConnector](withSettings.lenient())
+    val aMock = mock[MicroserviceConnector](withSettings.strictness(Strictness.LENIENT))
   }
 }

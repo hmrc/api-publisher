@@ -51,7 +51,8 @@ object PublisherApiStatus {
     case _                      => None
   }
 
-  private val convert: String => JsResult[PublisherApiStatus] = s => PublisherApiStatus(s).fold[JsResult[PublisherApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
+  private val convert: String => JsResult[PublisherApiStatus] =
+    s => PublisherApiStatus(s).fold[JsResult[PublisherApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
 
   implicit val reads: Reads[PublisherApiStatus] = JsPath.read[String].flatMapResult(convert(_))
 

@@ -119,7 +119,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       val responseBody: JsValue      = Json.parse(publishResponse.body)
       (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
-      errorMessages should contain only (
+      errorMessages should contain.only(
         """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
         """string [c] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
       )

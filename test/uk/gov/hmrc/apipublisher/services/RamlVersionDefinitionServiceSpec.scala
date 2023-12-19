@@ -34,7 +34,7 @@ class RamlVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val testService = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
   trait Setup {
-    implicit val hc                  = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val version                      = "1.0"
     val mockMicroserviceConnector    = mock[MicroserviceConnector]
     val ramlVersionDefinitionService = new RamlVersionDefinitionService(mockMicroserviceConnector)

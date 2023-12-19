@@ -31,11 +31,13 @@ object AppDependencies {
   )
 
   private lazy val testDependencies = Seq(
-    "uk.gov.hmrc"               %% "bootstrap-test-play-28"       % bootstrapVersion          % "test,it",
-    "uk.gov.hmrc.mongo"         %% "hmrc-mongo-test-play-28"      % mongoVersion              % "test,it",
-    "org.scalaj"                %% "scalaj-http"                  % "2.4.2"                   % "test,it",
-    "org.mockito"               %% "mockito-scala-scalatest"      % "1.16.46"                 % "test,it",
-    "com.typesafe.play"         %% "play-test"                    % PlayVersion.current       % "test,it",
-    "com.github.tomakehurst"    %  "wiremock-jre8-standalone"     % "2.31.0"                  % "test,it"
-  )
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"           % bootstrapVersion,
+    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-28"          % mongoVersion,
+    "com.vladsch.flexmark"     % "flexmark-all"                     % "0.62.2",
+    "org.scalaj"              %% "scalaj-http"                      % "2.4.2",
+    "com.typesafe.play"       %% "play-test"                        % PlayVersion.current,
+    "com.github.tomakehurst"  %  "wiremock-jre8-standalone"         % "2.31.0",
+    "org.mockito"             %% "mockito-scala-scalatest"          % "1.17.29",
+    "org.scalatest"           %% "scalatest"                        % "3.2.17"
+  ).map(_ % "test,it")
 }

@@ -66,7 +66,7 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
   trait Setup {
     WireMock.reset()
     val apiSubscriptionFieldsConfig = ApiSSubscriptionFieldsConfig(s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort")
-    implicit val hc                 = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val hc: HeaderCarrier  = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 

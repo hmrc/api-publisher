@@ -30,8 +30,8 @@ import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
-  val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
-  implicit val hc      = HeaderCarrier()
+  val aServiceLocation           = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends MicroserviceConnectorMockModule

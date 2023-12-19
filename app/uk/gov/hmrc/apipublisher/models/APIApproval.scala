@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class APIApproval(serviceName: String, serviceUrl: String, name: String, description: Option[String] = None, approved: Option[Boolean] = Some(false)) {
   def isApproved: Boolean = approved.getOrElse(false)
 }
 
 object APIApproval {
-  implicit val apiApprovalFormat = Json.format[APIApproval]
+  implicit val apiApprovalFormat: Format[APIApproval] = Json.format[APIApproval]
 }
