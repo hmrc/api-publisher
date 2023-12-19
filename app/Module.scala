@@ -32,7 +32,6 @@ class Module extends AbstractModule {
     bind(classOf[UrlRewriter]).to(classOf[DocumentationUrlRewriter])
     bind(classOf[RamlLoader]).to(classOf[DocumentationRamlLoader])
     bind(classOf[HttpClient]).to(classOf[DefaultHttpClient])
-    bind(classOf[OASFileLocator]).toInstance(MicroserviceOASFileLocator)
     bind(classOf[SwaggerParserExtension]).toInstance(new OpenAPIV3Parser)
     bind(classOf[OasVersionDefinitionService.OasParser]).toInstance(new OasParserImpl)
   }

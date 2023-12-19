@@ -122,16 +122,13 @@ class PublisherService @Inject() (
     val scopeSeq: Seq[Scope]      = apiAndScopes.scopes.as[Seq[Scope]]
     val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
 
-    apiScopeConnector.retrieveScopes(scopesSearch) flatMap {
-      scopeServiceScopes =>
-        {
-          ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
-            case ScopesDefinedOk       => checkScopesForErrors(scopeServiceScopes, scopeSeq)
-            case ScopesNotDefined(msg) =>
-              val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
-              successful(Some(undefinedScopesErrorJson))
-          }
-        }
+    apiScopeConnector.retrieveScopes(scopesSearch) flatMap { scopeServiceScopes =>
+      ApiAndScopes.validateAPIScopesAreDefined(apiAndScopes, scopeServiceScopes) match {
+        case ScopesDefinedOk       => checkScopesForErrors(scopeServiceScopes, scopeSeq)
+        case ScopesNotDefined(msg) =>
+          val undefinedScopesErrorJson = Json.obj("scopeErrors" -> JsArray(Seq(Json.obj("field" -> "key", "message" -> msg))))
+          successful(Some(undefinedScopesErrorJson))
+      }
     }
   }
 

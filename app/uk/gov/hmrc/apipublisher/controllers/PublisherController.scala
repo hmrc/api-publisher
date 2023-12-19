@@ -30,11 +30,13 @@ import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import cats.implicits._
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, PublicationResult, ServiceLocation}
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
 @Singleton
 class PublisherController @Inject() (
@@ -95,12 +97,22 @@ class PublisherController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
-    handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
-      publisherService.validateAPIDefinitionAndScopes(requestBody).map {
-        case Some(errors) => BadRequest(errors)
-        case None         => NoContent
-      } recover recovery(FAILED_TO_VALIDATE)
+    val E = EitherTHelper.make[Result]
+
+    for {
+      _           <- E.fromEither(ensureAuthorised)
+      payload     <- E.fromEither(validatePayload[ApiAndScopes])
+      validation  <- E.fromOptionF(publisherService.validateAPIDefinitionAndScopes(payload), ???)
     }
+    yield validation
+
+    ???
+    // handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
+    //   publisherService.validateAPIDefinitionAndScopes(requestBody).map {
+    //     case Some(errors) => BadRequest(errors)
+    //     case None         => NoContent
+    //   } recover recovery(FAILED_TO_VALIDATE)
+    // }
   }
 
   def fetchUnapprovedServices(): Action[AnyContent] = Action.async { _ =>
@@ -126,18 +138,31 @@ class PublisherController @Inject() (
       } yield result
     } recover recovery(FAILED_TO_APPROVE_SERVICES)
   }
+  
+  private def ensureAuthorised(implicit request: Request[JsValue]): Either[Result, Unit] = {
+    lazy val failedResult = Left(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
+    request.headers.get("Authorization") match {
+      case None => failedResult
+      case Some(value) if (appConfig.publishingKey != base64Decode(value)) => failedResult
+      case _ => Right(())
+    }
+  }
+  
+  private def validatePayload[T](implicit request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
+    request.body.validate[T] match {
+      case JsSuccess(payload, _) => Right(payload)
+      case JsError(errs)         => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
+    }
+  }
 
   private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {
     val authHeader = request.headers.get("Authorization")
     if (authHeader.isEmpty || appConfig.publishingKey != base64Decode(authHeader.get)) {
       Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     } else {
-      Try(request.body.validate[T]) match {
-        case Success(JsSuccess(payload, _)) => f(payload)
-        case Success(JsError(errs))         => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
-        case Failure(e)                     =>
-          logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
-          Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
+      request.body.validate[T] match {
+        case JsSuccess(payload, _) => f(payload)
+        case JsError(errs)        => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
       }
     }
   }
