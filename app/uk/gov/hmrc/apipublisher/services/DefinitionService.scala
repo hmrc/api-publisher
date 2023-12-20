@@ -23,7 +23,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import cats.implicits._
 
 import play.api.libs.json._
-import play.api.mvc.Result
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.domain.Endpoint

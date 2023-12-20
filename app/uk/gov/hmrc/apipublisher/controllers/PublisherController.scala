@@ -19,21 +19,22 @@ package uk.gov.hmrc.apipublisher.controllers
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+
 import org.everit.json.schema.ValidationException
+
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import uk.gov.hmrc.apipublisher.config.AppConfig
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, DefinitionFileNotFound, ErrorCode, FailedAPiDefinitionValidation, PublicationResult, PublishError, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-
-import scala.concurrent.Future.successful
 
 @Singleton
 class PublisherController @Inject() (
@@ -71,14 +72,14 @@ class PublisherController @Inject() (
 
     def validate(apiAndScopes: ApiAndScopes): Future[Either[PublishError, ApiAndScopes]] = {
       EitherT.fromOptionF(
-        OptionT(publisherService.validation(apiAndScopes, validateApiDefinition = false)).map(x => FailedAPiDefinitionValidation(x.toString)).value,
+        OptionT(publisherService.validation(apiAndScopes, validateApiDefinition = false)).map(x => FailedAPIDefinitionValidation(x.toString)).value,
         apiAndScopes
       ).swap.value
     }
 
     def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
-        case PublicationResult(true, publisherResponse) =>
+        case PublicationResult(true, publisherResponse)  =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
           Ok(Json.toJson(publisherResponse))
         case PublicationResult(false, publisherResponse) =>
@@ -87,15 +88,22 @@ class PublisherController @Inject() (
       }
     }
 
-
-    val getAndValidateDefinitionFileResult : Future[Either[PublishError, ApiAndScopes]] = {for {
-      apiAndScopes <- EitherT(getDefinition)
-      validatedApiAndScopes <- EitherT(validate(apiAndScopes))
-    } yield validatedApiAndScopes}.value
+    val getAndValidateDefinitionFileResult: Future[Either[PublishError, ApiAndScopes]] = {
+      for {
+        apiAndScopes          <- EitherT(getDefinition)
+        validatedApiAndScopes <- EitherT(validate(apiAndScopes))
+      } yield validatedApiAndScopes
+    }.value
 
     getAndValidateDefinitionFileResult.flatMap {
       case Right(apiAndScopes: ApiAndScopes) => publish(apiAndScopes)
-      case Left(e: PublishError) => successful(UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, e.message)))
+      case Left(e: PublishError)             => e match {
+          case DefinitionFileNotFound(message: String)               => successful(BadRequest(error(ErrorCode.INVALID_API_DEFINITION, message)))
+          case DefinitionFileNoBodyReturned(message: String)         => successful(BadRequest(error(ErrorCode.INVALID_API_DEFINITION, message)))
+          case DefinitionFileFailedSchemaValidation(message: String) => successful(BadRequest(error(ErrorCode.INVALID_API_DEFINITION, message)))
+          case FailedAPIDefinitionValidation(message: String)        => successful(BadRequest(error(ErrorCode.INVALID_API_DEFINITION, message)))
+          case _                                                     => successful(UnprocessableEntity(error(ErrorCode.UNKNOWN_ERROR, e.message)))
+        }
     }.recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
 
   }

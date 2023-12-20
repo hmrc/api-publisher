@@ -17,7 +17,8 @@ object AppDependencies {
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.1.0",
     "org.typelevel"             %% "cats-core"                    % "2.10.0",
     "uk.gov.hmrc"               %% "api-platform-common-domain"   % commonDomainVersion,
-    "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
+    "com.github.erosb" % "everit-json-schema" % "1.14.4",
+  "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
       excludeAll(
         ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
         ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),

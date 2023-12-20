@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.domain.Endpoint
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 
@@ -72,9 +72,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     "handle no api and scopes for service location" in new Setup {
       MicroserviceConnectorMock.GetAPIAndScopes.findsNone
 
-      val result = await(service.getDefinition(aServiceLocation))
-
-      result shouldBe None
+      await(service.getDefinition(aServiceLocation)).left.value shouldBe DefinitionFileNoBodyReturned("")
     }
 
     "handle api and scopes with no data" in new Setup {

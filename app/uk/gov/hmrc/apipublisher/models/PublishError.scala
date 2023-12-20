@@ -16,15 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-
-sealed trait PublishError{
+sealed trait PublishError {
   val message: String
 }
 
-case class DefinitionFileNoBodyReturned(message: String) extends PublishError
-case class DefinitionFileNotFound(message: String) extends PublishError
-case class DefinitionFileUnprocessableEntity(message: String) extends PublishError
+case class DefinitionFileNoBodyReturned(message: String)         extends PublishError
+case class DefinitionFileNotFound(message: String)               extends PublishError
+case class DefinitionFileUnprocessableEntity(message: String)    extends PublishError
 case class DefinitionFileFailedSchemaValidation(message: String) extends PublishError
-case class FailedAPiDefinitionValidation(message: String) extends PublishError
-
+case class FailedAPIDefinitionValidation(message: String)        extends PublishError

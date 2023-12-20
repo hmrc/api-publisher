@@ -22,11 +22,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.io.IOUtils
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
@@ -34,8 +36,9 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpReadsOption, HttpResponse}
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
+
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileFailedSchemaValidation, DefinitionFileNoBodyReturned, DefinitionFileNotFound, DefinitionFileUnprocessableEntity, PublishError, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object MicroserviceConnector {
@@ -80,7 +83,7 @@ class MicroserviceConnector @Inject() (
         _.toRight(DefinitionFileNoBodyReturned(s"Unable to find definition for service ${serviceLocation.serviceName}"))
       }
       .recover {
-        case UpstreamErrorResponse(message, NOT_FOUND, _, _)            => Left(DefinitionFileNotFound(s"Unable to find definition for service ${serviceLocation.serviceName}"))
+        case UpstreamErrorResponse(message, NOT_FOUND, _, _)            => Left(DefinitionFileNotFound(s"Unable to find definition for service ${serviceLocation.serviceName}: $message"))
         case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(message))
       }
       .map(_.map(defaultCategories))

@@ -22,9 +22,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import play.api.mvc.Results.NotFound
-
-import uk.gov.hmrc.apipublisher.models.ApiAndScopes
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned}
 
 trait MicroserviceConnectorMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -35,7 +33,7 @@ trait MicroserviceConnectorMockModule {
     object GetAPIAndScopes {
 
       def findsNone =
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(NotFound(""))))
+        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(""))))
 
       def fails = {
         val errorMessage = "something went wrong"

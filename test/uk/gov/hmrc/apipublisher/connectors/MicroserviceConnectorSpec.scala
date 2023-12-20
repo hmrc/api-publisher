@@ -27,22 +27,19 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.swagger.v3.parser.OpenAPIV3Parser
-import org.everit.json.schema.ValidationException
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
-import play.api.mvc.Result
-import play.api.mvc.Results.NotFound
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -54,10 +51,10 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
-  val apiAndScopeDefinition                    = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints.json")).mkString
-  val apiAndScopeDefinitionWithoutWhitelisting = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")).mkString
+  val apiAndScopeDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
+  val apiAndScopeDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
 
-  val invalidDefinition = Source.fromURL(getClass.getResource("/input/invalid-api-definition.json")).mkString
+  val invalidDefinition = handleGetFileAndClose("/input/invalid-api-definition.json")
 
   val api                         = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
   val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
@@ -107,6 +104,13 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     )
   }
 
+  def handleGetFileAndClose(path: String) = {
+    val definitionSource = Source.fromURL(getClass.getResource(path))
+    val definitionStr    = definitionSource.mkString
+    definitionSource.close()
+    definitionStr
+  }
+
   override def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(apiProducerHost, apiProducerPort)
@@ -136,59 +140,59 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
       await(connector.getAPIAndScopes(testService)).value.categories should contain only CUSTOMS
     }
 
     "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-without-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-without-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
       await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
     "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-empty-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-empty-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
       await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
-    "Return none if the API endpoint returns 204" in new Setup {
+    "Return DefinitionFileNoBodyReturned if the API endpoint returns 204" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
-      //Left(Result(404, TreeMap()))
+      // Left(Result(404, TreeMap()))
       await(connector.getAPIAndScopes(testService)) match {
-        case Left(Result(status,_))  if status == NOT_FOUND => succeed
-        case e                 => {println(e)
-          fail()
-        }
+        case Left(DefinitionFileNoBodyReturned(_)) => succeed
+        case _                                     => fail()
       }
 
     }
 
-    "Fail if the API endpoint returns 404" in new Setup {
+    "return DefinitionFileNotFound if the API endpoint returns 404" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
 
-      intercept[UpstreamErrorResponse] {
-        await(connector.getAPIAndScopes(testService))
-      }.statusCode shouldBe NOT_FOUND
+      val result = await(connector.getAPIAndScopes(testService)).left.value
+      result shouldBe DefinitionFileNotFound(
+        "Unable to find definition for service test.example.com: GET of 'http://127.0.0.1:21112/api/definition' returned 404. Response body: ''"
+      )
+
     }
 
-    "Fail if the API definition is invalid" in new Setup {
+    "return DefinitionFileFailedSchemaValidation if the API definition is invalid" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      intercept[ValidationException] {
-        await(connector.getAPIAndScopes(testService))
-      }
+      val result = await(connector.getAPIAndScopes(testService)).left.value
+      result shouldBe DefinitionFileFailedSchemaValidation("#: 2 schema violations found")
+
     }
 
     "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      val result: Either[Result, ApiAndScopes] = await(connector.getAPIAndScopes(testService))
+      val result: Either[PublishError, ApiAndScopes] = await(connector.getAPIAndScopes(testService))
 
       result.isRight shouldBe true
     }
