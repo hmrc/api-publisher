@@ -34,6 +34,8 @@ import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsArray, JsObject}
+import play.api.mvc.Result
+import play.api.mvc.Results.NotFound
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
@@ -118,60 +120,53 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Return the api definition" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result shouldEqual Some(ApiAndScopes(api, scopes))
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(api, scopes)
     }
 
     "Accept api definition for private API without whitelisted application IDs" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutWhitelisting)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result shouldEqual Some(ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes))
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes)
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only OTHER
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only OTHER
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
       val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-categories.json")).mkString
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only CUSTOMS
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only CUSTOMS
     }
 
     "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
       val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-without-categories.json")).mkString
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only EXAMPLE
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
     "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
       val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-empty-categories.json")).mkString
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only EXAMPLE
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
     "Return none if the API endpoint returns 204" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
-      val result = await(connector.getAPIAndScopes(testService))
+      //Left(Result(404, TreeMap()))
+      await(connector.getAPIAndScopes(testService)) match {
+        case Left(Result(status,_))  if status == NOT_FOUND => succeed
+        case e                 => {println(e)
+          fail()
+        }
+      }
 
-      result shouldEqual None
     }
 
     "Fail if the API endpoint returns 404" in new Setup {
@@ -193,9 +188,9 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      val result: Option[ApiAndScopes] = await(connector.getAPIAndScopes(testService))
+      val result: Either[Result, ApiAndScopes] = await(connector.getAPIAndScopes(testService))
 
-      result shouldBe defined
+      result.isRight shouldBe true
     }
 
     "should not parse nginx response to JSON" in new Setup {

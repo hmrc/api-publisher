@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.connectors
+package uk.gov.hmrc.apipublisher.models
 
-import scala.concurrent.Future
+import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 
-import play.api.http.Status.UNPROCESSABLE_ENTITY
-import play.api.mvc.Result
-import play.api.mvc.Results.UnprocessableEntity
-import uk.gov.hmrc.http.UpstreamErrorResponse
-
-trait ConnectorRecovery {
-
-  def unprocessableRecovery[U]: PartialFunction[Throwable, Future[Either[Result, U]]] = {
-    case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Future.successful(Left(UnprocessableEntity(message)))
-  }
+sealed trait PublishError{
+  val message: String
 }
+
+case class DefinitionFileNoBodyReturned(message: String) extends PublishError
+case class DefinitionFileNotFound(message: String) extends PublishError
+case class DefinitionFileUnprocessableEntity(message: String) extends PublishError
+case class DefinitionFileFailedSchemaValidation(message: String) extends PublishError
+case class FailedAPiDefinitionValidation(message: String) extends PublishError
+

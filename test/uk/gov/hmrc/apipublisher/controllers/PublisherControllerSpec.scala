@@ -80,7 +80,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   }
 
   trait Setup extends BaseSetup {
-    when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
+    when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(apiAndScopes)))
     when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
     when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
       approved = true,
@@ -93,7 +93,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     val validRequest = request(serviceLocation, sharedSecret)
 
     "respond with BAD_REQUEST when no definition is found" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(None))
+      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Left(mock[Result])))
 
       val result = underTest.publish(validRequest)
 
@@ -101,7 +101,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
+      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(apiAndScopes)))
       when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(Some(JsString("Bang"))))
 
       val result = underTest.publish(validRequest)

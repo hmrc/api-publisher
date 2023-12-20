@@ -22,6 +22,8 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import play.api.mvc.Results.NotFound
+
 import uk.gov.hmrc.apipublisher.models.ApiAndScopes
 
 trait MicroserviceConnectorMockModule {
@@ -33,7 +35,7 @@ trait MicroserviceConnectorMockModule {
     object GetAPIAndScopes {
 
       def findsNone =
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(None))
+        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(NotFound(""))))
 
       def fails = {
         val errorMessage = "something went wrong"
@@ -41,7 +43,7 @@ trait MicroserviceConnectorMockModule {
       }
 
       def returns(in: ApiAndScopes) = {
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Some(in)))
+        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Right(in)))
       }
     }
 
