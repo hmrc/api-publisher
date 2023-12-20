@@ -65,7 +65,8 @@ class PublisherController @Inject() (
     type Over[A] = EitherT[Future, Result, A]
 
     def getDefinition: Over[ApiAndScopes] = {
-      EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
+      // EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
+      EitherT(definitionService.getDefinition(serviceLocation))
     }
 
     def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {

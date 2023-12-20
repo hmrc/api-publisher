@@ -30,6 +30,8 @@ import uk.gov.hmrc.ramltools.domain.Endpoint
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import play.api.mvc.Result
 
 object DefinitionService {
 
@@ -45,11 +47,13 @@ class DefinitionService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+  val E = EitherTHelper.make[Result]
+
+  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[Result, ApiAndScopes]] = {
     (
       for {
-        baseApiAndScopes     <- OptionT(microserviceConnector.getAPIAndScopes(serviceLocation))
-        detailedApiAndScopes <- OptionT.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
+        baseApiAndScopes     <- E.fromEitherF(microserviceConnector.getAPIAndScopes(serviceLocation))
+        detailedApiAndScopes <- E.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
       } yield detailedApiAndScopes
     )
       .value

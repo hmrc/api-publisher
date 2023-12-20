@@ -29,6 +29,7 @@ import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 
+import play.api.mvc.Results.{NotFound, UnprocessableEntity}
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
@@ -40,6 +41,10 @@ import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
+import play.api.mvc.Result
+import scala.util.Success
+import uk.gov.hmrc.http.UnprocessableEntityException
+import scala.util.Failure
 
 object MicroserviceConnector {
   case class Config(validateApiDefinition: Boolean, oasParserMaxDuration: FiniteDuration)
@@ -71,20 +76,23 @@ class MicroserviceConnector @Inject() (
     }
   }
 
-  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[Result, ApiAndScopes]] = {
     val url = s"${serviceLocation.serviceUrl}/api/definition"
     http.GET[Option[ApiAndScopes]](url)(readOptionOfNotFound, implicitly, implicitly)
-      .map(validateApiAndScopesAgainstSchema)
-      .map(defaultCategories)
       .recover(unprocessableRecovery)
+      .map(defaultCategories)
+      .map(x => x.toRight(NotFound(s"Unable to find definition for service ${serviceLocation.serviceName}")))
+      .map(x => x.flatMap(validateApiAndScopesAgainstSchema))
   }
 
-  private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
-    apiAndScopes map { definition =>
-      if (config.validateApiDefinition) {
-        apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
+  private def validateApiAndScopesAgainstSchema(apiAndScopes: ApiAndScopes): Either[Result,ApiAndScopes] = {
+    if (config.validateApiDefinition) {
+      Try(apiDefinitionSchema.validate(new JSONObject(Json.toJson(apiAndScopes).toString))) match {
+        case Success(_) => Right(apiAndScopes)
+        case Failure(ex) => Left(UnprocessableEntity(ex.getMessage()))
       }
-      definition
+    }else{
+      Right(apiAndScopes)
     }
   }
 
