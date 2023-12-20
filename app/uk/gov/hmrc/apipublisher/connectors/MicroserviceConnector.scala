@@ -20,9 +20,10 @@ import java.io.InputStream
 import java.nio.charset.StandardCharsets.UTF_8
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
+import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.io.IOUtils
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
@@ -35,7 +36,6 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpReadsOption, HttpResponse}
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
-import io.swagger.v3.oas.models.OpenAPI
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
@@ -49,10 +49,11 @@ object MicroserviceConnector {
 class MicroserviceConnector @Inject() (
     config: MicroserviceConnector.Config,
     ramlLoader: RamlLoader,
-    oasFileLoader: OASfileLoader,
+    oasFileLoader: OASFileLoader,
     http: HttpClient,
     env: Environment
-  )(implicit val ec: ExecutionContext) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
+  )(implicit val ec: ExecutionContext
+  ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
 
   val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
@@ -103,8 +104,8 @@ class MicroserviceConnector @Inject() (
     ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
   }
 
-   def getOAS(serviceLocation: ServiceLocation, version: String): Future[OpenAPI] = {
+  def getOAS(serviceLocation: ServiceLocation, version: String): Future[OpenAPI] = {
     oasFileLoader.load(serviceLocation, version, config.oasParserMaxDuration)
-   }
- 
+  }
+
 }

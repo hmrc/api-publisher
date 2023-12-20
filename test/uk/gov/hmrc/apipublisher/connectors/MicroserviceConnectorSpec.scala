@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import java.io.FileNotFoundException
-import java.{util => ju}
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.io.Source
@@ -30,8 +27,6 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.swagger.v3.parser.OpenAPIV3Parser
-import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
-import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, SwaggerParseResult}
 import org.everit.json.schema.ValidationException
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -67,45 +62,24 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
-  trait BaseSetup {
+  trait Setup {
     WireMock.reset()
     val mockRamlLoader               = mock[DocumentationRamlLoader]
     implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
-
-    def oasFileLocator: MicroserviceConnector.OASFileLocator
-    def oasParser: SwaggerParserExtension
 
     val appConfig: Configuration = mock[Configuration]
 
     lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      oasFileLocator,
-      oasParser,
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
-  }
 
-  trait Setup extends BaseSetup {
-    val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
-    val oasParser      = new OpenAPIV3Parser()
-  }
-
-  trait SetupWithTimedOutParser extends BaseSetup {
-    val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
-
-    val oasParser = new SwaggerParserExtension {
-
-      override def readLocation(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = {
-        Thread.sleep(15000)
-        throw new RuntimeException("Should have crashed out of the blocking by now")
-      }
-
-      override def readContents(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = ???
-
-    }
+    val mockOasFileLoader = mock[OASFileLoader]
+    val oasParser         = new OpenAPIV3Parser()
   }
 
   trait SetupWithNoApiDefinitionValidation extends Setup {
@@ -113,8 +87,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = false, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      MicroserviceConnector.MicroserviceOASFileLocator,
-      new OpenAPIV3Parser(),
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
@@ -126,8 +99,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      oasFileLocator,
-      mockOpenApiParser,
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
@@ -256,55 +228,11 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
   }
 
   "getOAS" should {
-    "load the OAS file when found and is a valid model" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/application.yaml")
+    "call the microservice to get the application.yaml" in new Setup {
+      connector.getOAS(testService, "1.0")
 
-      await(connector.getOAS(testService, "1.0"))
-
-      ok("Done")
+      verify(mockOasFileLoader).load(eqTo(testService), eqTo("1.0"), *)
     }
 
-    "load the OAS file when multifile OAS is found and is a valid model" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/multifile/v1/application.yaml")
-
-      await(connector.getOAS(testService, "1.0"))
-
-      ok("Done")
-    }
-
-    "handle an invalid OAS file" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/bad-application.yaml")
-
-      intercept[RuntimeException] {
-        await(connector.getOAS(testService, "1.0"))
-      }
-    }
-
-    "handle when the OAS file is not found" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
-
-      intercept[RuntimeException] {
-        await(connector.getOAS(testService, "1.0"))
-      }
-    }
-
-    "handle a FileNotFoundException when locating yaml specification" in new SetupWithMockedOpenApiParser {
-      when(mockOpenApiParser.readLocation(*, *, *)).thenThrow(new FileNotFoundException("A problem reading the YAML file"))
-
-      intercept[IllegalArgumentException] {
-        await(connector.getOAS(testService, "1.0"))
-      }.getMessage() shouldBe "Cannot find valid OAS file"
-    }
-
-    // Flakey test in build server...
-    "return timeout when OAS parser takes too long" ignore new SetupWithTimedOutParser {
-      import scala.concurrent.duration._
-
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
-
-      intercept[IllegalStateException] {
-        Await.result(connector.getOAS(testService, "1.0"), 29.seconds)
-      }
-    }
   }
 }
