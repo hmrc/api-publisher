@@ -21,6 +21,7 @@ import scala.concurrent.Future.{failed, successful}
 import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned}
 
@@ -33,7 +34,7 @@ trait MicroserviceConnectorMockModule {
     object GetAPIAndScopes {
 
       def findsNone =
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(""))))
+        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(ServiceLocation("", "")))))
 
       def fails = {
         val errorMessage = "something went wrong"

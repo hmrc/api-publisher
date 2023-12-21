@@ -80,11 +80,11 @@ class MicroserviceConnector @Inject() (
 
     http.GET[Option[ApiAndScopes]](url)(readOptionOfNotFound, implicitly, implicitly)
       .map {
-        _.toRight(DefinitionFileNoBodyReturned(s"Unable to find definition for service ${serviceLocation.serviceName}"))
+        _.toRight(DefinitionFileNoBodyReturned(serviceLocation))
       }
       .recover {
-        case UpstreamErrorResponse(message, NOT_FOUND, _, _)            => Left(DefinitionFileNotFound(s"Unable to find definition for service ${serviceLocation.serviceName}: $message"))
-        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(message))
+        case UpstreamErrorResponse(_, NOT_FOUND, _, _)            => Left(DefinitionFileNotFound(serviceLocation))
+        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(serviceLocation,message))
       }
       .map(_.map(defaultCategories))
       .map(_.flatMap(validateApiAndScopesAgainstSchema))
@@ -94,7 +94,7 @@ class MicroserviceConnector @Inject() (
     if (config.validateApiDefinition) {
       Try(apiDefinitionSchema.validate(new JSONObject(Json.toJson(apiAndScopes).toString))) match {
         case Success(_)  => Right(apiAndScopes)
-        case Failure(ex) => Left(DefinitionFileFailedSchemaValidation(ex.getMessage)) // FailValidationFail
+        case Failure(ex) => Left(DefinitionFileFailedSchemaValidation(ex.getMessage))
       }
     } else {
       Right(apiAndScopes)

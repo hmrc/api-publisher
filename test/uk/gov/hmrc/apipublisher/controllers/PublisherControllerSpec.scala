@@ -93,7 +93,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     val validRequest = request(serviceLocation, sharedSecret)
 
     "respond with BAD_REQUEST when no definition is found" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Left(DefinitionFileNotFound("SomeError"))))
+      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Left(DefinitionFileNotFound(mock[ServiceLocation]))))
 
       val result = underTest.publish(validRequest)
 
@@ -177,7 +177,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "succeed when given a valid payload" in new Setup {
 
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(*)).thenReturn(successful(None))
+      when(mockPublisherService.validation(eqTo(apiAndScopes), *)(*)).thenReturn(successful(None))
 
       val result = underTest.validate()(request(apiAndScopes, sharedSecret))
 
@@ -188,7 +188,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = """{"error":"invalid-scope"}"""
       val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
+      when(mockPublisherService.validation(eqTo(input.as[ApiAndScopes]), *)(*))
         .thenReturn(successful(Some(Json.parse(errorString))))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))
@@ -201,7 +201,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = "TESTING! Scope blah has not been defined"
       val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
+      when(mockPublisherService.validation(eqTo(input.as[ApiAndScopes]), *)(*))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))

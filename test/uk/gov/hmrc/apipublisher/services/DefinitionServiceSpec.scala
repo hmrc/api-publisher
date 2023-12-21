@@ -72,7 +72,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     "handle no api and scopes for service location" in new Setup {
       MicroserviceConnectorMock.GetAPIAndScopes.findsNone
 
-      await(service.getDefinition(aServiceLocation)).left.value shouldBe DefinitionFileNoBodyReturned("")
+      await(service.getDefinition(aServiceLocation)).left.value shouldBe DefinitionFileNoBodyReturned(mock[ServiceLocation])
     }
 
     "handle api and scopes with no data" in new Setup {

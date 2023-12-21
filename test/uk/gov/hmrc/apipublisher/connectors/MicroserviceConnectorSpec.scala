@@ -176,7 +176,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       val result = await(connector.getAPIAndScopes(testService)).left.value
       result shouldBe DefinitionFileNotFound(
-        "Unable to find definition for service test.example.com: GET of 'http://127.0.0.1:21112/api/definition' returned 404. Response body: ''"
+        ServiceLocation("some-service", "http://127.0.0.1:21112/api/definition")
       )
 
     }

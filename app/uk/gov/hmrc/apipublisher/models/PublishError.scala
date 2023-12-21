@@ -16,12 +16,27 @@
 
 package uk.gov.hmrc.apipublisher.models
 
+
 sealed trait PublishError {
   val message: String
 }
 
-case class DefinitionFileNoBodyReturned(message: String)         extends PublishError
-case class DefinitionFileNotFound(message: String)               extends PublishError
-case class DefinitionFileUnprocessableEntity(message: String)    extends PublishError
+case class DefinitionFileNoBodyReturned(serviceLocation: ServiceLocation) extends PublishError {
+  val message = s"Unable to find definition for service ${serviceLocation.serviceName}"
+}
+
+case class DefinitionFileNotFound(serviceLocation: ServiceLocation) extends PublishError {
+  val message = s"Unable to find definition for service ${serviceLocation.serviceName}"
+}
+
+case class DefinitionFileUnprocessableEntity(serviceLocation: ServiceLocation, validationMessage: String) extends PublishError {
+  val message = s"Unable to read result as an ApiAndScopes for service ${serviceLocation.serviceName}: $validationMessage"
+}
+
+import play.api.libs.json._
+
 case class DefinitionFileFailedSchemaValidation(message: String) extends PublishError
-case class FailedAPIDefinitionValidation(message: String)        extends PublishError
+
+case class GenericValidationFailure(error: JsValue) extends PublishError {
+  val message = error.toString
+}
