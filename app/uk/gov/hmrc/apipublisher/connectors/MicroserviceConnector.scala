@@ -83,8 +83,8 @@ class MicroserviceConnector @Inject() (
         _.toRight(DefinitionFileNoBodyReturned(serviceLocation))
       }
       .recover {
-        case UpstreamErrorResponse(_, NOT_FOUND, _, _)            => Left(DefinitionFileNotFound(serviceLocation))
-        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(serviceLocation,message))
+        case UpstreamErrorResponse(_, NOT_FOUND, _, _)                  => Left(DefinitionFileNotFound(serviceLocation))
+        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(serviceLocation, message))
       }
       .map(_.map(defaultCategories))
       .map(_.flatMap(validateApiAndScopesAgainstSchema))

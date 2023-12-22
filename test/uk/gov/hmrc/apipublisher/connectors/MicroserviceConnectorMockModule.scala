@@ -21,9 +21,8 @@ import scala.concurrent.Future.{failed, successful}
 import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apipublisher.models.ServiceLocation
 
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned}
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
 
 trait MicroserviceConnectorMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>

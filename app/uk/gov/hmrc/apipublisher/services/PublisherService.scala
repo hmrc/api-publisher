@@ -72,6 +72,7 @@ class PublisherService @Inject() (
     checkApprovedAndPublish(apiAndScopes)
 
   }
+
   def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
 
     def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {

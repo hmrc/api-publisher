@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-
 sealed trait PublishError {
   val message: String
 }
