@@ -32,8 +32,8 @@ trait MicroserviceConnectorMockModule {
 
     object GetAPIAndScopes {
 
-      def findsNone =
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(ServiceLocation("", "")))))
+      def findsNone(serviceLocation: ServiceLocation) =
+        when(aMock.getAPIAndScopes(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
 
       def fails = {
         val errorMessage = "something went wrong"

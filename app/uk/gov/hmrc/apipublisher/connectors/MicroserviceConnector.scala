@@ -25,8 +25,8 @@ import scala.util.{Failure, Success, Try}
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.io.IOUtils
-import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
+import org.everit.json.schema.{Schema, ValidationException}
 import org.json.JSONObject
 
 import play.api.Environment
@@ -93,8 +93,11 @@ class MicroserviceConnector @Inject() (
   private def validateApiAndScopesAgainstSchema(apiAndScopes: ApiAndScopes): Either[PublishError, ApiAndScopes] = {
     if (config.validateApiDefinition) {
       Try(apiDefinitionSchema.validate(new JSONObject(Json.toJson(apiAndScopes).toString))) match {
-        case Success(_)  => Right(apiAndScopes)
-        case Failure(ex) => Left(DefinitionFileFailedSchemaValidation(ex.getMessage))
+        case Success(_)                       => Right(apiAndScopes)
+        case Failure(ex: ValidationException) =>
+          logger.error(s"FAILED_TO_PUBLISH - Validation of API definition failed: ${ex.toJSON.toString(2)}", ex)
+          Left(DefinitionFileFailedSchemaValidation(Json.parse(ex.toJSON.toString)))
+        case Failure(ex)                      => Left(DefinitionFileFailedSchemaValidation(Json.parse(s"""{"Unexpected exception": "$ex.message"}""")))
       }
     } else {
       Right(apiAndScopes)

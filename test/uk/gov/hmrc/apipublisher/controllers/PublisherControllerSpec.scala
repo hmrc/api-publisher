@@ -93,7 +93,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     val validRequest = request(serviceLocation, sharedSecret)
 
     "respond with BAD_REQUEST when no definition is found" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Left(DefinitionFileNotFound(mock[ServiceLocation]))))
+      when(mockDefinitionService.getDefinition(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNotFound(serviceLocation))))
 
       val result = underTest.publish(validRequest)
 

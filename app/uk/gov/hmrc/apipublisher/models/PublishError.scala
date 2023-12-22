@@ -34,7 +34,9 @@ case class DefinitionFileUnprocessableEntity(serviceLocation: ServiceLocation, v
 
 import play.api.libs.json._
 
-case class DefinitionFileFailedSchemaValidation(message: String) extends PublishError
+case class DefinitionFileFailedSchemaValidation(error: JsValue) extends PublishError {
+  val message = error.toString
+}
 
 case class GenericValidationFailure(error: JsValue) extends PublishError {
   val message = error.toString

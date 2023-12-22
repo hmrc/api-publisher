@@ -54,11 +54,11 @@ class PublisherController @Inject() (
   val ER = EitherTHelper.make[Result]
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
-    case err: DefinitionFileNotFound                           => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
-    case err: DefinitionFileNoBodyReturned                     => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
-    case err: DefinitionFileUnprocessableEntity                => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
-    case DefinitionFileFailedSchemaValidation(message: String) => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, message))
-    case err: GenericValidationFailure                         => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileNotFound               => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileNoBodyReturned         => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileUnprocessableEntity    => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileFailedSchemaValidation => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(err.error)))
+    case err: GenericValidationFailure             => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
   }
 
   private def ensureAuthorised(implicit request: Request[JsValue]): Option[Result] = {
@@ -78,7 +78,7 @@ class PublisherController @Inject() (
   }
 
   def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
-    def innerPublish(serviceLocation: ServiceLocation): Future[Result] = {
+    def publishHandlingErrors(serviceLocation: ServiceLocation): Future[Result] = {
       ER.liftF(publishService(serviceLocation))
         .merge
         .recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
@@ -92,7 +92,7 @@ class PublisherController @Inject() (
         } yield serviceLocation
       )
 
-    serviceLocationER.semiflatMap(innerPublish(_))
+    serviceLocationER.semiflatMap(publishHandlingErrors(_))
       .merge
   }
 
@@ -134,9 +134,11 @@ class PublisherController @Inject() (
       for {
         _            <- ER.fromEither(ensureAuthorised.toRight(()).swap)
         apiAndScopes <- ER.fromEither(validateRequestPayload[ApiAndScopes])
-        validation   <- ER.fromEitherF(publisherService.validation(apiAndScopes, validateApiDefinition = true).map(_.toRight(apiAndScopes).map(x =>
-                          UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(x)))
-                        ).swap))
+        validation   <- ER.fromEitherF(
+                          publisherService.validation(apiAndScopes, validateApiDefinition = true)
+                            .map(_.toRight(apiAndScopes).map(x => BadRequest(Json.toJson(x)))
+                              .swap)
+                        )
       } yield NoContent
     )
       .merge

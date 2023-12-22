@@ -100,7 +100,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       publishResponse.is2xx shouldBe true
     }
 
-    Scenario("Validation of API definition failed") {
+    Scenario("Validation of API definition failed during publish") {
 
       Given("A microservice is running with an invalid API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
@@ -118,6 +118,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The validation errors are present in the response body")
       val responseBody: JsValue      = Json.parse(publishResponse.body)
       (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
+      println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+      println(responseBody)
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
       errorMessages should contain.only(
         """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",

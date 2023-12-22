@@ -32,7 +32,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
@@ -163,7 +163,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Return DefinitionFileNoBodyReturned if the API endpoint returns 204" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
-      // Left(Result(404, TreeMap()))
       await(connector.getAPIAndScopes(testService)) match {
         case Left(DefinitionFileNoBodyReturned(_)) => succeed
         case _                                     => fail()
@@ -176,7 +175,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       val result = await(connector.getAPIAndScopes(testService)).left.value
       result shouldBe DefinitionFileNotFound(
-        ServiceLocation("some-service", "http://127.0.0.1:21112/api/definition")
+        ServiceLocation("test.example.com", "http://127.0.0.1:21112")
       )
 
     }
@@ -184,9 +183,10 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileFailedSchemaValidation if the API definition is invalid" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService)).left.value
-      result shouldBe DefinitionFileFailedSchemaValidation("#: 2 schema violations found")
-
+      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#/properties/scopes/items/properties/key","pointerToViolation":"#/scopes/0/key","causingExceptions":[],"keyword":"pattern","message":"string [read:HELLO] does not match pattern ^[a-z:\\-0-9]+$"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 
     "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
