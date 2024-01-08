@@ -138,7 +138,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
           .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
 
       Then("The api-publisher responded with status BAD_REQUEST")
-      publishResponse.code shouldBe BAD_REQUEST // TODO
+      publishResponse.code shouldBe BAD_REQUEST
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body)
