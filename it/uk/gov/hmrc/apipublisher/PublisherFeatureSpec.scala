@@ -118,8 +118,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       And("The validation errors are present in the response body")
       val responseBody: JsValue      = Json.parse(publishResponse.body)
       (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
-      println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-      println(responseBody)
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
       errorMessages should contain.only(
         """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
@@ -148,9 +146,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         "code"    -> JsString(ErrorCode.INVALID_API_DEFINITION.toString),
         "message" -> JsString("Unable to find definition for service test.example.com")
       )
-      println("XXXXXX")
-      println(responseBody)
-
     }
   }
 

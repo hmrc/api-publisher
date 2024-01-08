@@ -17,8 +17,8 @@ object AppDependencies {
     "org.julienrf"              %% "play-json-derived-codecs"     % "10.1.0",
     "org.typelevel"             %% "cats-core"                    % "2.10.0",
     "uk.gov.hmrc"               %% "api-platform-common-domain"   % commonDomainVersion,
-    "com.github.erosb" % "everit-json-schema" % "1.14.4",
-  "io.swagger.parser.v3"      %  "swagger-parser"               % "2.1.9"
+    "com.github.erosb"          % "everit-json-schema"            % "1.14.4",
+    "io.swagger.parser.v3"        %  "swagger-parser"             % "2.1.9"
       excludeAll(
         ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
         ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
@@ -26,11 +26,11 @@ object AppDependencies {
         ExclusionRule("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
         ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
       ),
-    "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
-    "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-    "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
-    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
-    "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion
+    "com.fasterxml.jackson.core"        % "jackson-core"            % jacksonVersion,
+    "com.fasterxml.jackson.core"        % "jackson-databind"        % jacksonVersion,
+    "com.fasterxml.jackson.core"        % "jackson-annotations"     % jacksonVersion,
+    "com.fasterxml.jackson.dataformat"  % "jackson-dataformat-yaml" % jacksonVersion,
+    "com.fasterxml.jackson.datatype"    % "jackson-datatype-jsr310" % jacksonVersion
   )
 
   private lazy val testDependencies = Seq(
