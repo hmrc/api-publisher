@@ -34,11 +34,11 @@ import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services._
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 
@@ -70,30 +70,30 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   )
 
   trait BaseSetup {
-    implicit val hc           = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockPublisherService  = mock[PublisherService]
-    val mockApprovalService   = mock[ApprovalService]
-    val mockAppContext        = mock[AppContext]
-    val mockDefinitionService = mock[DefinitionService]
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val mockPublisherService       = mock[PublisherService]
+    val mockApprovalService        = mock[ApprovalService]
+    val mockAppConfig              = mock[AppConfig]
+    val mockDefinitionService      = mock[DefinitionService]
 
-    val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppContext, stubControllerComponents())
+    val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppConfig, stubControllerComponents())
   }
 
   trait Setup extends BaseSetup {
-    when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
+    when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(apiAndScopes)))
     when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
     when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
       approved = true,
       publisherResponse
     )))
-    when(mockAppContext.publishingKey).thenReturn(sharedSecret)
+    when(mockAppConfig.publishingKey).thenReturn(sharedSecret)
   }
 
   "publish" should {
     val validRequest = request(serviceLocation, sharedSecret)
 
     "respond with BAD_REQUEST when no definition is found" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(None))
+      when(mockDefinitionService.getDefinition(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNotFound(serviceLocation))))
 
       val result = underTest.publish(validRequest)
 
@@ -101,7 +101,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Some(apiAndScopes)))
+      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(apiAndScopes)))
       when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(Some(JsString("Bang"))))
 
       val result = underTest.publish(validRequest)
@@ -177,7 +177,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "succeed when given a valid payload" in new Setup {
 
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(apiAndScopes))(*)).thenReturn(successful(None))
+      when(mockPublisherService.validation(eqTo(apiAndScopes), *)(*)).thenReturn(successful(None))
 
       val result = underTest.validate()(request(apiAndScopes, sharedSecret))
 
@@ -188,7 +188,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = """{"error":"invalid-scope"}"""
       val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
+      when(mockPublisherService.validation(eqTo(input.as[ApiAndScopes]), *)(*))
         .thenReturn(successful(Some(Json.parse(errorString))))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))
@@ -201,7 +201,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = "TESTING! Scope blah has not been defined"
       val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
-      when(mockPublisherService.validateAPIDefinitionAndScopes(eqTo(input.as[ApiAndScopes]))(*))
+      when(mockPublisherService.validation(eqTo(input.as[ApiAndScopes]), *)(*))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))
@@ -231,7 +231,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "retrieve a list of unapproved services" in new Setup {
 
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(Seq(employeeServiceApproval, marriageAllowanceApproval)))
+      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List(employeeServiceApproval, marriageAllowanceApproval)))
       val result = underTest.fetchUnapprovedServices()(FakeRequest())
 
       status(result) shouldEqual OK
@@ -239,7 +239,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "retrieve an empty list when there are no unapproved services" in new Setup {
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(Seq.empty))
+      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List.empty))
       val result = underTest.fetchUnapprovedServices()(FakeRequest())
 
       status(result) shouldEqual OK

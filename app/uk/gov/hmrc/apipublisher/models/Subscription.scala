@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class Subscription(serviceName: String, callbackUrl: String, criteria: Option[Map[String, String]] = None)
 
 object Subscription {
-  implicit val format = Json.format[Subscription]
+  implicit val format: Format[Subscription] = Json.format[Subscription]
 }

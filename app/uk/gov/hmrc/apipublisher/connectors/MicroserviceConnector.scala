@@ -16,21 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import java.io.{FileNotFoundException, InputStream}
+import java.io.InputStream
 import java.nio.charset.StandardCharsets.UTF_8
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, blocking}
-import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
-import akka.actor.ActorSystem
 import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
-import io.swagger.v3.parser.core.models.ParseOptions
 import org.apache.commons.io.IOUtils
-import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
+import org.everit.json.schema.{Schema, ValidationException}
 import org.json.JSONObject
 
 import play.api.Environment
@@ -42,21 +38,10 @@ import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object MicroserviceConnector {
-
-  trait OASFileLocator {
-    def locationOf(serviceLocation: ServiceLocation, version: String): String
-  }
-
-  object MicroserviceOASFileLocator extends OASFileLocator {
-
-    def locationOf(serviceLocation: ServiceLocation, version: String): String =
-      s"${serviceLocation.serviceUrl}/api/conf/$version/application.yaml"
-  }
-
   case class Config(validateApiDefinition: Boolean, oasParserMaxDuration: FiniteDuration)
 }
 
@@ -64,12 +49,10 @@ object MicroserviceConnector {
 class MicroserviceConnector @Inject() (
     config: MicroserviceConnector.Config,
     ramlLoader: RamlLoader,
-    oasFileLocator: MicroserviceConnector.OASFileLocator,
-    openAPIV3Parser: SwaggerParserExtension,
+    oasFileLoader: OASFileLoader,
     http: HttpClient,
     env: Environment
-  )(implicit val ec: ExecutionContext,
-    system: ActorSystem
+  )(implicit val ec: ExecutionContext
   ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
 
   val apiDefinitionSchema: Schema = {
@@ -88,32 +71,46 @@ class MicroserviceConnector @Inject() (
     }
   }
 
-  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ApiAndScopes]] = {
+    import play.api.http.Status.{NOT_FOUND, UNPROCESSABLE_ENTITY}
+
+    import uk.gov.hmrc.http.UpstreamErrorResponse
+
     val url = s"${serviceLocation.serviceUrl}/api/definition"
+
     http.GET[Option[ApiAndScopes]](url)(readOptionOfNotFound, implicitly, implicitly)
-      .map(validateApiAndScopesAgainstSchema)
-      .map(defaultCategories)
-      .recover(unprocessableRecovery)
+      .map {
+        _.toRight(DefinitionFileNoBodyReturned(serviceLocation))
+      }
+      .recover {
+        case UpstreamErrorResponse(_, NOT_FOUND, _, _)                  => Left(DefinitionFileNotFound(serviceLocation))
+        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(serviceLocation, message))
+      }
+      .map(_.map(defaultCategories))
+      .map(_.flatMap(validateApiAndScopesAgainstSchema))
   }
 
-  private def validateApiAndScopesAgainstSchema(apiAndScopes: Option[ApiAndScopes]): Option[ApiAndScopes] = {
-    apiAndScopes map { definition =>
-      if (config.validateApiDefinition) {
-        apiDefinitionSchema.validate(new JSONObject(Json.toJson(definition).toString))
+  private def validateApiAndScopesAgainstSchema(apiAndScopes: ApiAndScopes): Either[PublishError, ApiAndScopes] = {
+    if (config.validateApiDefinition) {
+      Try(apiDefinitionSchema.validate(new JSONObject(Json.toJson(apiAndScopes).toString))) match {
+        case Success(_)                       => Right(apiAndScopes)
+        case Failure(ex: ValidationException) =>
+          logger.error(s"FAILED_TO_PUBLISH - Validation of API definition failed: ${ex.toJSON.toString(2)}", ex)
+          Left(DefinitionFileFailedSchemaValidation(Json.parse(ex.toJSON.toString)))
+        case Failure(ex)                      => Left(DefinitionFileFailedSchemaValidation(Json.parse(s"""{"Unexpected exception": "$ex.message"}""")))
       }
-      definition
+    } else {
+      Right(apiAndScopes)
     }
   }
 
-  private def defaultCategories(apiAndScopes: Option[ApiAndScopes]) = {
-    apiAndScopes map { definition =>
-      if (definition.categories.isEmpty) {
-        val defaultCategories = categoryMap.getOrElse(definition.apiName, Seq(OTHER))
-        val updatedApi        = definition.api ++ Json.obj("categories" -> defaultCategories)
-        definition.copy(api = updatedApi)
-      } else {
-        definition
-      }
+  private def defaultCategories(apiAndScopes: ApiAndScopes): ApiAndScopes = {
+    if (apiAndScopes.categories.isEmpty) {
+      val defaultCategories = categoryMap.getOrElse(apiAndScopes.apiName, Seq(OTHER))
+      val updatedApi        = apiAndScopes.api ++ Json.obj("categories" -> defaultCategories)
+      apiAndScopes.copy(api = updatedApi)
+    } else {
+      apiAndScopes
     }
   }
 
@@ -122,47 +119,7 @@ class MicroserviceConnector @Inject() (
   }
 
   def getOAS(serviceLocation: ServiceLocation, version: String): Future[OpenAPI] = {
-    def handleSuccess(openApi: OpenAPI): Future[OpenAPI] = {
-      logger.info(s"Read OAS file from ${serviceLocation.serviceUrl}")
-      Future.successful(openApi)
-    }
-
-    def handleFailure(err: List[String]): Future[OpenAPI] = {
-      logger.warn(s"Failed to load OAS file from ${serviceLocation.serviceUrl} due to [${err.mkString}]")
-      Future.failed(new IllegalArgumentException("Cannot find valid OAS file"))
-    }
-
-    val parseOptions  = new ParseOptions();
-    parseOptions.setResolve(true);
-    parseOptions.setResolveFully(true);
-    val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
-
-    val futureParsing = Future {
-      blocking {
-        try {
-          val parserResult = openAPIV3Parser.readLocation(oasFileLocator.locationOf(serviceLocation, version), emptyAuthList, parseOptions)
-
-          val outcome = (Option(parserResult.getMessages), Option(parserResult.getOpenAPI)) match {
-            case (Some(msgs), _) if msgs.size > 0 => Left(msgs.asScala.toList)
-            case (_, Some(openApi))               => Right(openApi)
-            case _                                => Left(List("No errors or openAPI were returned from parsing"))
-          }
-
-          outcome
-        } catch {
-          case e: FileNotFoundException => Left(List(e.getMessage()))
-        }
-      }
-    }
-      .flatMap(outcome =>
-        outcome.fold(
-          err => handleFailure(err),
-          oasApi => handleSuccess(oasApi)
-        )
-      )
-
-    val futureTimer: Future[OpenAPI] = akka.pattern.after(config.oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
-
-    Future.firstCompletedOf(List(futureParsing, futureTimer))
+    oasFileLoader.load(serviceLocation, version, config.oasParserMaxDuration)
   }
+
 }

@@ -20,28 +20,28 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 import org.everit.json.schema.ValidationException
 
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ErrorCode, PublicationResult, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 @Singleton
 class PublisherController @Inject() (
     definitionService: DefinitionService,
     publisherService: PublisherService,
     approvalService: ApprovalService,
-    appContext: AppContext,
+    appConfig: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
@@ -51,32 +51,62 @@ class PublisherController @Inject() (
   val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
   val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
-  def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
-    handleRequest[ServiceLocation](FAILED_TO_PUBLISH) {
-      requestBody => publishService(requestBody)
+  val ER = EitherTHelper.make[Result]
+
+  private val mapBusinessErrorsToResults: PublishError => Result = _ match {
+    case err: DefinitionFileNotFound               => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileNoBodyReturned         => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileUnprocessableEntity    => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+    case err: DefinitionFileFailedSchemaValidation => UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(err.error)))
+    case err: GenericValidationFailure             => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+  }
+
+  private def ensureAuthorised(implicit request: Request[JsValue]): Option[Result] = {
+    lazy val failedResult = Some(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
+    request.headers.get("Authorization") match {
+      case None                                                            => failedResult
+      case Some(value) if (appConfig.publishingKey != base64Decode(value)) => failedResult
+      case _                                                               => None
     }
+  }
+
+  private def validateRequestPayload[T](implicit request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
+    request.body.validate[T] match {
+      case JsSuccess(payload, _) => Right(payload)
+      case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, s"Unable to parse request body : ${JsError.toJson(err)}")))
+    }
+  }
+
+  def publish: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
+    def publishHandlingErrors(serviceLocation: ServiceLocation): Future[Result] = {
+      ER.liftF(publishService(serviceLocation))
+        .merge
+        .recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
+    }
+
+    val serviceLocationER =
+      (
+        for {
+          _               <- ER.fromEither(ensureAuthorised.toRight(()).swap)
+          serviceLocation <- ER.fromEither(validateRequestPayload[ServiceLocation])
+        } yield serviceLocation
+      )
+
+    serviceLocationER.semiflatMap(publishHandlingErrors(_))
+      .merge
   }
 
   private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
-    import cats.data.{OptionT, EitherT}
     import cats.implicits._
+    val E = EitherTHelper.make[PublishError]
 
-    type Over[A] = EitherT[Future, Result, A]
-
-    def getDefinition: Over[ApiAndScopes] = {
-      EitherT(definitionService.getDefinition(serviceLocation).map(_.toRight(BadRequest)))
+    def validateApiAndScopes(apiAndScopes: ApiAndScopes): Future[Either[PublishError, ApiAndScopes]] = {
+      publisherService.validation(apiAndScopes, validateApiDefinition = false).map(_.toRight(apiAndScopes).map(GenericValidationFailure(_)).swap)
     }
 
-    def validate(apiAndScopes: ApiAndScopes): Over[Unit] = {
-      EitherT.fromOptionF(
-        OptionT(publisherService.validation(apiAndScopes, validateApiDefinition = false)).map(BadRequest(_)).value,
-        ()
-      ).swap
-    }
-
-    def publish(apiAndScopes: ApiAndScopes): Future[Result] = {
+    def publishApiAndScopes(apiAndScopes: ApiAndScopes): Future[Result] = {
       publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
         case PublicationResult(true, publisherResponse)  =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
@@ -87,20 +117,32 @@ class PublisherController @Inject() (
       }
     }
 
-    getDefinition.flatMap(apiAndScopes => {
-      validate(apiAndScopes).semiflatMap(_ =>
-        publish(apiAndScopes)
-      )
-    }).merge.recover(recovery(s"$FAILED_TO_PUBLISH ${serviceLocation.serviceName}"))
+    (
+      for {
+        apiAndScopes          <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
+        validatedApiAndScopes <- E.fromEitherF(validateApiAndScopes(apiAndScopes))
+        publisherResponse     <- E.liftF(publishApiAndScopes(apiAndScopes))
+      } yield publisherResponse
+    )
+      .leftMap(mapBusinessErrorsToResults)
+      .merge
+      .recover(recovery(FAILED_TO_PUBLISH))
   }
 
   def validate: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
-    handleRequest[ApiAndScopes](FAILED_TO_VALIDATE) { requestBody =>
-      publisherService.validateAPIDefinitionAndScopes(requestBody).map {
-        case Some(errors) => BadRequest(errors)
-        case None         => NoContent
-      } recover recovery(FAILED_TO_VALIDATE)
-    }
+    (
+      for {
+        _            <- ER.fromEither(ensureAuthorised.toRight(()).swap)
+        apiAndScopes <- ER.fromEither(validateRequestPayload[ApiAndScopes])
+        validation   <- ER.fromEitherF(
+                          publisherService.validation(apiAndScopes, validateApiDefinition = true)
+                            .map(_.toRight(apiAndScopes).map(x => BadRequest(Json.toJson(x)))
+                              .swap)
+                        )
+      } yield NoContent
+    )
+      .merge
+      .recover(recovery(FAILED_TO_VALIDATE))
   }
 
   def fetchUnapprovedServices(): Action[AnyContent] = Action.async { _ =>
@@ -125,21 +167,6 @@ class PublisherController @Inject() (
                            }
       } yield result
     } recover recovery(FAILED_TO_APPROVE_SERVICES)
-  }
-
-  private def handleRequest[T](prefix: String)(f: T => Future[Result])(implicit request: Request[JsValue], reads: Reads[T]): Future[Result] = {
-    val authHeader = request.headers.get("Authorization")
-    if (authHeader.isEmpty || appContext.publishingKey != base64Decode(authHeader.get)) {
-      Future.successful(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
-    } else {
-      Try(request.body.validate[T]) match {
-        case Success(JsSuccess(payload, _)) => f(payload)
-        case Success(JsError(errs))         => Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
-        case Failure(e)                     =>
-          logger.error(s"$prefix - Unprocessable request received: ${e.getMessage} => ${request.body}")
-          Future.successful(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
-      }
-    }
   }
 
   private def base64Decode(stringToDecode: String): String = {

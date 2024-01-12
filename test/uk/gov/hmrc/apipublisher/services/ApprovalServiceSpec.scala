@@ -21,18 +21,18 @@ import scala.concurrent.Future.successful
 
 import utils.AsyncHmrcSpec
 
+import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
-import uk.gov.hmrc.apipublisher.wiring.AppContext
 
 class ApprovalServiceSpec extends AsyncHmrcSpec {
 
   trait Setup {
     val mockApiApprovalRepository = mock[APIApprovalRepository]
-    val mockAppContext            = mock[AppContext]
+    val mockAppConfig             = mock[AppConfig]
 
-    val underTest = new ApprovalService(mockApiApprovalRepository, mockAppContext)
+    val underTest = new ApprovalService(mockApiApprovalRepository, mockAppConfig)
 
     val unapprovedServices = Seq(
       APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
@@ -55,7 +55,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Allow publication of previously unknown services when PreventAutoDeploy is disabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(false)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(false)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
 
@@ -68,7 +68,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Allow publication of previously disabled service when PreventAutoDeploy is disabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(false)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(false)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(false)))))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
 
@@ -81,7 +81,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Allow publication of previously enabled service when PreventAutoDeploy is disabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(false)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(false)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(true)))))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
 
@@ -94,7 +94,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Prevent publication of previously unknown services when PreventAutoDeploy is enabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(true)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(true)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false)))).thenReturn(successful(apiApproval.copy(approved = Some(false))))
 
@@ -107,7 +107,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Prevent publication of previously disabled service when PreventAutoDeploy is enabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(true)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(true)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(false)))))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false)))).thenReturn(successful(apiApproval.copy(approved = Some(false))))
 
@@ -120,7 +120,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     "Allow publication of previously enabled service when PreventAutoDeploy is enabled" in new Setup {
       val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
 
-      when(mockAppContext.preventAutoDeploy).thenReturn(true)
+      when(mockAppConfig.preventAutoDeploy).thenReturn(true)
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(true)))))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
 

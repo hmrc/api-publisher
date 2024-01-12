@@ -48,7 +48,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
     WireMock.reset()
     val apiScopeConfig = ApiScopeConfig("http://localhost:21113")
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClient])
   }

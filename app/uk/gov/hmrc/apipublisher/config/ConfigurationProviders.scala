@@ -21,7 +21,7 @@ import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.FiniteDuration
 
 import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment, Mode}
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apipublisher.connectors._
@@ -42,8 +42,6 @@ class ConfigurationModule extends Module {
 class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
     extends Provider[ApiDefinitionConfig] {
 
-  protected def mode: Mode = environment.mode
-
   override def get(): ApiDefinitionConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
     ApiDefinitionConfig(serviceBaseUrl)
@@ -53,8 +51,6 @@ class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configura
 @Singleton
 class ApiScopeConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
     extends Provider[ApiScopeConfig] {
-
-  protected def mode: Mode = environment.mode
 
   override def get(): ApiScopeConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-scope")
@@ -66,8 +62,6 @@ class ApiScopeConfigProvider @Inject() (val runModeConfiguration: Configuration,
 class ApiSSubscriptionFieldsConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
     extends Provider[ApiSSubscriptionFieldsConfig] {
 
-  protected def mode: Mode = environment.mode
-
   override def get(): ApiSSubscriptionFieldsConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-subscription-fields")
     ApiSSubscriptionFieldsConfig(serviceBaseUrl)
@@ -77,8 +71,6 @@ class ApiSSubscriptionFieldsConfigProvider @Inject() (val runModeConfiguration: 
 @Singleton
 class MicroserviceConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
     extends Provider[MicroserviceConnector.Config] {
-
-  protected def mode: Mode = environment.mode
 
   override def get(): MicroserviceConnector.Config = {
     val validateApiDefinition = runModeConfiguration.getOptional[Boolean]("validateApiDefinition").getOrElse(true)

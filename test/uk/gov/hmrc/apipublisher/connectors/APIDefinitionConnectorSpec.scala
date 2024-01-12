@@ -48,7 +48,7 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
     WireMock.reset()
     val apiDefinitionConfig = ApiDefinitionConfig("http://localhost:21112")
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 

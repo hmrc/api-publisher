@@ -19,9 +19,10 @@ package uk.gov.hmrc.apipublisher.connectors
 import scala.concurrent.Future.{failed, successful}
 
 import io.swagger.v3.oas.models.OpenAPI
+import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apipublisher.models.ApiAndScopes
+import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
 
 trait MicroserviceConnectorMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -31,8 +32,8 @@ trait MicroserviceConnectorMockModule {
 
     object GetAPIAndScopes {
 
-      def findsNone =
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(None))
+      def findsNone(serviceLocation: ServiceLocation) =
+        when(aMock.getAPIAndScopes(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
 
       def fails = {
         val errorMessage = "something went wrong"
@@ -40,7 +41,7 @@ trait MicroserviceConnectorMockModule {
       }
 
       def returns(in: ApiAndScopes) = {
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Some(in)))
+        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Right(in)))
       }
     }
 
@@ -55,6 +56,6 @@ trait MicroserviceConnectorMockModule {
   }
 
   object MicroserviceConnectorMock extends BaseMicroserviceConnectorMock {
-    val aMock = mock[MicroserviceConnector](withSettings.lenient())
+    val aMock = mock[MicroserviceConnector](withSettings.strictness(Strictness.LENIENT))
   }
 }
