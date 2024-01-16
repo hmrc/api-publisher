@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import java.io.FileNotFoundException
-import java.{util => ju}
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.io.Source
@@ -30,22 +27,19 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.swagger.v3.parser.OpenAPIV3Parser
-import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
-import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, SwaggerParseResult}
-import org.everit.json.schema.ValidationException
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models._
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -57,55 +51,34 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
-  val apiAndScopeDefinition                    = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints.json")).mkString
-  val apiAndScopeDefinitionWithoutWhitelisting = Source.fromURL(getClass.getResource("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")).mkString
+  val apiAndScopeDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
+  val apiAndScopeDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
 
-  val invalidDefinition = Source.fromURL(getClass.getResource("/input/invalid-api-definition.json")).mkString
+  val invalidDefinition = handleGetFileAndClose("/input/invalid-api-definition.json")
 
   val api                         = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
   val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
 
   val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
-  trait BaseSetup {
+  trait Setup {
     WireMock.reset()
-    val mockRamlLoader  = mock[DocumentationRamlLoader]
-    implicit val hc     = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    implicit val system = app.injector.instanceOf[ActorSystem]
-
-    def oasFileLocator: MicroserviceConnector.OASFileLocator
-    def oasParser: SwaggerParserExtension
+    val mockRamlLoader               = mock[DocumentationRamlLoader]
+    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
     val appConfig: Configuration = mock[Configuration]
 
     lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      oasFileLocator,
-      oasParser,
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
-  }
 
-  trait Setup extends BaseSetup {
-    val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
-    val oasParser      = new OpenAPIV3Parser()
-  }
-
-  trait SetupWithTimedOutParser extends BaseSetup {
-    val oasFileLocator = mock[MicroserviceConnector.OASFileLocator]
-
-    val oasParser = new SwaggerParserExtension {
-
-      override def readLocation(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = {
-        Thread.sleep(15000)
-        throw new RuntimeException("Should have crashed out of the blocking by now")
-      }
-
-      override def readContents(x$1: String, x$2: ju.List[AuthorizationValue], x$3: ParseOptions): SwaggerParseResult = ???
-
-    }
+    val mockOasFileLoader = mock[OASFileLoader]
+    val oasParser         = new OpenAPIV3Parser()
   }
 
   trait SetupWithNoApiDefinitionValidation extends Setup {
@@ -113,8 +86,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = false, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      MicroserviceConnector.MicroserviceOASFileLocator,
-      new OpenAPIV3Parser(),
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
@@ -126,11 +98,17 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
-      oasFileLocator,
-      mockOpenApiParser,
+      mockOasFileLoader,
       app.injector.instanceOf[HttpClient],
       app.injector.instanceOf[Environment]
     )
+  }
+
+  def handleGetFileAndClose(path: String) = {
+    val definitionSource = Source.fromURL(getClass.getResource(path))
+    val definitionStr    = definitionSource.mkString
+    definitionSource.close()
+    definitionStr
   }
 
   override def beforeAll(): Unit = {
@@ -146,84 +124,77 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Return the api definition" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result shouldEqual Some(ApiAndScopes(api, scopes))
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(api, scopes)
     }
 
     "Accept api definition for private API without whitelisted application IDs" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutWhitelisting)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result shouldEqual Some(ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes))
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes)
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only OTHER
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only OTHER
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only CUSTOMS
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only CUSTOMS
     }
 
     "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-without-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-without-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only EXAMPLE
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
     "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
-      val helloDefinition = Source.fromURL(getClass.getResource("/input/hello-definition-with-empty-categories.json")).mkString
+      val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-empty-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      val result = await(connector.getAPIAndScopes(testService))
-
-      result.get.categories should contain only EXAMPLE
+      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
     }
 
-    "Return none if the API endpoint returns 204" in new Setup {
+    "Return DefinitionFileNoBodyReturned if the API endpoint returns 204" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
-      val result = await(connector.getAPIAndScopes(testService))
+      await(connector.getAPIAndScopes(testService)) match {
+        case Left(DefinitionFileNoBodyReturned(_)) => succeed
+        case _                                     => fail()
+      }
 
-      result shouldEqual None
     }
 
-    "Fail if the API endpoint returns 404" in new Setup {
+    "return DefinitionFileNotFound if the API endpoint returns 404" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
 
-      intercept[UpstreamErrorResponse] {
-        await(connector.getAPIAndScopes(testService))
-      }.statusCode shouldBe NOT_FOUND
+      val result = await(connector.getAPIAndScopes(testService)).left.value
+      result shouldBe DefinitionFileNotFound(
+        ServiceLocation("test.example.com", "http://127.0.0.1:21112")
+      )
+
     }
 
-    "Fail if the API definition is invalid" in new Setup {
+    "return DefinitionFileFailedSchemaValidation if the API definition is invalid" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      intercept[ValidationException] {
-        await(connector.getAPIAndScopes(testService))
-      }
+      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#/properties/scopes/items/properties/key","pointerToViolation":"#/scopes/0/key","causingExceptions":[],"keyword":"pattern","message":"string [read:HELLO] does not match pattern ^[a-z:\\-0-9]+$"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 
     "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinition)))
 
-      val result: Option[ApiAndScopes] = await(connector.getAPIAndScopes(testService))
+      val result: Either[PublishError, ApiAndScopes] = await(connector.getAPIAndScopes(testService))
 
-      result shouldBe defined
+      result.isRight shouldBe true
     }
 
     "should not parse nginx response to JSON" in new Setup {
@@ -256,55 +227,11 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
   }
 
   "getOAS" should {
-    "load the OAS file when found and is a valid model" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/application.yaml")
+    "call the microservice to get the application.yaml" in new Setup {
+      connector.getOAS(testService, "1.0")
 
-      await(connector.getOAS(testService, "1.0"))
-
-      ok("Done")
+      verify(mockOasFileLoader).load(eqTo(testService), eqTo("1.0"), *)
     }
 
-    "load the OAS file when multifile OAS is found and is a valid model" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/multifile/v1/application.yaml")
-
-      await(connector.getOAS(testService, "1.0"))
-
-      ok("Done")
-    }
-
-    "handle an invalid OAS file" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/bad-application.yaml")
-
-      intercept[RuntimeException] {
-        await(connector.getOAS(testService, "1.0"))
-      }
-    }
-
-    "handle when the OAS file is not found" in new Setup {
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
-
-      intercept[RuntimeException] {
-        await(connector.getOAS(testService, "1.0"))
-      }
-    }
-
-    "handle a FileNotFoundException when locating yaml specification" in new SetupWithMockedOpenApiParser {
-      when(mockOpenApiParser.readLocation(*, *, *)).thenThrow(new FileNotFoundException("A problem reading the YAML file"))
-
-      intercept[IllegalArgumentException] {
-        await(connector.getOAS(testService, "1.0"))
-      }.getMessage() shouldBe "Cannot find valid OAS file"
-    }
-
-    // Flakey test in build server...
-    "return timeout when OAS parser takes too long" ignore new SetupWithTimedOutParser {
-      import scala.concurrent.duration._
-
-      when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
-
-      intercept[IllegalStateException] {
-        Await.result(connector.getOAS(testService, "1.0"), 29.seconds)
-      }
-    }
   }
 }

@@ -120,7 +120,7 @@ case class ApiAndScopes(api: JsObject, scopes: JsArray) {
 }
 
 object ApiAndScopes {
-  implicit val formats = Json.format[ApiAndScopes]
+  implicit val formats: Format[ApiAndScopes] = Json.format[ApiAndScopes]
 
   def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
     val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
@@ -137,17 +137,17 @@ object ApiAndScopes {
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])
 
 object OptionalFieldDefinitions {
-  implicit val reads = Json.reads[OptionalFieldDefinitions]
+  implicit val reads: Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
 }
 
 case class Scope(key: String, name: String, description: String)
 
 object Scope {
-  implicit val formats = Json.format[Scope]
+  implicit val formats: Format[Scope] = Json.format[Scope]
 }
 
 case class ServiceLocation(serviceName: String, serviceUrl: String, metadata: Option[Map[String, String]] = None)
 
 object ServiceLocation {
-  implicit val formats = Json.format[ServiceLocation]
+  implicit val formats: Format[ServiceLocation] = Json.format[ServiceLocation]
 }

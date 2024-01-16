@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions: Seq[FieldDefinition])
 
 object ApiSubscriptionFieldDefinitionsRequest {
-  implicit val formats = Json.format[ApiSubscriptionFieldDefinitionsRequest]
+  implicit val formats: Format[ApiSubscriptionFieldDefinitionsRequest] = Json.format[ApiSubscriptionFieldDefinitionsRequest]
 }

@@ -64,7 +64,7 @@ class ApiAndScopesSpec extends AsyncHmrcSpec {
   }
 
   "API version numbers should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain only ("1.0", "2.0", "3.0")
+    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain.only("1.0", "2.0", "3.0")
   }
 
   "Field definitions should be extracted from the JSON definition" in {

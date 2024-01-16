@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.wiring
+package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.Inject
 
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-class AppContext @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
+class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
 
   lazy val appName                    = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
   lazy val appUrl                     = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))

@@ -369,7 +369,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       inside(parser.apply(None)(sample)) {
         case (get :: put :: Nil) =>
           get.queryParameters shouldBe defined
-          get.queryParameters.get should contain allOf (QueryParam("petId", false), QueryParam("collarSize", false))
+          get.queryParameters.get should contain.allOf(QueryParam("petId", false), QueryParam("collarSize", false))
 
           put.queryParameters shouldBe defined
           put.queryParameters.get should contain only QueryParam("petId", false)
@@ -421,7 +421,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
       inside(parser.apply(None)(sample)) {
         case (get :: put :: Nil) =>
           get.queryParameters shouldBe defined
-          get.queryParameters.get should contain allOf (QueryParam("petId", true), QueryParam("collarSize", false))
+          get.queryParameters.get should contain.allOf(QueryParam("petId", true), QueryParam("collarSize", false))
 
           put.queryParameters shouldBe defined
           put.queryParameters.get should contain only QueryParam("petId", false)

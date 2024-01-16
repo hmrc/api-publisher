@@ -158,7 +158,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -174,7 +174,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -192,7 +192,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -209,7 +209,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -227,7 +227,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(*)(*)).thenReturn(successful(scopesSeq))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -241,7 +241,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "I have changed"))
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello", "read:test")))(*)).thenReturn(successful(scopeFromScopeService))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndMultiScopes, true))
 
       verify(mockApiScopeConnector).retrieveScopes(refEq(Set("read:hello", "read:test")))(*)
 
@@ -255,7 +255,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -272,7 +272,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello", "read:test")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val result: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+      val result: Option[JsValue] = await(publisherService.validation(apiAndMultiScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -290,7 +290,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello", "read:test")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val errors: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(apiAndMultiScopes))
+      val errors: Option[JsValue] = await(publisherService.validation(apiAndMultiScopes, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -307,7 +307,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val errors: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(ApiAndScopes(api, JsArray())))
+      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(api, JsArray()), true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
@@ -325,7 +325,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:goodbye", "read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val errors: Option[JsValue] = await(publisherService.validateAPIDefinitionAndScopes(ApiAndScopes(apiWithTwoScopes, JsArray(Seq(Json.parse(scopeFromApiDefinition))))))
+      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(apiWithTwoScopes, JsArray(Seq(Json.parse(scopeFromApiDefinition)))), true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)

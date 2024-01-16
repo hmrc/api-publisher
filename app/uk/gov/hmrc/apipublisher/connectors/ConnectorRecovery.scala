@@ -16,12 +16,16 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
+import scala.concurrent.Future
+
 import play.api.http.Status.UNPROCESSABLE_ENTITY
-import uk.gov.hmrc.http.{UnprocessableEntityException, UpstreamErrorResponse}
+import play.api.mvc.Result
+import play.api.mvc.Results.UnprocessableEntity
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 trait ConnectorRecovery {
 
-  def unprocessableRecovery[U]: PartialFunction[Throwable, U] = {
-    case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => throw new UnprocessableEntityException(message)
+  def unprocessableRecovery[U]: PartialFunction[Throwable, Future[Either[Result, U]]] = {
+    case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Future.successful(Left(UnprocessableEntity(message)))
   }
 }

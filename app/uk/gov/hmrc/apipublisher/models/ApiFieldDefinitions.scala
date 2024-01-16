@@ -59,7 +59,7 @@ object Validation {
 
   implicit val nelValidationRuleFormat: Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
 
-  implicit val ValidationJF = Json.format[Validation]
+  implicit val ValidationJF: Format[Validation] = Json.format[Validation]
 }
 
 case class ApiFieldDefinitions(apiContext: String, apiVersion: String, fieldDefinitions: Seq[FieldDefinition])

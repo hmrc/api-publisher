@@ -20,10 +20,10 @@ import javax.inject.Inject
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.OptionT
 import cats.implicits._
 
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.ramltools.domain.Endpoint
 
@@ -45,11 +45,13 @@ class DefinitionService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Option[ApiAndScopes]] = {
+  val E = EitherTHelper.make[PublishError]
+
+  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ApiAndScopes]] = {
     (
       for {
-        baseApiAndScopes     <- OptionT(microserviceConnector.getAPIAndScopes(serviceLocation))
-        detailedApiAndScopes <- OptionT.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
+        baseApiAndScopes     <- E.fromEitherF(microserviceConnector.getAPIAndScopes(serviceLocation))
+        detailedApiAndScopes <- E.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
       } yield detailedApiAndScopes
     )
       .value

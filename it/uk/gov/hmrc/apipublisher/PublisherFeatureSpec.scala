@@ -20,13 +20,13 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status.UNPROCESSABLE_ENTITY
+import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, UNPROCESSABLE_ENTITY}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
 import scalaj.http.{Http, HttpResponse}
-import uk.gov.hmrc.apipublisher.models.ErrorCode.INVALID_API_DEFINITION
+import uk.gov.hmrc.apipublisher.models.ErrorCode
 
 class PublisherFeatureSpec extends BaseFeatureSpec {
 
@@ -100,7 +100,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       publishResponse.is2xx shouldBe true
     }
 
-    Scenario("Validation of API definition failed") {
+    Scenario("Validation of API definition failed during publish") {
 
       Given("A microservice is running with an invalid API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
@@ -117,11 +117,34 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue      = Json.parse(publishResponse.body)
-      (responseBody \ "code").as[String] shouldBe INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
-      errorMessages should contain only (
+      errorMessages should contain.only(
         """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
         """string [c] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
+      )
+    }
+
+    Scenario("When fetch of definition.json file from micropservice fails with NOT_FOUND") {
+
+      Given("A microservice is running with an invalid API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
+
+      When("The publisher is triggered")
+      val publishResponse: HttpResponse[String] =
+        Http(s"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+
+      Then("The api-publisher responded with status BAD_REQUEST")
+      publishResponse.code shouldBe BAD_REQUEST
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body)
+      responseBody shouldBe Json.obj(
+        "code"    -> JsString(ErrorCode.INVALID_API_DEFINITION.toString),
+        "message" -> JsString("Unable to find definition for service test.example.com")
       )
     }
   }
