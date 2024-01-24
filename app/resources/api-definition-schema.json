@@ -63,11 +63,6 @@
           "type": "boolean",
           "default": false
         },
-        "requiresTrust": {
-          "description": "DEPRECATED. This has been superseded by Private API access",
-          "type": "boolean",
-          "default": false
-        },
         "categories": {
           "description": "The list of service groups the API will be categorised by.",
           "type": "array",

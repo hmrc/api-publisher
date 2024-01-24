@@ -23,7 +23,6 @@ Details of the API
 | --- | --- | --- | --- | --- |
 | `name` | _string_ | Required | ^[A-Z]{1}.*$ | The name for the API (title case i.e. Individual Benefits, not Individual benefits). |
 | `versions` | _object[]_ | Required | [versions](#versions) | A list of the different versions of the API |
-| `requiresTrust` | _boolean_ | Optional | False (default) | DEPRECATED. This has been superseded by Private API access |
 | `context` | _string_ | Required | ^[a-z]+[a-z/\-]{4,}$ | The unique context for the API. This should be consistent with the HMRC Domain Model. See [API Domain Model](https://confluence.tools.tax.service.gov.uk/display/ApiPlatform/HMRC%27s+API+Domain+Model) |
 | `isTestSupport` | _boolean_ | Optional | False (default) | Categorises the API as being a Test Support API |
 | `categories` | _string[]_ | Optional | EXAMPLE<br>AGENTS<br>BUSINESS_RATES<br>CHARITIES<br>CONSTRUCTION_INDUSTRY_SCHEME<br>CORPORATION_TAX<br>CUSTOMS<br>ESTATES<br>HELP_TO_SAVE<br>INCOME_TAX_MTD<br>LIFETIME_ISA<br>MARRIAGE_ALLOWANCE<br>NATIONAL_INSURANCE<br>PAYE<br>PENSIONS<br>PRIVATE_GOVERNMENT<br>RELIEF_AT_SOURCE<br>SELF_ASSESSMENT<br>STAMP_DUTY<br>TRUSTS<br>VAT<br>VAT_MTD<br>OTHER | The list of service groups the API will be categorised by. |
