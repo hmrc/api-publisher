@@ -20,14 +20,14 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import scalaj.http
+import scalaj.http.Http
+
+import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
-
-import scalaj.http
-import scalaj.http.Http
-import play.api.http.Status.BAD_REQUEST
 
 class ValidateFeatureSpec extends BaseFeatureSpec {
 

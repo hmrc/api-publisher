@@ -63,7 +63,7 @@ The response will contain information regarding why the request could not be und
 ```json
 {
   "statusCode": 400,
-  "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (akka.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
+  "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (org.apache.pekko.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
 }
 ```
 #### 401 Unauthorized
@@ -153,7 +153,7 @@ No response as the request was successful
 ```json
 {
   "statusCode": 400,
-  "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (akka.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
+  "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (org.apache.pekko.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
 }
 ```
 #### 400 Bad Request - Scope Changed Error

@@ -3,7 +3,6 @@ import scoverage.ScoverageKeys._
 object ScoverageSettings {
   private val excludesRegexes = Seq(
     "<empty>",
-    "com\\.kenshoo\\.play\\.metrics\\..*",
     ".*definition.*",
     "prod\\..*",
     "app\\..*",

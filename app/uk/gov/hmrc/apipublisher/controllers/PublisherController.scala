@@ -162,8 +162,8 @@ class PublisherController @Inject() (
       for {
         serviceLocation <- approvalService.approveService(serviceName)
         result          <- publishService(serviceLocation).map {
-                             case Result(ResponseHeader(OK, _, _), _, _, _, _) => NoContent
-                             case other                                        => other
+                             case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
+                             case other                                           => other
                            }
       } yield result
     } recover recovery(FAILED_TO_APPROVE_SERVICES)

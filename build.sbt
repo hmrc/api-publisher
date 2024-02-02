@@ -5,7 +5,6 @@ import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-publisher"
 
-lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 scalaVersion := "2.13.12"
@@ -15,7 +14,7 @@ ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(plugins: _*)
+  .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
   .settings(scalaSettings: _*)
@@ -39,6 +38,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .configs(IntegrationTest)
   .settings(DefaultBuildSettings.integrationTestSettings())
+  .settings(scalafixConfigSettings(IntegrationTest))
   .settings(
     IntegrationTest / fork := false,
     IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
