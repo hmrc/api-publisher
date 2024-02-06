@@ -22,10 +22,11 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.jdk.CollectionConverters._
 
-import akka.actor.ActorSystem
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import io.swagger.v3.parser.core.models.ParseOptions
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.pattern
 
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -89,7 +90,7 @@ class OASFileLoader @Inject() (oasFileLocator: OASFileLoader.OASFileLocator, ope
         )
       )
 
-    val futureTimer: Future[OpenAPI] = akka.pattern.after(oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
+    val futureTimer: Future[OpenAPI] = pattern.after(oasParserMaxDuration, using = system.scheduler)(Future.failed(new IllegalStateException("Exceeded OAS parse time")))
 
     Future.firstCompletedOf(List(futureParsing, futureTimer))
   }

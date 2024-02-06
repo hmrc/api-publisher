@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import org.mockito.BDDMockito.given
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec

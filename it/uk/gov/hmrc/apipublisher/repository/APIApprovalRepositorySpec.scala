@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.repository
 
-import uk.gov.hmrc.apipublisher.models.APIApproval
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.Application
 import utils.AsyncHmrcSpec
+
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+
+import uk.gov.hmrc.apipublisher.models.APIApproval
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
     with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -38,7 +40,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
-    await(repository.ensureIndexes)
+    await(repository.ensureIndexes())
   }
 
   override protected def afterAll(): Unit = {

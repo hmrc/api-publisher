@@ -20,12 +20,14 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import scalaj.http.{Http, HttpResponse}
+
 import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, UNPROCESSABLE_ENTITY}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
-import scalaj.http.{Http, HttpResponse}
+
 import uk.gov.hmrc.apipublisher.models.ErrorCode
 
 class PublisherFeatureSpec extends BaseFeatureSpec {
