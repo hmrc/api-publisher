@@ -23,7 +23,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(ScoverageSettings())
   .settings(
     name := appName,
-
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
@@ -37,17 +36,6 @@ lazy val microservice = Project(appName, file("."))
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
     addTestReportOption(Test, "test-reports")
   )
-//  .configs(IntegrationTest)
-//  .settings(DefaultBuildSettings.integrationTestSettings())
-//  .settings(scalafixConfigSettings(IntegrationTest))
-//  .settings(
-//    IntegrationTest / fork := false,
-//    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
-//    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
-//    addTestReportOption(IntegrationTest, "int-test-reports"),
-//    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-//    IntegrationTest / parallelExecution:= false
-//  )
   .settings(
     scalacOptions ++= Seq(
       "-Wconf:cat=unused&src=views/.*\\.scala:s",
@@ -61,6 +49,7 @@ lazy val microservice = Project(appName, file("."))
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
+  .settings(DefaultBuildSettings.itSettings())
   .settings(
     name := "integration-tests",
     headerSettings(Test) ++ automateHeaderSettings(Test)
