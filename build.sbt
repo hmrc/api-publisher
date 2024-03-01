@@ -2,8 +2,6 @@ import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings
 import uk.gov.hmrc.DefaultBuildSettings._
 
-import scala.collection.Seq
-
 lazy val appName = "api-publisher"
 
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
