@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apipublisher.services
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import utils.AsyncHmrcSpec
@@ -66,6 +66,10 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       primeRamlFor(version)
       primeOasFor(version, endpoints: _*)
     }
+
+    def primeOasFailure(version: String, throwable: Throwable) = {
+      when(oasVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(failed(throwable))
+    }
   }
 
   "getDefinition" should {
@@ -86,7 +90,21 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       intercept[IllegalStateException] {
         await(service.getDefinition(aServiceLocation))
       }
-        .getMessage startsWith "No endpoints defined for"
+        .getMessage shouldBe "No endpoints defined for 1.0 of test"
+    }
+
+    "handle api and scopes with bad OAS" in new Setup {
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val scopes = json[JsArray]("/input/scopes.json")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
+
+      primeRamlFor("1.0")
+      primeOasFailure("1.0", new RuntimeException("Boom"))
+
+      intercept[IllegalStateException] {
+        await(service.getDefinition(aServiceLocation))
+      }
+        .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
     "handle api and scopes with RAML data only" in new Setup {
@@ -113,6 +131,20 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
       val expected = json[JsObject]("/expected/api-simple-oas.json")
       result.value shouldBe ApiAndScopes(expected, scopes)
+    }
+
+    "handle api and scopes with bad OAS data only" in new Setup {
+      val api    = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val scopes = json[JsArray]("/input/scopes.json")
+      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api, scopes))
+
+      primeRamlFor("1.0")
+      primeOasFailure("1.0", new RuntimeException("Boom"))
+
+      intercept[IllegalStateException] {
+        await(service.getDefinition(aServiceLocation))
+      }
+        .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
     "handle api and scopes with both RAML and OS data that matches" in new Setup {

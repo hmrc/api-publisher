@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.controllers
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.everit.json.schema.ValidationException
@@ -124,6 +125,10 @@ class PublisherController @Inject() (
         publisherResponse     <- E.liftF(publishApiAndScopes(apiAndScopes))
       } yield publisherResponse
     )
+      .leftSemiflatTap { err: PublishError =>
+        logger.error(s"Failed to publish api and scopes due to ${err.message}")
+        successful(err) // Thrown away
+      }
       .leftMap(mapBusinessErrorsToResults)
       .merge
       .recover(recovery(FAILED_TO_PUBLISH))
@@ -136,10 +141,14 @@ class PublisherController @Inject() (
         apiAndScopes <- ER.fromEither(validateRequestPayload[ApiAndScopes])
         validation   <- ER.fromEitherF(
                           publisherService.validation(apiAndScopes, validateApiDefinition = true)
-                            .map(_.toRight(apiAndScopes).map(x => BadRequest(Json.toJson(x)))
-                              .swap)
+                            .map(_.toRight(NoContent))
                         )
-      } yield NoContent
+                          .swap
+                          .leftMap { jsv =>
+                            logger.error(s"Failed to publish api and scopes due to ${jsv.toString}")
+                            BadRequest(Json.toJson(jsv))
+                          }
+      } yield validation
     )
       .merge
       .recover(recovery(FAILED_TO_VALIDATE))

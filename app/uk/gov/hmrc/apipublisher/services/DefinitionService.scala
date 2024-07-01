@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.Inject
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 import cats.implicits._
 
@@ -88,18 +89,32 @@ class DefinitionService @Inject() (
     val ramlVD = ramlVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
       .orElse(successful(List.empty))
 
-    val oasVD = oasVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
-      .orElse(successful(List.empty))
+    val oasVD: Future[Either[Throwable, List[Endpoint]]] =
+      oasVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
+        .map(_.asRight[Throwable])
+        .recover {
+          case NonFatal(t) => Left(t)
+        }
 
     ramlVD.flatMap { raml =>
       oasVD.map { oas =>
         (raml, oas) match {
-          case (Nil, Nil)                                                                   => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (ramlEndpoints, Nil)                                                         => logger.info(s"${describeService} : Using RAML to publish"); (ramlEndpoints, ApiVersionSource.RAML)
-          case (Nil, oasEndpoints)                                                          => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, ApiVersionSource.OAS)
-          case (ramlEndpoints, oasEndpoints) if (ramlEndpoints.toSet == oasEndpoints.toSet) =>
-            logger.info(s"${describeService} : Both RAML and OAS match for publishing"); (oasEndpoints, ApiVersionSource.OAS)
-          case (ramlEndpoints, oasEndpoints)                                                => logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); (ramlEndpoints, ApiVersionSource.RAML)
+          case (Nil, Right(Nil))                                                                   =>
+            throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
+          case (Nil, Left(t))                                                                      =>
+            throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName} due to failure in OAS Parsing - [${t.getMessage()}]")
+          case (ramlEndpoints, Right(Nil))                                                         =>
+            logger.info(s"${describeService} : Using RAML to publish")
+            (ramlEndpoints, ApiVersionSource.RAML)
+          case (ramlEndpoints, Left(t))                                                            =>
+            logger.info(s"${describeService} : Using RAML to publish due to failure in OAS Parsing - [${t.getMessage()}]")
+            (ramlEndpoints, ApiVersionSource.RAML)
+          case (Nil, Right(oasEndpoints))                                                          => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, ApiVersionSource.OAS)
+          case (ramlEndpoints, Right(oasEndpoints)) if (ramlEndpoints.toSet == oasEndpoints.toSet) =>
+            logger.info(s"${describeService} : Both RAML and OAS match for publishing")
+            (oasEndpoints, ApiVersionSource.OAS)
+          case (ramlEndpoints, Right(oasEndpoints))                                                =>
+            logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); (ramlEndpoints, ApiVersionSource.RAML)
         }
       }
     }
