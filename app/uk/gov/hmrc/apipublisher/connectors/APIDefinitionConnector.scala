@@ -45,9 +45,9 @@ class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpC
   }
 
   def validateAPIDefinition(definition: JsObject)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    val url = s"$serviceBaseUrl/api-definition/validate"
+    val url = url"$serviceBaseUrl/api-definition/validate"
     http
-      .post(url"$url")
+      .post(url)
       .withBody(definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
