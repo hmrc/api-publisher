@@ -1,10 +1,9 @@
-import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings
-import uk.gov.hmrc.DefaultBuildSettings._
 
 lazy val appName = "api-publisher"
 
-lazy val playSettings: Seq[Setting[_]] = Seq.empty
+Global / bloopAggregateSourceDependencies := true
+Global / bloopExportJarClassifiers := Some(Set("sources"))
 
 ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / majorVersion := 0
@@ -15,12 +14,8 @@ ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(playSettings: _*)
-  .settings(scalaSettings: _*)
-  .settings(defaultSettings(): _*)
   .settings(ScoverageSettings())
   .settings(
-    name := appName,
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
@@ -29,17 +24,14 @@ lazy val microservice = Project(appName, file("."))
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     Test / fork := false,
     Test / parallelExecution := false,
-    Test / unmanagedSourceDirectories += baseDirectory.value / "test",
     Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
-    addTestReportOption(Test, "test-reports")
   )
   .settings(
     scalacOptions ++= Seq(
-      "-Wconf:cat=unused&src=views/.*\\.scala:s",
-      "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
-      "-Wconf:cat=unused&src=.*Routes\\.scala:s",
-      "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
+      // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
+      // suppress warnings in generated routes files
+      "-Wconf:src=routes/.*:s"
     )
   )
 
@@ -50,12 +42,9 @@ lazy val it = (project in file("it"))
   .settings(DefaultBuildSettings.itSettings())
   .settings(
     name := "integration-tests",
-    headerSettings(Test) ++ automateHeaderSettings(Test)
   )
 
 
-Global / bloopAggregateSourceDependencies := true
-Global / bloopExportJarClassifiers := Some(Set("sources"))
 
 
 commands ++= Seq(
