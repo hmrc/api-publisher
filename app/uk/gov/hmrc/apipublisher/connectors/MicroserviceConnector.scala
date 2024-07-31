@@ -79,7 +79,7 @@ class MicroserviceConnector @Inject() (
 
     http
       .get(url"${serviceLocation.serviceUrl}/api/definition")
-      .execute[Either[UpstreamErrorResponse, Option[ApiAndScopes]]]
+      .execute[Either[UpstreamErrorResponse, Option[ApiAndScopes]]] // Uses readOptionOfNotFound for reading
       .map {
         case Right(oApiAndScopes)                                             => oApiAndScopes.toRight(DefinitionFileNoBodyReturned(serviceLocation))
         case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _))                  => Left(DefinitionFileNotFound(serviceLocation))
