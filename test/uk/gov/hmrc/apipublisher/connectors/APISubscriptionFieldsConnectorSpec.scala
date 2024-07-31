@@ -33,7 +33,8 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, FieldDefinition}
@@ -70,7 +71,7 @@ class APISubscriptionFieldsConnectorSpec extends AsyncHmrcSpec with BeforeAndAft
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new APISubscriptionFieldsConnector(apiSubscriptionFieldsConfig, app.injector.instanceOf[HttpClient])
+    val connector = new APISubscriptionFieldsConnector(apiSubscriptionFieldsConfig, app.injector.instanceOf[HttpClientV2])
 
     def publishFieldDefinitions(definitions: Seq[ApiFieldDefinitions] = apiFieldDefinitions): Future[Unit] =
       connector.publishFieldDefinitions(definitions)

@@ -20,30 +20,37 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.json.{JsString, JsValue, Json}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import uk.gov.hmrc.apipublisher.models.Scope
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class APIScopeConnector @Inject() (config: ApiScopeConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+class APIScopeConnector @Inject() (config: ApiScopeConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
     extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Unit] = {
-    http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/scope", scopes).map {
-      case Right(_)                                                         => (())
-      case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-      case Left(err)                                                        => throw err
-    }
+    http
+      .post(url"$serviceBaseUrl/scope")
+      .withBody(scopes)
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .map {
+        case Right(_)                                                         => (())
+        case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+        case Left(err)                                                        => throw err
+      }
   }
 
   def validateScopes(scopes: JsValue)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    val url = s"$serviceBaseUrl/scope/validate"
-    http.POST[JsValue, Either[UpstreamErrorResponse, HttpResponse]](url, scopes)
+    val url = url"$serviceBaseUrl/scope/validate"
+    http.post(url)
+      .withBody(Json.toJson(scopes))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(_)                                                => None
         case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>
@@ -54,8 +61,7 @@ class APIScopeConnector @Inject() (config: ApiScopeConfig, http: HttpClient)(imp
   }
 
   def retrieveScopes(scopeKeys: Set[String])(implicit hc: HeaderCarrier): Future[Seq[Scope]] = {
-    val url = url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}"
-    http.GET[Seq[Scope]](url)
+    http.get(url"$serviceBaseUrl/scope?keys=${scopeKeys.mkString(" ")}").execute[Seq[Scope]]
   }
 }
 

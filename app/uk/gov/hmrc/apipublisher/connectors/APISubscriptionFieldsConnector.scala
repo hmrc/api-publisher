@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
-import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.json.{JsString, JsValue, Json}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UnprocessableEntityException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
     extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = config.baseUrl
@@ -37,10 +36,13 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
   def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(implicit hc: HeaderCarrier): Future[Unit] = {
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
-        val urlEncodedApiContext = URLEncoder.encode(apiContext, StandardCharsets.UTF_8.name)
-        val request              = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-        val putUrl               = s"$serviceBaseUrl/definition/context/$urlEncodedApiContext/version/$apiVersion"
-        http.PUT[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
+        http.put(url"$serviceBaseUrl/definition/context/$apiContext/version/$apiVersion")
+          .withBody(
+            Json.toJson(
+              ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
+            )
+          )
+          .execute[Either[UpstreamErrorResponse, HttpResponse]]
           .map {
             case Right(_)                                                         => (())
             case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
@@ -55,10 +57,14 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
     if (fieldDefinitions.isEmpty) {
       Future.successful(None)
     } else {
-      val request = ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
-      val putUrl  = s"$serviceBaseUrl/validate"
-
-      http.POST[ApiSubscriptionFieldDefinitionsRequest, Either[UpstreamErrorResponse, HttpResponse]](putUrl, request)
+      http
+        .post(url"$serviceBaseUrl/validate")
+        .withBody(
+          Json.toJson(
+            ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions)
+          )
+        )
+        .execute[Either[UpstreamErrorResponse, HttpResponse]]
         .map {
           case Right(_)                                                         => None
           case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Some(JsString("Field definitions are invalid"))

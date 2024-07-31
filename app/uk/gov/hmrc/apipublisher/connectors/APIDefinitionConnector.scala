@@ -22,27 +22,34 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse, UnprocessableEntityException, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClient)(implicit val ec: ExecutionContext)
+class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
     extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
-    http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](s"$serviceBaseUrl/api-definition", api, Seq.empty).map {
-      case Right(_)                                                         => (())
-      case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
-      case Left(err)                                                        => throw err
-    }
+    http.post(url"$serviceBaseUrl/api-definition")
+      .withBody(Json.toJson(api))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .map {
+        case Right(_)                                                         => (())
+        case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+        case Left(err)                                                        => throw err
+      }
   }
 
   def validateAPIDefinition(definition: JsObject)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
     val url = s"$serviceBaseUrl/api-definition/validate"
-    http.POST[JsObject, Either[UpstreamErrorResponse, HttpResponse]](url, definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
+    http
+      .post(url"$url")
+      .withBody(definition ++ Json.obj("serviceBaseUrl" -> "dummy", "serviceName" -> "dummy"))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(_)                                                => None
         case Left(UpstreamErrorResponse(message, BAD_REQUEST, _, _)) =>

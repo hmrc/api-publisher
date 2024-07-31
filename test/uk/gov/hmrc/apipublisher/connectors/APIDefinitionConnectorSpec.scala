@@ -31,8 +31,9 @@ import utils.AsyncHmrcSpec
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.{CONTENT_TYPE, JSON, _}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -52,7 +53,7 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
 
     val appConfig: Configuration = mock[Configuration]
 
-    val connector = new APIDefinitionConnector(apiDefinitionConfig, app.injector.instanceOf[HttpClient])
+    val connector = new APIDefinitionConnector(apiDefinitionConfig, app.injector.instanceOf[HttpClientV2])
   }
 
   override def beforeAll(): Unit = {
