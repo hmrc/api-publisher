@@ -30,7 +30,8 @@ import utils.AsyncHmrcSpec
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.Scope
 
@@ -50,7 +51,7 @@ class APIScopeConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Gu
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClient])
+    val connector = new APIScopeConnector(apiScopeConfig, app.injector.instanceOf[HttpClientV2])
   }
 
   override def beforeAll(): Unit = {

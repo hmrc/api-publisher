@@ -33,7 +33,8 @@ import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, HttpReadsOption, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
 import uk.gov.hmrc.ramltools.RAML
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
@@ -50,7 +51,7 @@ class MicroserviceConnector @Inject() (
     config: MicroserviceConnector.Config,
     ramlLoader: RamlLoader,
     oasFileLoader: OASFileLoader,
-    http: HttpClient,
+    http: HttpClientV2,
     env: Environment
   )(implicit val ec: ExecutionContext
   ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
@@ -76,15 +77,14 @@ class MicroserviceConnector @Inject() (
 
     import uk.gov.hmrc.http.UpstreamErrorResponse
 
-    val url = s"${serviceLocation.serviceUrl}/api/definition"
-
-    http.GET[Option[ApiAndScopes]](url)(readOptionOfNotFound, implicitly, implicitly)
+    http
+      .get(url"${serviceLocation.serviceUrl}/api/definition")
+      .execute[Either[UpstreamErrorResponse, Option[ApiAndScopes]]] // Uses readOptionOfNotFound for reading
       .map {
-        _.toRight(DefinitionFileNoBodyReturned(serviceLocation))
-      }
-      .recover {
-        case UpstreamErrorResponse(_, NOT_FOUND, _, _)                  => Left(DefinitionFileNotFound(serviceLocation))
-        case UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _) => Left(DefinitionFileUnprocessableEntity(serviceLocation, message))
+        case Right(oApiAndScopes)                                             => oApiAndScopes.toRight(DefinitionFileNoBodyReturned(serviceLocation))
+        case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _))                  => Left(DefinitionFileNotFound(serviceLocation))
+        case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Left(DefinitionFileUnprocessableEntity(serviceLocation, message))
+        case Left(err)                                                        => throw err
       }
       .map(_.map(defaultCategories))
       .map(_.flatMap(validateApiAndScopesAgainstSchema))

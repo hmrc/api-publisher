@@ -36,7 +36,8 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
 import uk.gov.hmrc.apipublisher.models._
@@ -73,7 +74,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
       mockOasFileLoader,
-      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
     )
 
@@ -87,7 +88,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       MicroserviceConnector.Config(validateApiDefinition = false, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
       mockOasFileLoader,
-      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
     )
   }
@@ -99,7 +100,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
       mockRamlLoader,
       mockOasFileLoader,
-      app.injector.instanceOf[HttpClient],
+      app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
     )
   }
