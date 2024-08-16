@@ -47,7 +47,7 @@ class PublisherService @Inject() (
 
     def publish(apiAndScopes: ApiAndScopes): Future[JsObject] = {
       for {
-        _  <- apiScopeConnector.publishScopes(apiAndScopes.scopes)
+        _  <- if (apiAndScopes.scopes.nonEmpty) apiScopeConnector.publishScopes(apiAndScopes.scopes.get) else successful(())
         api = apiDetailsWithServiceLocation(apiAndScopes)
         _  <- apiDefinitionConnector.publishAPI(api)
         _  <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
@@ -85,8 +85,8 @@ class PublisherService @Inject() (
 
     def checkScopesForErrors(scopeServiceScopes: Seq[Scope], scopeSeq: Seq[Scope]): Future[Option[JsObject]] = {
       for {
-        scopeErrors        <- apiScopeConnector.validateScopes(apiAndScopes.scopes)
-        scopeChangedErrors <- successful(scopesRemainUnchanged(scopeServiceScopes, scopeSeq))
+        scopeErrors        <- if (scopeSeq.nonEmpty) apiScopeConnector.validateScopes(apiAndScopes.scopes.get) else successful(None)
+        scopeChangedErrors <- if (scopeSeq.nonEmpty) successful(scopesRemainUnchanged(scopeServiceScopes, scopeSeq)) else successful(None)
         apiErrors          <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
         fieldDefnErrors    <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
       } yield {
@@ -116,7 +116,7 @@ class PublisherService @Inject() (
       }
     }
 
-    val scopeSeq: Seq[Scope]      = apiAndScopes.scopes.as[Seq[Scope]]
+    val scopeSeq: Seq[Scope]      = if (apiAndScopes.scopes.nonEmpty) apiAndScopes.scopes.get.as[Seq[Scope]] else Seq.empty
     val scopesSearch: Set[String] = (scopeSeq.map(s => s.key).toList ++ apiAndScopes.apiScopes).toSet
 
     apiScopeConnector.retrieveScopes(scopesSearch) flatMap { scopeServiceScopes =>

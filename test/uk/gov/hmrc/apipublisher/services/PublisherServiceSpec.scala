@@ -39,11 +39,11 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
   val scopes: JsArray                 = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
   val scopesSeq: Seq[Scope]           = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[Seq[Scope]]
   val multiScopes: JsArray            = Json.parse(getClass.getResourceAsStream("/input/multi-scopes.json")).as[JsArray]
-  val apiAndScopes: ApiAndScopes      = ApiAndScopes(api, scopes)
-  val apiAndMultiScopes: ApiAndScopes = ApiAndScopes(api, multiScopes)
+  val apiAndScopes: ApiAndScopes      = ApiAndScopes(api, Some(scopes))
+  val apiAndMultiScopes: ApiAndScopes = ApiAndScopes(api, Some(multiScopes))
 
   val apiWithoutFieldDefinitions: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
-  val apiAndScopesWithoutFieldDefinitions: ApiAndScopes = ApiAndScopes(apiWithoutFieldDefinitions, scopes)
+  val apiAndScopesWithoutFieldDefinitions: ApiAndScopes = ApiAndScopes(apiWithoutFieldDefinitions, Some(scopes))
 
   val apiContext = "test"
 
@@ -299,18 +299,31 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       errors.isDefined shouldBe false
     }
 
-    "Succeed when API defines no scopes but uses one which is in the scopes database" in new Setup {
+    "Succeed when API defines empty scopes and no scopes validation" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"))
 
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiScopeConnector.validateScopes(*)(*)).thenReturn(successful(None))
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(api, JsArray()), true))
+      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(api, Some(JsArray())), true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiScopeConnector).validateScopes(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      errors.isDefined shouldBe false
+    }
+
+    "Succeed when API defines no scopes and no scopes validation" in new Setup {
+      val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"))
+
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+
+      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(api, None), true))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       errors.isDefined shouldBe false
@@ -325,7 +338,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       when(mockApiScopeConnector.retrieveScopes(refEq(Set("read:goodbye", "read:hello")))(*)).thenReturn(successful(scopeFromScopeService))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(apiWithTwoScopes, JsArray(Seq(Json.parse(scopeFromApiDefinition)))), true))
+      val errors: Option[JsValue] = await(publisherService.validation(ApiAndScopes(apiWithTwoScopes, Some(JsArray(Seq(Json.parse(scopeFromApiDefinition))))), true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiScopeConnector).validateScopes(*)(*)
