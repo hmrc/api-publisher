@@ -299,7 +299,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       errors.isDefined shouldBe false
     }
 
-    "Succeed when API defines empty scopes and no scopes validation" in new Setup {
+    "Succeed when API defines empty scopes" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"))
 
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
@@ -314,7 +314,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       errors.isDefined shouldBe false
     }
 
-    "Succeed when API defines no scopes and no scopes validation" in new Setup {
+    "Succeed when API defines no scopes" in new Setup {
       val scopeFromScopeService = Seq(Scope("read:hello", "Say Hello", "Ability to Say Hello"))
 
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
