@@ -54,8 +54,11 @@ object ApiVersionSource {
   }
 }
 
-case class ApiAndScopes(api: JsObject, scopes: JsArray) {
-  private lazy val definedScopes: Seq[String] = (scopes \\ "key").map(_.as[String]).toSeq
+case class ApiAndScopes(api: JsObject, scopes: Option[JsArray]) {
+
+  private lazy val definedScopes: Seq[String] =
+    if (scopes.nonEmpty) (scopes.get \\ "key").map(_.as[String]).toSeq
+    else Seq.empty
 
   lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String]).toSeq
 
@@ -126,11 +129,8 @@ object ApiAndScopes {
     val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
     val scopesRequiredByApi: Seq[String] = apiAndScopes.definedScopes ++ apiAndScopes.apiScopes
     val missing                          = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
-    if (missing.nonEmpty) {
-      ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
-    } else {
-      ScopesDefinedOk
-    }
+    if (scopesRequiredByApi.isEmpty || missing.isEmpty) ScopesDefinedOk
+    else ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
   }
 }
 

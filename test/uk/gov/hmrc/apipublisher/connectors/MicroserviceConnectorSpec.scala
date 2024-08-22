@@ -125,13 +125,13 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Return the api definition" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(api, scopes)
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(api, Some(scopes))
     }
 
     "Accept api definition for private API without whitelisted application IDs" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutWhitelisting)))
 
-      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(apiWithoutWhitelistedAppIDs, scopes)
+      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(apiWithoutWhitelistedAppIDs, Some(scopes))
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {

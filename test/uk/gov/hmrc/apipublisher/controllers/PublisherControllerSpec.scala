@@ -51,7 +51,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
   private val api          = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
   private val scopes       = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
-  private val apiAndScopes = ApiAndScopes(api, scopes)
+  private val apiAndScopes = ApiAndScopes(api, Some(scopes))
 
   private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
 

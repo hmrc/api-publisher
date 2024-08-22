@@ -42,28 +42,28 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
     Scenario("Publisher receive an API notification") {
 
       Given("A microservice is running with an API Definition")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithScopes)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
 
-      And("The api definition is running")
+      And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
       // apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
       apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
 
-      And("The api subscription fields is running")
+      And("api subscription fields is running")
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
 
-      And("The api scope is running")
+      And("api scope is running")
       apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
       apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
       apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
         .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
-      When("The publisher is triggered")
+      When("publisher is triggered")
       val publishResponse: HttpResponse[String] =
         Http(s"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
@@ -98,7 +98,121 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .withHeader(CONTENT_TYPE, containing(JSON))
         .withRequestBody(equalToJson(fieldDefinitions_3_0)))
 
-      And("The api-publisher responded with status 2xx")
+      And("api-publisher responded with status 2xx")
+      publishResponse.is2xx shouldBe true
+    }
+
+    Scenario("Publisher receives a call to publish an API with empty scopes in it's definition") {
+
+      Given("A microservice is running with an API Definition with empty scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyScopes)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      And("api scope is running")
+      apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
+      apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
+      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
+        .willReturn(aResponse().withStatus(200).withBody(scopes)))
+
+      When("publisher is triggered")
+      val publishResponse: HttpResponse[String] =
+        Http(s"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+
+      Then("The scope is validated")
+      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      And("The scope is published to the API Scope microservice")
+      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(scopes)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.is2xx shouldBe true
+    }
+
+    Scenario("Publisher receives a call to publish an API with no scopes in it's definition") {
+
+      Given("A microservice is running with an API Definition without scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      And("api scope is running")
+      apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
+      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
+        .willReturn(aResponse().withStatus(200).withBody(scopes)))
+
+      When("publisher is triggered")
+      val publishResponse: HttpResponse[String] =
+        Http(s"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+
+      And("api-publisher responded with status 2xx")
       publishResponse.is2xx shouldBe true
     }
 
@@ -127,7 +241,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       )
     }
 
-    Scenario("When fetch of definition.json file from micropservice fails with NOT_FOUND") {
+    Scenario("When fetch of definition.json file from microservice fails with NOT_FOUND") {
 
       Given("A microservice is running with an invalid API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
@@ -192,7 +306,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |}
     """.stripMargin
 
-  val definitionJson =
+  val definitionJsonWithScopes =
     s"""
        |{
        |  "scopes": [
@@ -202,6 +316,102 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
        |      "description": "Ability to Say Hello"
        |    }
        |  ],
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "Callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          },
+       |          {
+       |            "name": "token",
+       |            "description": "Secure Token",
+       |            "hint": "Just a hint",
+       |            "type": "SecureToken"
+       |          }
+       |        ]
+       |      },
+       |      {
+       |        "version": "2.0",
+       |        "status": "PUBLISHED"
+       |      },
+       |      {
+       |        "version": "3.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrlOnly",
+       |            "description": "Only a callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithEmptyScopes =
+    s"""
+       |{
+       |  "scopes": [
+       |  ],
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "Callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          },
+       |          {
+       |            "name": "token",
+       |            "description": "Secure Token",
+       |            "hint": "Just a hint",
+       |            "type": "SecureToken"
+       |          }
+       |        ]
+       |      },
+       |      {
+       |        "version": "2.0",
+       |        "status": "PUBLISHED"
+       |      },
+       |      {
+       |        "version": "3.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrlOnly",
+       |            "description": "Only a callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithoutScopes =
+    s"""
+       |{
        |  "api": {
        |    "name": "Test",
        |    "description": "Test API",
