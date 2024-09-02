@@ -23,6 +23,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
+import sttp.client3.{Request, Response, SimpleHttpClient}
 
 abstract class BaseFeatureSpec extends AnyFeatureSpec
     with GivenWhenThen with ScalaFutures
@@ -77,4 +78,10 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
     apiDefinitionServer.stop()
   }
 
+  def http(request: => Request[Either[String, String], Any]): Response[Either[String, String]] = {
+    val httpClient = SimpleHttpClient()
+    val response   = httpClient.send(request)
+    httpClient.close()
+    response
+  }
 }
