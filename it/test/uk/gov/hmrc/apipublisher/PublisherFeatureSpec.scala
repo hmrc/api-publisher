@@ -20,9 +20,11 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import scalaj.http.{Http, HttpResponse}
+import org.scalatest.EitherValues
+import sttp.client3.{UriContext, basicRequest}
+import sttp.model.StatusCode
 
-import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, UNPROCESSABLE_ENTITY}
+import play.api.http.Status.NOT_FOUND
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
@@ -30,7 +32,7 @@ import play.api.test.TestServer
 
 import uk.gov.hmrc.apipublisher.models.ErrorCode
 
-class PublisherFeatureSpec extends BaseFeatureSpec {
+class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   val publishingKey: String        = UUID.randomUUID().toString
   val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
@@ -64,11 +66,13 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
       When("publisher is triggered")
-      val publishResponse: HttpResponse[String] =
-        Http(s"$serverUrl/publish")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
 
       Then("The scope is validated")
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
@@ -99,7 +103,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .withRequestBody(equalToJson(fieldDefinitions_3_0)))
 
       And("api-publisher responded with status 2xx")
-      publishResponse.is2xx shouldBe true
+      publishResponse.isSuccess shouldBe true
     }
 
     Scenario("Publisher receives a call to publish an API with empty scopes in it's definition") {
@@ -126,11 +130,13 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
       When("publisher is triggered")
-      val publishResponse: HttpResponse[String] =
-        Http(s"$serverUrl/publish")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
 
       Then("The scope is validated")
       apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
@@ -161,7 +167,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .withRequestBody(equalToJson(fieldDefinitions_3_0)))
 
       And("api-publisher responded with status 2xx")
-      publishResponse.is2xx shouldBe true
+      publishResponse.isSuccess shouldBe true
     }
 
     Scenario("Publisher receives a call to publish an API with no scopes in it's definition") {
@@ -187,11 +193,13 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
       When("publisher is triggered")
-      val publishResponse: HttpResponse[String] =
-        Http(s"$serverUrl/publish")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
 
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
@@ -213,7 +221,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
         .withRequestBody(equalToJson(fieldDefinitions_3_0)))
 
       And("api-publisher responded with status 2xx")
-      publishResponse.is2xx shouldBe true
+      publishResponse.isSuccess shouldBe true
     }
 
     Scenario("Validation of API definition failed during publish") {
@@ -222,17 +230,19 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
 
       When("The publisher is triggered")
-      val publishResponse: HttpResponse[String] =
-        Http(s"$serverUrl/publish")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
 
       Then("The api-publisher responded with status 422")
-      publishResponse.code shouldBe UNPROCESSABLE_ENTITY
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
 
       And("The validation errors are present in the response body")
-      val responseBody: JsValue      = Json.parse(publishResponse.body)
+      val responseBody: JsValue      = Json.parse(publishResponse.body.left.value)
       (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
       val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
       errorMessages should contain.only(
@@ -247,17 +257,19 @@ class PublisherFeatureSpec extends BaseFeatureSpec {
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
 
       When("The publisher is triggered")
-      val publishResponse: HttpResponse[String] =
-        Http(s"$serverUrl/publish")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""").asString
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
 
       Then("The api-publisher responded with status BAD_REQUEST")
-      publishResponse.code shouldBe BAD_REQUEST
+      publishResponse.code shouldBe StatusCode.BadRequest
 
       And("The validation errors are present in the response body")
-      val responseBody: JsValue = Json.parse(publishResponse.body)
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
       responseBody shouldBe Json.obj(
         "code"    -> JsString(ErrorCode.INVALID_API_DEFINITION.toString),
         "message" -> JsString("Unable to find definition for service test.example.com")

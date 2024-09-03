@@ -20,8 +20,9 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import scalaj.http
-import scalaj.http.Http
+import org.scalatest.EitherValues
+import sttp.client3.{UriContext, basicRequest}
+import sttp.model.StatusCode
 
 import play.api.http.Status.BAD_REQUEST
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -29,7 +30,7 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import play.api.test.TestServer
 
-class ValidateFeatureSpec extends BaseFeatureSpec {
+class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   val publishingKey: String        = UUID.randomUUID().toString
   val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
@@ -43,10 +44,15 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
       Given("The API Publisher is running")
       startServer()
       When("malformed Json is passed to an endpoint")
-      val response: http.HttpResponse[String] = Http(s"$serverUrl/validate").header(CONTENT_TYPE, JSON).postData(malformedJson).asString
+      val response = http(
+        basicRequest
+          .post(uri"$serverUrl/validate")
+          .header(CONTENT_TYPE, JSON)
+          .body(malformedJson)
+      )
       Then("The controller should return 400 with a Malformed Json error message")
-      response.code shouldBe BAD_REQUEST
-      val body                                = Json.parse(response.body)
+      response.code shouldBe StatusCode.BadRequest
+      val body     = Json.parse(response.body.left.value)
       (body \ "statusCode").as[Int] shouldBe BAD_REQUEST
       (body \ "message").as[String] should startWith("Invalid Json")
     }
@@ -71,15 +77,17 @@ class ValidateFeatureSpec extends BaseFeatureSpec {
         .willReturn(aResponse().withStatus(204)))
 
       When("a Json payload is passed to the validate endpoint")
-      val response: http.HttpResponse[String] =
-        Http(s"$serverUrl/validate")
+      val response = http(
+        basicRequest
+          .post(uri"$serverUrl/validate")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .postData(apiAndScope).asString
+          .body(apiAndScope)
+      )
 
       Then("the controller should return 400 with the API Definition error message")
-      assert(response.code == 400)
-      val body = Json.parse(response.body)
+      assert(response.code == StatusCode.BadRequest)
+      val body = Json.parse(response.body.left.value)
       assert((body \ "apiDefinitionErrors").as[String] contains """'{"error":"invalid"}'""")
     }
   }
