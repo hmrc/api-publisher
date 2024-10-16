@@ -59,12 +59,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
 
-      And("api scope is running")
-      apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
-      apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
-      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
-        .willReturn(aResponse().withStatus(200).withBody(scopes)))
-
       When("publisher is triggered")
       val publishResponse = http(
         basicRequest
@@ -74,18 +68,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
           .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
       )
 
-      Then("The scope is validated")
-      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
         .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      And("The scope is published to the API Scope microservice")
-      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(scopes)))
 
       Then("The definition is published to the API Definition microservice")
       apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
@@ -123,12 +108,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
 
-      And("api scope is running")
-      apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
-      apiScopeMock.register(post(urlEqualTo("/scope/validate")).willReturn(aResponse()))
-      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
-        .willReturn(aResponse().withStatus(200).withBody(scopes)))
-
       When("publisher is triggered")
       val publishResponse = http(
         basicRequest
@@ -138,18 +117,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
           .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
       )
 
-      Then("The scope is validated")
-      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
         .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      And("The scope is published to the API Scope microservice")
-      apiScopeMock.verifyThat(postRequestedFor(urlEqualTo("/scope"))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(scopes)))
 
       Then("The definition is published to the API Definition microservice")
       apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
@@ -186,11 +156,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
       apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
-
-      And("api scope is running")
-      apiScopeMock.register(post(urlEqualTo("/scope")).willReturn(aResponse()))
-      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
-        .willReturn(aResponse().withStatus(200).withBody(scopes)))
 
       When("publisher is triggered")
       val publishResponse = http(
@@ -242,13 +207,10 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       publishResponse.code shouldBe StatusCode.UnprocessableEntity
 
       And("The validation errors are present in the response body")
-      val responseBody: JsValue      = Json.parse(publishResponse.body.left.value)
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
       (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
-      val errorMessages: Seq[String] = (responseBody \ "message" \ "causingExceptions" \\ "message").map(_.as[String]).toSeq
-      errorMessages should contain.only(
-        """string [read:HELLO] does not match pattern ^[a-z:\-0-9]+$""",
-        """string [c] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
-      )
+      val errorMessages         = (responseBody \ "message" \ "message").as[String]
+      errorMessages shouldBe """string [invalid context] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
     }
 
     Scenario("When fetch of definition.json file from microservice fails with NOT_FOUND") {
@@ -307,7 +269,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |  "api": {
        |    "name": "Test",
        |    "description": "Test API",
-       |    "context": "c",
+       |    "context": "invalid context",
        |    "versions": [
        |      {
        |        "version": "1.0",

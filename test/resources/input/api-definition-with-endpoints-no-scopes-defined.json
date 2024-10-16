@@ -3,13 +3,12 @@
   "api": {
     "name" : "Test",
     "description" : "Test API",
-    "context" : "test",
+    "context" : "test/api",
     "versions" : [
       {
         "version" : "1.0",
         "access" : {
-          "type" : "PRIVATE",
-          "whitelistApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+          "type" : "PRIVATE"
         },
         "status" : "PUBLISHED",
         "endpoints" : [

@@ -3,42 +3,6 @@
   "description": "HMRC API definition. See [JSON definition]",
   "type": "object",
   "properties": {
-    "scopes": {
-      "description": "A list of all OAuth scopes used by this API",
-      "type": "array",
-      "items": {
-        "description": "Details of an OAuth scope",
-        "type": "object",
-        "properties": {
-          "key": {
-            "description": "The key/identifier used to refer to this scope (lowercase, separate words with a colon(:)).",
-            "type": "string",
-            "pattern": "^[a-z:\\-0-9]+$",
-            "maxLength": 60
-          },
-          "name": {
-            "description": "The human friendly name for this scope (sentence case). This is shown to users in the OAuth journey and in documentation,",
-            "type": "string"
-          },
-          "description": {
-            "description": "The description for this scope (recommendation set this to the same value as the name)",
-            "type": "string"
-          },
-          "confidenceLevel": {
-            "description": "The Identity Verification confidence level required to use this scope. Value can be 50, 100, 200 or 300. See [Identity Verification on the API Platform](https://confluence.tools.tax.service.gov.uk/display/DTRG/Identity+Verification+on+the+API+Platform)",
-            "type": "integer",
-            "minimum": 50,
-            "maximum": 300
-          }
-        },
-        "required": [
-          "key",
-          "name",
-          "description"
-        ],
-        "additionalProperties": false
-      }
-    },
     "api": {
       "description": "Details of the API",
       "type": "object",

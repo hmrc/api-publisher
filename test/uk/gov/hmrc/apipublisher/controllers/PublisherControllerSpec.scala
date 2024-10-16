@@ -50,8 +50,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   private val sharedSecret = UUID.randomUUID().toString
 
   private val api          = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
-  private val scopes       = Json.parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
-  private val apiAndScopes = ApiAndScopes(api, Some(scopes))
+  private val apiAndScopes = ApiAndScopes(api)
 
   private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
 
@@ -82,7 +81,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   trait Setup extends BaseSetup {
     when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(apiAndScopes)))
     when(mockPublisherService.validation(eqTo(apiAndScopes), eqTo(false))(*)).thenReturn(successful(None))
-    when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+    when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
       approved = true,
       publisherResponse
     )))
@@ -117,11 +116,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual OK
       contentAsJson(result) shouldBe Json.toJson(publisherResponse)
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
     }
 
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, publisherResponse)))
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, publisherResponse)))
 
       val validRequest = request(serviceLocation, sharedSecret)
 
@@ -129,14 +128,14 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual ACCEPTED
       contentAsJson(result) shouldBe Json.toJson(publisherResponse)
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
     }
 
     "return 500 (internal server error) when publisher service fails with an unexpected exception" in new Setup {
       val errorMessage         = "Test error"
       val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
-      given(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(errorServiceLocation), *)(*))
+      given(mockPublisherService.publishAPIDefinition(eqTo(errorServiceLocation), *)(*))
         .willReturn(Future.failed(new IllegalArgumentException(errorMessage)))
 
       val errorRequest = request(errorServiceLocation, sharedSecret)
@@ -164,7 +163,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "return 422 when publishing fails" in new Setup {
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*))
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*))
         .thenReturn(Future.failed(new UnprocessableEntityException("")))
 
       val result = underTest.publish(request(serviceLocation, sharedSecret))
@@ -271,7 +270,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     "approve a known service" in new Setup {
 
       when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(serviceLocation))
-      when(mockPublisherService.publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
         approved = true,
         publisherResponse
       )))
@@ -279,7 +278,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.approve("employee-paye")(FakeRequest())
 
       status(result) shouldBe NO_CONTENT
-      verify(mockPublisherService).publishAPIDefinitionAndScopes(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
@@ -289,7 +288,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.approve("unknown-service")(FakeRequest())
 
       status(result) shouldBe NOT_FOUND
-      verify(mockPublisherService, never).publishAPIDefinitionAndScopes(any[ServiceLocation], *)(*)
+      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
     }
 
   }
