@@ -24,37 +24,6 @@ import uk.gov.hmrc.apipublisher.models
 
 class ApiAndScopesSpec extends AsyncHmrcSpec {
 
-//  "ValidateAPIScopesAreDefined" should {
-//    val sayHelloScope  = Scope("say:hello", "Say Hello", "Ability to Say Hello")
-//    val readHelloScope = Scope("read:hello", "Read Hello", "Ability to Read Hello")
-//
-//    "pass when the scopes used in the API are defined in the API definition" in {
-//      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json"), Seq(readHelloScope))
-//      result shouldBe ScopesDefinedOk
-//    }
-//
-//    "pass when the scopes used in the API are not defined in the API definition but have been retrieved from api-scope" in {
-//      val result = ApiAndScopes.validateAPIScopesAreDefined(
-//        apiAndScope("/input/api-definition-with-endpoints-no-scopes-defined.json"),
-//        Seq(sayHelloScope, readHelloScope)
-//      )
-//      result shouldBe ScopesDefinedOk
-//    }
-//
-//    "fail when the scopes used in the API are defined partly in the API definition and the remainder are retrieved from api-scope" in {
-//      val result = ApiAndScopes.validateAPIScopesAreDefined(
-//        apiAndScope("/input/api-definition-with-endpoints-one-scope-defined.json"),
-//        Seq(readHelloScope)
-//      )
-//      result shouldBe ScopesNotDefined("Undefined scopes used in api: [say:hello]")
-//    }
-//
-//    "fail when the scopes used in the API are not defined" in {
-//      val result = ApiAndScopes.validateAPIScopesAreDefined(apiAndScope("/input/api-definition-invalid-scope.json"))
-//      result shouldBe ScopesNotDefined("Undefined scopes used in api: [say:hello]")
-//    }
-//  }
-
   "API Name should be extracted from the JSON definition" in {
     apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").apiName shouldEqual "Test"
   }

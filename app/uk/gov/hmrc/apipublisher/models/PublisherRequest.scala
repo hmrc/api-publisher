@@ -118,14 +118,6 @@ case class ApiAndScopes(api: JsObject) {
 
 object ApiAndScopes {
   implicit val formats: Format[ApiAndScopes] = Json.format[ApiAndScopes]
-
-//  def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
-//    val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
-//    val scopesRequiredByApi: Seq[String] = apiAndScopes.apiScopes
-//    val missing                          = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
-//    if (scopesRequiredByApi.isEmpty || missing.isEmpty) ScopesDefinedOk
-//    else ScopesNotDefined(s"Undefined scopes used in api: ${missing.mkString("[", ", ", "]")}")
-//  }
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])

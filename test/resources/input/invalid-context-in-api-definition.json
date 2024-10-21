@@ -1,4 +1,11 @@
 {
+  "scopes": [
+    {
+      "key": "read:HELLO",
+      "name": "Say Hello",
+      "description": "Ability to Say Hello"
+    }
+  ],
   "api": {
     "name" : "Test",
     "description" : "Test API",

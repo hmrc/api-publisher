@@ -41,106 +41,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   Feature("Publish API on notification") {
 
-    Scenario("Publisher receive an API notification") {
-
-      Given("A microservice is running with an API Definition")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithScopes)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
-
-      And("api definition is running")
-      // TOOD - restore when api definition no longer rejects updated api
-      // apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
-      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
-
-      And("api subscription fields is running")
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
-
-      When("publisher is triggered")
-      val publishResponse = http(
-        basicRequest
-          .post(uri"$serverUrl/publish")
-          .header(CONTENT_TYPE, JSON)
-          .header(AUTHORIZATION, encodedPublishingKey)
-          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
-      )
-
-      Then("The field definitions are validated")
-      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The definition is published to the API Definition microservice")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The field definitions are published to the API Subscription Fields microservice")
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
-
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
-    }
-
-    Scenario("Publisher receives a call to publish an API with empty scopes in it's definition") {
-
-      Given("A microservice is running with an API Definition with empty scopes")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyScopes)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
-
-      And("api definition is running")
-      // TOOD - restore when api definition no longer rejects updated api
-      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
-
-      And("api subscription fields is running")
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
-
-      When("publisher is triggered")
-      val publishResponse = http(
-        basicRequest
-          .post(uri"$serverUrl/publish")
-          .header(CONTENT_TYPE, JSON)
-          .header(AUTHORIZATION, encodedPublishingKey)
-          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
-      )
-
-      Then("The field definitions are validated")
-      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The definition is published to the API Definition microservice")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The field definitions are published to the API Subscription Fields microservice")
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
-
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
-    }
-
-    Scenario("Publisher receives a call to publish an API with no scopes in it's definition") {
+    Scenario("Publishing successful for an API with a valid definition") {
 
       Given("A microservice is running with an API Definition without scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
@@ -189,10 +90,83 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       publishResponse.isSuccess shouldBe true
     }
 
-    Scenario("Validation of API definition failed during publish") {
+    Scenario("A validation error occurs during Publish due to scopes in definition") {
+
+      Given("A microservice is running with an API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithScopes)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      // apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate")).willReturn(aResponse()))
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      val errorMessages         = (responseBody \ "message" \ "message").as[String]
+      errorMessages shouldBe """extraneous key [scopes] is not permitted"""
+    }
+
+    Scenario("A validation error occurs during Publish due to empty scopes in definition") {
+
+      Given("A microservice is running with an API Definition with empty scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyScopes)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      val errorMessages         = (responseBody \ "message" \ "message").as[String]
+      errorMessages shouldBe """extraneous key [scopes] is not permitted"""
+    }
+
+    Scenario("A validation error occurs during Publish due to invalid context in definition") {
 
       Given("A microservice is running with an invalid API Definition")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionJson)))
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithInvalidContext)))
 
       When("The publisher is triggered")
       val publishResponse = http(
@@ -256,16 +230,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
   val apiSubscriptionFieldsUrlVersion_2_0 = s"/definition/context/$urlEncodedApiContext/version/2.0"
   val apiSubscriptionFieldsUrlVersion_3_0 = s"/definition/context/$urlEncodedApiContext/version/3.0"
 
-  val invalidDefinitionJson =
+  val definitionJsonWithInvalidContext =
     s"""
        |{
-       |  "scopes": [
-       |    {
-       |      "key": "read:HELLO",
-       |      "name": "Say Hello",
-       |      "description": "Ability to Say Hello"
-       |    }
-       |  ],
        |  "api": {
        |    "name": "Test",
        |    "description": "Test API",

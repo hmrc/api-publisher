@@ -37,7 +37,7 @@ class PublisherService @Inject() (
 
   def publishAPIDefinition(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
 
-    def apiDetailsWithServiceLocation(apiAndScopes: ApiAndScopes): JsObject = {
+    val apiDetailsWithServiceLocation: JsObject = {
       apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
         "serviceBaseUrl" -> serviceLocation.serviceUrl,
         "serviceName"    -> serviceLocation.serviceName
@@ -46,10 +46,9 @@ class PublisherService @Inject() (
 
     def publish(apiAndScopes: ApiAndScopes): Future[JsObject] = {
       for {
-        _  <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
-        api = apiDetailsWithServiceLocation(apiAndScopes)
-        _  <- apiDefinitionConnector.publishAPI(api)
-      } yield api
+        _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation)
+        _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
+      } yield apiDetailsWithServiceLocation
     }
 
     def publishFieldDefinitions(fieldDefinitions: Seq[ApiFieldDefinitions]): Future[Unit] = {
@@ -63,7 +62,7 @@ class PublisherService @Inject() (
     def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
       for {
         isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        api        <- if (isApproved) publish(apiAndScopes) else successful(apiDetailsWithServiceLocation(apiAndScopes))
+        api        <- if (isApproved) publish(apiAndScopes) else successful(apiDetailsWithServiceLocation)
       } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 

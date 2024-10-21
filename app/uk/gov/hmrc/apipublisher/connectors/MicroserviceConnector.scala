@@ -31,7 +31,7 @@ import org.json.JSONObject
 
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
@@ -56,7 +56,7 @@ class MicroserviceConnector @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
 
-  val apiDefinitionSchema: Schema = {
+  private val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
     val schema: Schema           = SchemaLoader.load(new JSONObject(IOUtils.toString(inputStream, UTF_8)))
     IOUtils.closeQuietly(inputStream)
@@ -79,20 +79,22 @@ class MicroserviceConnector @Inject() (
 
     http
       .get(url"${serviceLocation.serviceUrl}/api/definition")
-      .execute[Either[UpstreamErrorResponse, Option[ApiAndScopes]]] // Uses readOptionOfNotFound for reading
+      .execute[Either[UpstreamErrorResponse, Option[JsObject]]] // Uses readOptionOfNotFound for reading
       .map {
-        case Right(oApiAndScopes)                                             => oApiAndScopes.toRight(DefinitionFileNoBodyReturned(serviceLocation))
+        case Right(definition)                                                => definition.toRight(DefinitionFileNoBodyReturned(serviceLocation))
         case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _))                  => Left(DefinitionFileNotFound(serviceLocation))
         case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => Left(DefinitionFileUnprocessableEntity(serviceLocation, message))
         case Left(err)                                                        => throw err
       }
+      .map(_.flatMap(validateDefinition))
       .map(_.map(defaultCategories))
-      .map(_.flatMap(validateApiAndScopesAgainstSchema))
   }
 
-  private def validateApiAndScopesAgainstSchema(apiAndScopes: ApiAndScopes): Either[PublishError, ApiAndScopes] = {
+  private def validateDefinition(definition: JsObject): Either[PublishError, ApiAndScopes] = {
+    val apiAndScopes = ApiAndScopes((definition \ "api").as[JsObject])
     if (config.validateApiDefinition) {
-      Try(apiDefinitionSchema.validate(new JSONObject(Json.toJson(apiAndScopes).toString))) match {
+      val definitionJsonObj = new JSONObject(definition.toString)
+      Try(apiDefinitionSchema.validate(definitionJsonObj)) match {
         case Success(_)                       => Right(apiAndScopes)
         case Failure(ex: ValidationException) =>
           logger.error(s"FAILED_TO_PUBLISH - Validation of API definition failed: ${ex.toJSON.toString(2)}", ex)

@@ -55,10 +55,10 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
   val apiAndScopeDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
   val apiAndScopeDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
 
-  val invalidContextInDefinition         = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
+  val invalidContextInDefinition           = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
   val invalidDefinitionWithScopeInEndpoint = handleGetFileAndClose("/input/api-definition-with-endpoints-and-scopes-defined.json")
-  val invalidDefinitionWithEmptyScopes = handleGetFileAndClose("/input/api-definition-with-endpoints-no-scopes-defined.json")
-  val invalidDefinitionWithScopes = handleGetFileAndClose("/input/invalid-api-definition-with-scopes.json")
+  val invalidDefinitionWithEmptyScopes     = handleGetFileAndClose("/input/api-definition-with-endpoints-no-scopes-defined.json")
+  val invalidDefinitionWithScopes          = handleGetFileAndClose("/input/invalid-api-definition-with-scopes.json")
 
   val api                         = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
   val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
@@ -181,42 +181,41 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       result shouldBe DefinitionFileNotFound(
         ServiceLocation("test.example.com", "http://127.0.0.1:21112")
       )
-
     }
 
-//    "return DefinitionFileFailedSchemaValidation if context in API definition is invalid" in new Setup {
-//      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidContextInDefinition)))
-//
-//      val result         = await(connector.getAPIAndScopes(testService)).left.value
-//      val expectedErrors =
-//        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}""")
-//      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-//    }
-//
-//    "return DefinitionFileFailedSchemaValidation if the API definition has scope in endpoint" in new Setup {
-//      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopeInEndpoint)))
-//
-//      val result         = await(connector.getAPIAndScopes(testService)).left.value
-//      val expectedErrors =
-//        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#/properties/scopes/items/properties/key","pointerToViolation":"#/scopes/0/key","causingExceptions":[],"keyword":"pattern","message":"string [read:HELLO] does not match pattern ^[a-z:\\-0-9]+$"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
-//      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-//    }
-//
-//    "return DefinitionFileFailedSchemaValidation if the API definition has empty scopes" in new Setup {
-//      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithEmptyScopes)))
-//
-//      val result         = await(connector.getAPIAndScopes(testService)).left.value
-//      val expectedErrors =
-//        Json.parse("""{"schemaLocation":"#"}""")
-//      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-//    }
+    "return DefinitionFileFailedSchemaValidation if context in API definition is invalid" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidContextInDefinition)))
+
+      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has scope in endpoint" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopeInEndpoint)))
+
+      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#/properties/api","pointerToViolation":"#/api","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/access","pointerToViolation":"#/api/versions/0/access","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [whitelistApplicationIds] is not permitted"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [test] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has empty scopes" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithEmptyScopes)))
+
+      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
 
     "return DefinitionFileFailedSchemaValidation if the API definition has scopes" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopes)))
 
       val result         = await(connector.getAPIAndScopes(testService)).left.value
       val expectedErrors =
-        Json.parse("""{"schemaLocation":"#"}""")
+        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 
