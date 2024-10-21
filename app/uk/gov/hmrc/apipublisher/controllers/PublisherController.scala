@@ -47,12 +47,12 @@ class PublisherController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
-  val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
-  val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
-  val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
+  private val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
+  private val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
+  private val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
+  private val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
-  val ER = EitherTHelper.make[Result]
+  private val ER = EitherTHelper.make[Result]
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
     case err: DefinitionFileNotFound               => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
@@ -121,7 +121,7 @@ class PublisherController @Inject() (
     (
       for {
         apiAndScopes      <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
-        validatedApi      <- E.fromEitherF(validateApi(apiAndScopes))
+        _                 <- E.fromEitherF(validateApi(apiAndScopes))
         publisherResponse <- E.liftF(publishApiAndScopes(apiAndScopes))
       } yield publisherResponse
     )
