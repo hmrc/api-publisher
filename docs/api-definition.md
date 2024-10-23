@@ -5,17 +5,7 @@ HMRC API definition. See [JSON definition]
 
 | Name | Type | Required | Values | Description |
 | --- | --- |----------| --- | --- |
-| `scopes` | _object[]_ | Optional | [scopes](#scopes) | This _object[]_ should be an empty list and all OAuth scopes used by an API should now be defined in [the api-scopes service JSON scopes file](https://github.com/hmrc/api-scope/blob/master/conf/scopes.json). If processing the contents of this _object[]_ would result in creating new or changing existing scopes then the API will not be published. See [this Confluence post](https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes)  
 | `api` | _object_ | Required | [api](#api) | Details of the API |
-### `scopes`
-Details of an OAuth scope
-
-| Name | Type | Required | Values | Description |
-| --- | --- | --- | --- | --- |
-| `confidenceLevel` | _integer_ | Optional |  | The Identity Verification confidence level required to use this scope. Value can be 50, 100, 200 or 300. See [Identity Verification on the API Platform](https://confluence.tools.tax.service.gov.uk/display/DTRG/Identity+Verification+on+the+API+Platform) |
-| `name` | _string_ | Required |  | The human friendly name for this scope (sentence case). This is shown to users in the OAuth journey and in documentation, |
-| `key` | _string_ | Required | ^[a-z:\-0-9]+$ | The key/identifier used to refer to this scope (lowercase, separate words with a colon(:)). |
-| `description` | _string_ | Required |  | The description for this scope (recommendation set this to the same value as the name) |
 ### `api`
 Details of the API
 

@@ -68,14 +68,6 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
       apiDefinitionMock.register(post(urlEqualTo("/api-definition/validate"))
         .willReturn(aResponse().withStatus(400).withBody("""{"error":"invalid"}""")))
 
-      And("the API Scope service is primed to respond to a 'keys' query with a success")
-      apiScopeMock.register(get(urlEqualTo("/scope?keys=read:hello"))
-        .willReturn(aResponse().withStatus(200).withBody(scopes)))
-
-      And("the API Scope service is primed to respond with a success")
-      apiScopeMock.register(post(urlEqualTo("/scope/validate"))
-        .willReturn(aResponse().withStatus(204)))
-
       When("a Json payload is passed to the validate endpoint")
       val response = http(
         basicRequest
@@ -152,16 +144,4 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
       |  }
       |}
     """.stripMargin
-
-  val scopes: String =
-    """
-      |  [
-      |    {
-      |      "key": "read:hello",
-      |      "name": "Say Hello",
-      |      "description": "Ability to Say Hello"
-      |    }
-      |  ]
-    """.stripMargin
-
 }

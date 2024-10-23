@@ -47,12 +47,12 @@ class PublisherController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
-  val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
-  val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
-  val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
+  private val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
+  private val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
+  private val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
+  private val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
-  val ER = EitherTHelper.make[Result]
+  private val ER = EitherTHelper.make[Result]
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
     case err: DefinitionFileNotFound               => BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
@@ -103,12 +103,12 @@ class PublisherController @Inject() (
     import cats.implicits._
     val E = EitherTHelper.make[PublishError]
 
-    def validateApiAndScopes(apiAndScopes: ApiAndScopes): Future[Either[PublishError, ApiAndScopes]] = {
+    def validateApi(apiAndScopes: ApiAndScopes): Future[Either[PublishError, ApiAndScopes]] = {
       publisherService.validation(apiAndScopes, validateApiDefinition = false).map(_.toRight(apiAndScopes).map(GenericValidationFailure(_)).swap)
     }
 
     def publishApiAndScopes(apiAndScopes: ApiAndScopes): Future[Result] = {
-      publisherService.publishAPIDefinitionAndScopes(serviceLocation, apiAndScopes).map {
+      publisherService.publishAPIDefinition(serviceLocation, apiAndScopes).map {
         case PublicationResult(true, publisherResponse)  =>
           logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
           Ok(Json.toJson(publisherResponse))
@@ -120,9 +120,9 @@ class PublisherController @Inject() (
 
     (
       for {
-        apiAndScopes          <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
-        validatedApiAndScopes <- E.fromEitherF(validateApiAndScopes(apiAndScopes))
-        publisherResponse     <- E.liftF(publishApiAndScopes(apiAndScopes))
+        apiAndScopes      <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
+        _                 <- E.fromEitherF(validateApi(apiAndScopes))
+        publisherResponse <- E.liftF(publishApiAndScopes(apiAndScopes))
       } yield publisherResponse
     )
       .leftSemiflatTap { err: PublishError =>

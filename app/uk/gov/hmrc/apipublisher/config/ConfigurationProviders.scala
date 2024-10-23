@@ -31,7 +31,6 @@ class ConfigurationModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
-      bind[ApiScopeConfig].toProvider[ApiScopeConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
       bind[MicroserviceConnector.Config].toProvider[MicroserviceConnectorConfigProvider]
     )
@@ -45,16 +44,6 @@ class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configura
   override def get(): ApiDefinitionConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
     ApiDefinitionConfig(serviceBaseUrl)
-  }
-}
-
-@Singleton
-class ApiScopeConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
-    extends Provider[ApiScopeConfig] {
-
-  override def get(): ApiScopeConfig = {
-    val serviceBaseUrl = servicesConfig.baseUrl("api-scope")
-    ApiScopeConfig(serviceBaseUrl)
   }
 }
 

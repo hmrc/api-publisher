@@ -54,13 +54,7 @@ object ApiVersionSource {
   }
 }
 
-case class ApiAndScopes(api: JsObject, scopes: Option[JsArray]) {
-
-  private lazy val definedScopes: Seq[String] =
-    if (scopes.nonEmpty) (scopes.get \\ "key").map(_.as[String]).toSeq
-    else Seq.empty
-
-  lazy val apiScopes: Seq[String] = (api \ "versions" \\ "scope").map(_.as[String]).toSeq
+case class ApiAndScopes(api: JsObject) {
 
   private lazy val versions: JsArray = (api \ "versions").as[JsArray]
 
@@ -124,14 +118,6 @@ case class ApiAndScopes(api: JsObject, scopes: Option[JsArray]) {
 
 object ApiAndScopes {
   implicit val formats: Format[ApiAndScopes] = Json.format[ApiAndScopes]
-
-  def validateAPIScopesAreDefined(apiAndScopes: ApiAndScopes, retrievedScopes: Seq[Scope] = Seq()): ScopesDefinedResult = {
-    val retrievedScopesKeys: Seq[String] = retrievedScopes.map(scope => scope.key)
-    val scopesRequiredByApi: Seq[String] = apiAndScopes.definedScopes ++ apiAndScopes.apiScopes
-    val missing                          = scopesRequiredByApi.filterNot(retrievedScopesKeys.contains)
-    if (scopesRequiredByApi.isEmpty || missing.isEmpty) ScopesDefinedOk
-    else ScopesNotDefined(s"Undefined scopes used in definition: ${missing.mkString("[", ", ", "]")}")
-  }
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])
