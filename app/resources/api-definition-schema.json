@@ -182,7 +182,10 @@
                               },
                               "UrlValidationRule": {
                                 "description": "A URL Rule to validate a URL field.",
-                                "type": "object"
+                                "type": "object",
+                                "properties": {
+
+                                }
                               }
                             }
                           }
@@ -198,7 +201,7 @@
                           "type": "object",
                           "properties": {
                             "read": {
-                              "description": "Who going to have Read Access to the value of this Subscription Field",
+                              "description": "Who has Read Access to the value of this Subscription Field",
                               "type": "string",
                               "enum": [
                                 "anyone",
@@ -207,7 +210,7 @@
                               ]
                             },
                             "write": {
-                              "description": "Who going to have Write Access to the value of this Subscription Field",
+                              "description": "Who has Write Access to the value of this Subscription Field",
                               "type": "string",
                               "enum": [
                                 "anyone",
