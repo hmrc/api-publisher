@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.services
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -66,29 +67,33 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     }
 
     "Allow publication of previously disabled service when PreventAutoDeploy is disabled" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(approved = Some(false), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockAppConfig.preventAutoDeploy).thenReturn(false)
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(false)))))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe true
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn))
     }
 
     "Allow publication of previously enabled service when PreventAutoDeploy is disabled" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(approved = Some(true), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockAppConfig.preventAutoDeploy).thenReturn(false)
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(true)))))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe true
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn))
     }
 
     "Prevent publication of previously unknown services when PreventAutoDeploy is enabled" in new Setup {
@@ -105,40 +110,46 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     }
 
     "Prevent publication of previously disabled service when PreventAutoDeploy is enabled" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(approved = Some(false), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockAppConfig.preventAutoDeploy).thenReturn(true)
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(false)))))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false)))).thenReturn(successful(apiApproval.copy(approved = Some(false))))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe false
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(false)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn))
     }
 
     "Allow publication of previously enabled service when PreventAutoDeploy is enabled" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(approved = Some(true), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockAppConfig.preventAutoDeploy).thenReturn(true)
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval.copy(approved = Some(true)))))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe true
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn))
     }
 
     "Allow an existing Service to be approved" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval)))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true)))).thenReturn(successful(apiApproval.copy(approved = Some(true))))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn)))
       val result = await(underTest.approveService("testService"))
 
       result shouldBe ServiceLocation("testService", "http://localhost/myservice")
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn))
     }
 
     "Raise an exception if an attempt is made to approve an unknown service" in new Setup {
@@ -151,12 +162,13 @@ class ApprovalServiceSpec extends AsyncHmrcSpec {
     }
 
     "Return a summary of a service when requested" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(apiApproval)))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
       val result = await(underTest.fetchServiceApproval("testService"))
 
-      result shouldBe apiApproval
+      result shouldBe apiApproval.copy(createdOn = existingApiApproval.createdOn)
       verify(mockApiApprovalRepository).fetch("testService")
     }
 
