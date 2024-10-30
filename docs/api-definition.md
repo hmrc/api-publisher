@@ -47,7 +47,7 @@ Details a subscription field used by this API. If you would like to use subscrip
 | `hint` | _string_ | Optional |  | Hint text to display to users to help them provide a correct value for this field |
 | `shortDescription` | _string_ | Optional |  | A short description that is displayed on the API metadata page |
 | `validation` | _object_ | Optional | [validation](#validation) | Contains Rules to validate the value of the Field Definition. |
-| `access` | _object_ | Optional | [access](#access) | Access control for the value of this Subscription Field |
+| `access` | _object_ | Optional | [access](#access-1) | Access control for the value of this Subscription Field |
 ### `validation`
 Contains Rules to validate the value of the Field Definition.
 
@@ -71,8 +71,6 @@ A Regex Rule to validate the field value.
 ### `UrlValidationRule`
 A URL Rule to validate a URL field.
 
-| Name | Type | Required | Values | Description |
-| --- | --- | --- | --- | --- |
 ### `access`
 Access control for the value of this Subscription Field
 
