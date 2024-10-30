@@ -16,9 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.models
 
+import java.time.Instant
+
 import play.api.libs.json.{Format, Json}
 
-case class APIApproval(serviceName: String, serviceUrl: String, name: String, description: Option[String] = None, approved: Option[Boolean] = Some(false)) {
+case class APIApproval(
+    serviceName: String,
+    serviceUrl: String,
+    name: String,
+    description: Option[String] = None,
+    approved: Option[Boolean] = Some(false),
+    createdOn: Option[Instant] = Some(Instant.now())
+  ) {
   def isApproved: Boolean = approved.getOrElse(false)
 }
 
