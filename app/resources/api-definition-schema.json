@@ -182,10 +182,7 @@
                               },
                               "UrlValidationRule": {
                                 "description": "A URL Rule to validate a URL field.",
-                                "type": "object",
-                                "properties": {
-
-                                }
+                                "type": "object"
                               }
                             }
                           }

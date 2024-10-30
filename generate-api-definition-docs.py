@@ -12,7 +12,7 @@ parser.add_argument('schema_file', metavar='FILE', help='JSON file containing th
 parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
 
 args = parser.parse_args()
-
+anchors = set()
 
 def output(text):
     print(text)
@@ -40,7 +40,9 @@ def output_row(name, definition, is_required):
 
     # if the data type is an object then make it into a link
     if data_type == 'object' or data_type == 'object[]':
-        values = '[{}](#{})'.format(name.lower(), name)
+        anchor = name + "-1" if name in anchors else name
+        values = '[{}](#{})'.format(name.lower(), anchor)
+        anchors.add(anchor)
 
     # if the data type is a string with a pattern then use the regex pattern as the value
     if data_type == 'string' and definition.get('pattern'):
@@ -77,20 +79,22 @@ def output_object(name, schema_object, **kwargs):
     output('{} `{}`'.format('#' * kwargs.get('level', 2), name))
     output(schema_object.get('description', ''))
     output('')
-    output(
-        '| {} | {} | {} | {} | {} |'.format('Name', 'Type', 'Required', 'Values', 'Description')
-    )
-    output('| --- | --- | --- | --- | --- |')
-    for name, definition in schema_object['properties'].items():
-        is_required = 'Required' if name in required else 'Optional'
-        if definition.get('type') == 'object':
-            children.append({'name': name, 'definition': definition})
-        if definition.get('type') == 'array' and definition.get('items').get('type') == 'object':
-            children.append({'name': name, 'definition': definition.get('items')})
-        output_row(name, definition, is_required)
+    properties = schema_object.get('properties', [])
+    if len(properties) != 0:
+        output(
+            '| {} | {} | {} | {} | {} |'.format('Name', 'Type', 'Required', 'Values', 'Description')
+        )
+        output('| --- | --- | --- | --- | --- |')
+        for name, definition in properties.items():
+            is_required = 'Required' if name in required else 'Optional'
+            if definition.get('type') == 'object':
+                children.append({'name': name, 'definition': definition})
+            if definition.get('type') == 'array' and definition.get('items').get('type') == 'object':
+                children.append({'name': name, 'definition': definition.get('items')})
+            output_row(name, definition, is_required)
 
-    for child in children:
-        output_object(child['name'], child['definition'], level=3)
+        for child in children:
+            output_object(child['name'], child['definition'], level=3)
 
 
 with open(args.schema_file) as file:
