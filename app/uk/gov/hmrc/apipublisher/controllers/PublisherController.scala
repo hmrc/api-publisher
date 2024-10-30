@@ -56,19 +56,19 @@ class PublisherController @Inject() (
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
     case err: DefinitionFileNotFound               =>
-      logger.warn(s"$ErrorCode.INVALID_API_DEFINITION - DefinitionFileNotFound: ${err.message}")
+      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNotFound: ${err.message}")
       BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
     case err: DefinitionFileNoBodyReturned         =>
-      logger.warn(s"$ErrorCode.INVALID_API_DEFINITION - DefinitionFileNoBodyReturned: ${err.message}")
+      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNoBodyReturned: ${err.message}")
       BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
     case err: DefinitionFileUnprocessableEntity    =>
-      logger.warn(s"$ErrorCode.INVALID_API_DEFINITION - DefinitionFileUnprocessableEntity: ${err.message}")
+      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileUnprocessableEntity: ${err.message}")
       UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
     case err: DefinitionFileFailedSchemaValidation =>
-      logger.warn(s"$ErrorCode.INVALID_API_DEFINITION - DefinitionFileFailedSchemaValidation: ${err.message}")
+      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileFailedSchemaValidation: ${err.message}")
       UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(err.error)))
     case err: GenericValidationFailure             =>
-      logger.warn(s"$ErrorCode.INVALID_API_DEFINITION - GenericValidationFailure: ${err.message}")
+      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - GenericValidationFailure: ${err.message}")
       BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
   }
 
