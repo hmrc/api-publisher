@@ -187,6 +187,114 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       errorMessages shouldBe """string [invalid context] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
     }
 
+    Scenario("A validation error occurs during Publish due to missing regex attribute in RegexValidationRule") {
+
+      Given("A microservice is running with an API Definition with empty scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithNoRegexAttribute)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
+      errorMessages shouldBe """required key [regex] not found"""
+    }
+
+    Scenario("A validation error occurs during Publish due to an empty rules array") {
+
+      Given("A microservice is running with an API Definition with empty scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyRulesArray)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
+      errorMessages shouldBe """expected minimum item count: 1, found: 0"""
+    }
+
+    Scenario("A validation error occurs during Publish due to missing errorMessage") {
+
+      Given("A microservice is running with an API Definition with empty scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithNoErrorMessageAttribute)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The api-publisher responded with status 422")
+      publishResponse.code shouldBe StatusCode.UnprocessableEntity
+
+      And("The validation errors are present in the response body")
+      val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
+      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
+      errorMessages shouldBe """required key [errorMessage] not found"""
+    }
+
     Scenario("When fetch of definition.json file from microservice fails with NOT_FOUND") {
 
       Given("A microservice is running with an invalid API Definition")
@@ -342,6 +450,109 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |            "description": "Only a callback URL",
        |            "hint": "Just a hint",
        |            "type": "URL"
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithNoRegexAttribute =
+    s"""
+       |{
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |      "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "What is your callback URL?",
+       |            "shortDescription": "Callback URL",
+       |            "type": "PPNSField",
+       |            "validation": {
+       |              "errorMessage": "Callback URL must be a valid https URL",
+       |              "rules": [
+       |                {
+       |                  "UrlValidationRule": {}
+       |                },
+       |                {
+       |                  "RegexValidationRule": {}
+       |                }
+       |              ]
+       |            }
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithEmptyRulesArray =
+    s"""
+       |{
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |      "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "What is your callback URL?",
+       |            "shortDescription": "Callback URL",
+       |            "type": "PPNSField",
+       |            "validation": {
+       |              "errorMessage": "Callback URL must be a valid https URL",
+       |              "rules": [
+       |              ]
+       |            }
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithNoErrorMessageAttribute =
+    s"""
+       |{
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "PUBLISHED",
+       |      "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "What is your callback URL?",
+       |            "shortDescription": "Callback URL",
+       |            "type": "PPNSField",
+       |            "validation": {
+       |              "rules": [
+       |                {
+       |                  "UrlValidationRule": {}
+       |                },
+       |                {
+       |                  "RegexValidationRule": {
+       |                    "regex": "^https.*"
+       |                  }
+       |                }
+       |              ]
+       |            }
        |          }
        |        ]
        |      }
