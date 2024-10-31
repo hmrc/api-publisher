@@ -132,7 +132,7 @@
                     "name": {
                       "description": "The internal identifier for this field",
                       "type": "string",
-                      "pattern": "^[a-zA-Z]*$"
+                      "pattern": "^[a-zA-Z]+$"
                     },
                     "description": {
                       "description": "The description that will be shown to users for this field",

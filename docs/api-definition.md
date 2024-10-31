@@ -41,7 +41,7 @@ Details a subscription field used by this API. If you would like to use subscrip
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `name` | _string_ | Required | ^[a-zA-Z]*$ | The internal identifier for this field |
+| `name` | _string_ | Required | ^[a-zA-Z]+$ | The internal identifier for this field |
 | `description` | _string_ | Required |  | The description that will be shown to users for this field |
 | `type` | _string_ | Required | URL<br>SecureToken<br>STRING<br>PPNSField | The type of value expected for this field |
 | `hint` | _string_ | Optional |  | Hint text to display to users to help them provide a correct value for this field. If left blank the description will be used instead |
