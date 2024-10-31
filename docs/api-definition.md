@@ -1,5 +1,5 @@
 # HMRC API definition. See [JSON definition](https://confluence.tools.tax.service.gov.uk/display/DTRG/JSON+definition)
-Generated from [JSON schema](app/resources/api-definition-schema.json)
+Generated from [JSON schema](../app/resources/api-definition-schema.json)
 ## `root`
 HMRC API definition. See [JSON definition](https://confluence.tools.tax.service.gov.uk/display/DTRG/JSON+definition)
 
