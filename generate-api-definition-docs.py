@@ -101,5 +101,5 @@ with open(args.schema_file) as file:
     schema = json.load(file)
 
 output('# {}'.format(schema.get('description')))
-output('Generated from [JSON schema]({})'.format(args.schema_file))
+output('Generated from [JSON schema]({})'.format('../' + args.schema_file))
 output_object('root', schema)
