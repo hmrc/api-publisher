@@ -31,6 +31,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
@@ -56,6 +57,8 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
   private val marriageAllowanceApproval =
     APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
+  val serviceName                       = "employee-paye"
+  val actor                             = Actors.GatekeeperUser("Dave Brown")
 
   private val publisherResponse = PublisherResponse(
     name = "Example API",
@@ -86,6 +89,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       publisherResponse
     )))
     when(mockAppConfig.publishingKey).thenReturn(sharedSecret)
+
   }
 
   "publish" should {
@@ -266,28 +270,41 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   }
 
   "approve service" should {
+    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/approve")
+      .withHeaders("content-type" -> "application/json")
+      .withBody(Json.toJson(ApproveServiceRequest(serviceName, actor)))
 
     "approve a known service" in new Setup {
 
-      when(mockApprovalService.approveService("employee-paye")).thenReturn(successful(serviceLocation))
+      when(mockApprovalService.approveService(serviceName, Actors.GatekeeperUser("Dave Brown"))).thenReturn(successful(serviceLocation))
       when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
         approved = true,
         publisherResponse
       )))
 
-      val result = underTest.approve("employee-paye")(FakeRequest())
+      val result = underTest.approve(serviceName)(fakeRequest)
 
       status(result) shouldBe NO_CONTENT
       verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
-      when(mockApprovalService.approveService("unknown-service"))
+      when(mockApprovalService.approveService("unknown-service", Actors.GatekeeperUser("Dave Brown")))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 
-      val result = underTest.approve("unknown-service")(FakeRequest())
+      val result = underTest.approve("unknown-service")(fakeRequest)
 
       status(result) shouldBe NOT_FOUND
+      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
+    }
+
+    "raise an error when attempting to approve without the correct body" in new Setup {
+      when(mockApprovalService.approveService("unknown-service", Actors.GatekeeperUser("Dave Brown")))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
+
+      val result = underTest.approve("unknown-service")(FakeRequest().withHeaders("content-type" -> "application/json"))
+
+      status(result) shouldBe BAD_REQUEST
       verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
     }
 
