@@ -16,8 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.services
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
@@ -26,8 +30,8 @@ import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig)(implicit val ec: ExecutionContext)
-    extends ApplicationLogger {
+class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig, val clock: Clock)(implicit val ec: ExecutionContext)
+    extends ApplicationLogger with ClockNow {
 
   def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)
 
@@ -53,10 +57,10 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     } yield isApproved
   }
 
-  def approveService(serviceName: String): Future[ServiceLocation] =
+  def approveService(serviceName: String, actor: Actors.GatekeeperUser): Future[ServiceLocation] =
     for {
       approval <- fetchServiceApproval(serviceName)
-      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true)))
+      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true), approvedOn = Some(instant), approvedBy = Some(actor)))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)

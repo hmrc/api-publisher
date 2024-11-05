@@ -176,10 +176,10 @@ class PublisherController @Inject() (
       .recover(recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES))
   }
 
-  def approve(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    {
+  def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
       for {
-        serviceLocation <- approvalService.approveService(serviceName)
+        serviceLocation <- approvalService.approveService(serviceName, body.actor)
         result          <- publishService(serviceLocation).map {
                              case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
                              case other                                           => other
