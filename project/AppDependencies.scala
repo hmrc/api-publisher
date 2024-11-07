@@ -13,7 +13,7 @@ object AppDependencies {
     "uk.gov.hmrc.mongo"   %% "hmrc-mongo-play-30"         % mongoVersion,
     "org.json"             % "json"                       % "20230227",
     "com.damnhandy"        % "handy-uri-templates"        % "2.1.8",
-    "org.julienrf"        %% "play-json-derived-codecs"   % "10.1.0",
+    "org.julienrf"        %% "play-json-derived-codecs"   % "11.0.0",
     "org.typelevel"       %% "cats-core"                  % "2.10.0",
     "uk.gov.hmrc"         %% "api-platform-common-domain" % commonDomainVersion,
     "com.github.erosb"     % "everit-json-schema"         % "1.14.4",

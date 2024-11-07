@@ -41,7 +41,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   Feature("Publish API on notification") {
 
-    Scenario("Publishing successful for an API with a valid definition") {
+    Scenario("Publishing successful for an API with a valid definition and RAML") {
 
       Given("A microservice is running with an API Definition without scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
@@ -90,13 +90,62 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       publishResponse.isSuccess shouldBe true
     }
 
+    Scenario("Publishing successful for an API with a valid definition and OAS") {
+
+      Given("A microservice is running with an API Definition without scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.isSuccess shouldBe true
+    }
+
     Scenario("A validation error occurs during Publish due to scopes in definition") {
 
       Given("A microservice is running with an API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithScopes)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -131,9 +180,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
       Given("A microservice is running with an API Definition with empty scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyScopes)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -191,9 +240,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
       Given("A microservice is running with an API Definition with empty scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithNoFieldDefinitionName)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -227,9 +276,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
       Given("A microservice is running with an API Definition with empty scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithNoRegexAttribute)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -263,9 +312,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
       Given("A microservice is running with an API Definition with empty scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithEmptyRulesArray)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -299,9 +348,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
       Given("A microservice is running with an API Definition with empty scopes")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithNoErrorMessageAttribute)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
       And("api definition is running")
       // TOOD - restore when api definition no longer rejects updated api
@@ -834,4 +883,127 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       |    (scope): "read:hello"
       |
     """.stripMargin
+
+  val oas_1_0 =
+    """openapi: "3.0.3"
+      |info:
+      |  title: API Platform Test
+      |  version: 1.0.0
+      |  contact: {}
+      |servers:
+      |  - url: https://test-api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Sandbox
+      |  - url: https://api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Production
+      |    variables: {}
+      |
+      |components:
+      |  parameters:
+      |    acceptHeader:
+      |      name: Accept
+      |      in: header
+      |      schema:
+      |        type: string
+      |        enum: [
+      |          "application/vnd.hmrc.1.0+json"
+      |        ]
+      |      required: true
+      |paths:
+      |  /check/location:
+      |    get:
+      |      summary: Get Check Location
+      |      description: |
+      |        Get Check Location.
+      |        This endpoint is open access and requires no Authorization header.
+      |      tags:
+      |        - api-platform-test
+      |      parameters:
+      |        - $ref: '#/components/parameters/acceptHeader'
+      |      responses:
+      |        200:
+      |          description: "OK Response"
+      |      security:
+      |        - {}""".stripMargin
+
+  val oas_2_0 =
+    """openapi: "3.0.3"
+      |info:
+      |  title: API Platform Test
+      |  version: 2.0.0
+      |  contact: {}
+      |servers:
+      |  - url: https://test-api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Sandbox
+      |  - url: https://api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Production
+      |    variables: {}
+      |
+      |components:
+      |  parameters:
+      |    acceptHeader:
+      |      name: Accept
+      |      in: header
+      |      schema:
+      |        type: string
+      |        enum: [
+      |          "application/vnd.hmrc.2.0+json"
+      |        ]
+      |      required: true
+      |paths:
+      |  /check/location:
+      |    get:
+      |      summary: Get Check Location
+      |      description: |
+      |        Get Check Location.
+      |        This endpoint is open access and requires no Authorization header.
+      |      tags:
+      |        - api-platform-test
+      |      parameters:
+      |        - $ref: '#/components/parameters/acceptHeader'
+      |      responses:
+      |        200:
+      |          description: "OK Response"
+      |      security:
+      |        - {}""".stripMargin
+
+  val oas_3_0 =
+    """openapi: "3.0.3"
+      |info:
+      |  title: API Platform Test
+      |  version: 1.0.0
+      |  contact: {}
+      |servers:
+      |  - url: https://test-api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Sandbox
+      |  - url: https://api.service.hmrc.gov.uk/test/api-platform-test
+      |    description: Production
+      |    variables: {}
+      |
+      |components:
+      |  parameters:
+      |    acceptHeader:
+      |      name: Accept
+      |      in: header
+      |      schema:
+      |        type: string
+      |        enum: [
+      |          "application/vnd.hmrc.3.0+json"
+      |        ]
+      |      required: true
+      |paths:
+      |  /check/location:
+      |    get:
+      |      summary: Get Check Location
+      |      description: |
+      |        Get Check Location.
+      |        This endpoint is open access and requires no Authorization header.
+      |      tags:
+      |        - api-platform-test
+      |      parameters:
+      |        - $ref: '#/components/parameters/acceptHeader'
+      |      responses:
+      |        200:
+      |          description: "OK Response"
+      |      security:
+      |        - {}""".stripMargin
 }
