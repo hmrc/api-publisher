@@ -46,7 +46,12 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
     def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval], isApproved: Boolean): Future[APIApproval] =
       maybeExistingApiApproval match {
-        case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved), createdOn = existingApproval.createdOn))
+        case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(
+            approved = Some(isApproved),
+            createdOn = existingApproval.createdOn,
+            approvedOn = existingApproval.approvedOn,
+            approvedBy = existingApproval.approvedBy
+          ))
         case _                      => apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved)))
       }
 
