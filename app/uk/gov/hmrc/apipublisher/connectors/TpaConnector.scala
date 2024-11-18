@@ -36,8 +36,11 @@ class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(i
 
   protected val serviceBaseUrl: String = config.serviceBaseUrl
 
+  // This only uses library code.
+  // $COVERAGE-OFF$
   def fetchApplications(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[List[ApplicationWithCollaborators]] = {
     http.get(url"$serviceBaseUrl/application/?subscribesTo=${apiContext}&version=${versionNbr}")
       .execute[List[ApplicationWithCollaborators]]
   }
+  // $COVERAGE-ON$
 }

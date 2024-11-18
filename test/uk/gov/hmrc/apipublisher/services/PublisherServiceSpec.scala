@@ -22,6 +22,7 @@ import scala.concurrent.Future.{failed, successful}
 import utils.AsyncHmrcSpec
 
 import play.api.libs.json.{JsObject, JsValue, Json}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
@@ -30,7 +31,7 @@ import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 
-class PublisherServiceSpec extends AsyncHmrcSpec {
+class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaboratorsFixtures {
 
   val testServiceLocation: ServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
@@ -172,11 +173,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     }
 
     "Fail when status is retired and API has subscriptions" in new Setup {
-
-      val errorString = """{"error":"blah"}"""
+      val errorString = """"Version 1.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
-      when(mockTpaConnector.fetchApplications(*, *)).thenReturn(Successful(Some(standardApplication)))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List(standardApp)))
 
       val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
       val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
@@ -187,8 +187,43 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
 
       result.isDefined shouldBe true
-//      Json.stringify(result.get) shouldBe s"""{"fieldDefinitionErrors":$errorString}"""
+      Json.stringify(result.get) shouldBe s"""{"statusErrors":[$errorString]}"""
     }
 
+    "Fail when status is retired and two API versions have subscriptions" in new Setup {
+      val errorString1 = """"Version 1.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
+      val errorString2 = """"Version 2.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
+
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List(standardApp)))
+
+      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
+      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
+
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+      Json.stringify(result.get) shouldBe s"""{"statusErrors":[$errorString1,$errorString2]}"""
+    }
+
+    "Succeed when status is retired but no API has subscriptions" in new Setup {
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List.empty))
+
+      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
+      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
+
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe false
+    }
   }
 }
