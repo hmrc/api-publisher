@@ -19,9 +19,10 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -88,15 +89,14 @@ class PublisherService @Inject() (
           }
         }
       )
-      .map { versions =>
-        versions.map { v =>
-          JsString(s"Version $v cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).")
+        .map { versions =>
+          versions.map { v =>
+            JsString(s"Version $v cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).")
+          } match {
+            case Nil    => None
+            case h :: t => Some(JsArray(h :: t))
+          }
         }
-        match {
-          case Nil => None
-          case h :: t => Some(JsArray(h :: t))
-        }
-      }
     }
 
     def checkForErrors(): Future[Option[JsObject]] = {

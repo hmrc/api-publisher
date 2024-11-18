@@ -16,31 +16,28 @@
 
 package uk.gov.hmrc.apipublisher.connectors
 
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http._
-
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.client.HttpClientV2
+
 object TpaConnector {
+
   case class Config(
-     serviceBaseUrl: String
-  )
+      serviceBaseUrl: String
+    )
 }
 
-class TpaConnector(config: TpaConnector.Config, http: HttpClientV2)(implicit val ec: ExecutionContext) {
+@Singleton
+class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(implicit val ec: ExecutionContext) {
 
   protected val serviceBaseUrl: String = config.serviceBaseUrl
 
   def fetchApplications(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[List[ApplicationWithCollaborators]] = {
     http.get(url"$serviceBaseUrl/application/?subscribesTo=${apiContext}&version=${versionNbr}")
-        .execute[List[ApplicationWithCollaborators]]
+      .execute[List[ApplicationWithCollaborators]]
   }
 }
-
-
-
-
-
-

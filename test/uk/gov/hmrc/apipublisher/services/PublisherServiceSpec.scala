@@ -25,7 +25,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
-import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector}
+import uk.gov.hmrc.apipublisher.connectors._
 import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
@@ -69,11 +69,13 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier                                         = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockApiDefinitionConnector: APIDefinitionConnector                 = mock[APIDefinitionConnector]
     val mockApiSubscriptionFieldsConnector: APISubscriptionFieldsConnector = mock[APISubscriptionFieldsConnector]
+    val mockTpaConnector: TpaConnector                                     = mock[TpaConnector]
     val mockApprovalService: ApprovalService                               = mock[ApprovalService]
 
     val publisherService = new PublisherService(
       mockApiDefinitionConnector,
       mockApiSubscriptionFieldsConnector,
+      mockTpaConnector,
       mockApprovalService
     )
 
@@ -167,6 +169,25 @@ class PublisherServiceSpec extends AsyncHmrcSpec {
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"apiDefinitionErrors":$errorString}"""
+    }
+
+    "Fail when status is retired and API has subscriptions" in new Setup {
+
+      val errorString = """{"error":"blah"}"""
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
+      when(mockTpaConnector.fetchApplications(*, *)).thenReturn(Successful(Some(standardApplication)))
+
+      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
+      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
+
+      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+
+      result.isDefined shouldBe true
+//      Json.stringify(result.get) shouldBe s"""{"fieldDefinitionErrors":$errorString}"""
     }
 
   }

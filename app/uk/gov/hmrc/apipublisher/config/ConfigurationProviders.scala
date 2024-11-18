@@ -50,7 +50,7 @@ class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configura
 
 @Singleton
 class TpaConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
-  extends Provider[TpaConnector.Config] {
+    extends Provider[TpaConnector.Config] {
 
   override def get(): TpaConnector.Config = {
     val serviceBaseUrl = servicesConfig.baseUrl("third-party-application")
