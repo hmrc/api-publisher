@@ -32,7 +32,8 @@ class ConfigurationModule extends Module {
     Seq(
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSSubscriptionFieldsConfig].toProvider[ApiSSubscriptionFieldsConfigProvider],
-      bind[MicroserviceConnector.Config].toProvider[MicroserviceConnectorConfigProvider]
+      bind[MicroserviceConnector.Config].toProvider[MicroserviceConnectorConfigProvider],
+      bind[TpaConnector.Config].toProvider[TpaConnectorConfigProvider]
     )
   }
 }
@@ -44,6 +45,16 @@ class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configura
   override def get(): ApiDefinitionConfig = {
     val serviceBaseUrl = servicesConfig.baseUrl("api-definition")
     ApiDefinitionConfig(serviceBaseUrl)
+  }
+}
+
+@Singleton
+class TpaConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+    extends Provider[TpaConnector.Config] {
+
+  override def get(): TpaConnector.Config = {
+    val serviceBaseUrl = servicesConfig.baseUrl("third-party-application")
+    TpaConnector.Config(serviceBaseUrl)
   }
 }
 

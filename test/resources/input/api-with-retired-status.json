@@ -1,0 +1,68 @@
+{
+  "name" : "Test",
+  "description" : "Test API",
+  "context" : "test",
+  "versions" : [
+    {
+      "version" : "1.0",
+      "access" : {
+        "type" : "PRIVATE"
+      },
+      "status" : "RETIRED",
+      "fieldDefinitions": [
+        {
+          "name": "callback-url",
+          "description": "Callback URL",
+          "hint": "Just a hint",
+          "type": "URL",
+          "shortDescription": "short description",
+          "validation": {
+            "errorMessage": "error message",
+            "rules": [
+              {
+                "UrlValidationRule": {}
+              }
+            ]
+          }
+        },
+        {
+          "name": "token",
+          "description": "Secure Token",
+          "hint": "Just a hint",
+          "type": "SecureToken",
+          "validation": {
+            "errorMessage": "error message",
+            "rules": [
+              {
+                "RegexValidationRule": {
+                  "regex": "regex for token"
+                }
+              }
+            ]
+          },
+          "access": {
+            "devhub": {
+                  "read": "anyone",
+                  "write":"noOne"
+             }
+          }
+        }
+      ]
+    },
+    {
+      "version" : "2.0",
+      "access" : {
+        "type" : "PUBLIC"
+      },
+      "status" : "STABLE",
+      "fieldDefinitions": [
+        {
+          "name": "callback-url-only",
+          "description": "Only a callback URL",
+          "hint": "Just a hint",
+          "type": "URL"
+        }
+      ]
+    }
+  ]
+}

@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json._
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector}
+import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -31,6 +31,7 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 class PublisherService @Inject() (
     apiDefinitionConnector: APIDefinitionConnector,
     apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
+    tpaConnector: TpaConnector,
     approvalService: ApprovalService
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -71,7 +72,6 @@ class PublisherService @Inject() (
   }
 
   def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-
     def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
       if (validateApiDefinition) {
         apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
@@ -80,18 +80,43 @@ class PublisherService @Inject() (
       }
     }
 
+    def validateStatusAndSubscriptions()(implicit hc: HeaderCarrier) = {
+      def hasAnySubscribers(apiContext: String, version: String): Future[(String, Boolean)] = {
+        tpaConnector.fetchApplications(apiAndScopes.apiContext, version).map(as => (version, as.nonEmpty))
+      }
+
+      val vs: Future[List[String]] = Future.sequence(
+        apiAndScopes.retiredVersionNumbers.toList
+          .map { version => hasAnySubscribers(apiAndScopes.apiContext, version) }
+      )
+        .map {
+          _.filter(x => x._2).map(_._1)
+        }
+
+      vs.map { versions =>
+        versions.map { v =>
+          JsString(s"Version $v cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).")
+        } match {
+          case Nil    => None
+          case h :: t => Some(JsArray(h :: t))
+        }
+      }
+    }
+
     def checkForErrors(): Future[Option[JsObject]] = {
       for {
         apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
+        statusErrors    <- validateStatusAndSubscriptions()
         fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
       } yield {
-        if (apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
+        if (apiErrors.isEmpty && fieldDefnErrors.isEmpty && statusErrors.isEmpty) {
           None
         } else {
           Some(
             JsObject(
               Seq.empty[(String, JsValue)] ++
                 apiErrors.map("apiDefinitionErrors" -> _) ++
+                statusErrors.map("statusErrors" -> _) ++
                 fieldDefnErrors.map("fieldDefinitionErrors" -> _)
             )
           )

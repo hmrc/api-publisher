@@ -65,7 +65,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def approveService(serviceName: String, actor: Actors.GatekeeperUser): Future[ServiceLocation] =
     for {
       approval <- fetchServiceApproval(serviceName)
-      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true), approvedOn = Some(instant), approvedBy = Some(actor)))
+      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true), approvedOn = Some(instant()), approvedBy = Some(actor)))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
