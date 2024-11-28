@@ -24,9 +24,9 @@ import utils.AsyncHmrcSpec
 
 import play.api.libs.json._
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.ramltools.domain.Endpoint
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
+import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
@@ -38,9 +38,8 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       with MockitoSugar
       with ArgumentMatchersSugar {
 
-    val ramlVDS = mock[RamlVersionDefinitionService]
     val oasVDS  = mock[OasVersionDefinitionService]
-    val service = new DefinitionService(MicroserviceConnectorMock.aMock, ramlVDS, oasVDS)
+    val service = new DefinitionService(MicroserviceConnectorMock.aMock, oasVDS)
 
     val helloEndpoint   = Endpoint("/hello", "Say Hello", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
     val goodbyeEndpoint = Endpoint("/goodbye", "Say Goodbye", "GET", "USER", "UNLIMITED", Some("read:hello"), None)
@@ -49,21 +48,11 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
     def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
 
-    def primeRamlFor(version: String, endpoints: Endpoint*) = {
-      when(ramlVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))
-    }
-
     def primeOasFor(version: String, endpoints: Endpoint*) = {
       when(oasVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))
     }
 
-    def primeRamlOnlyFor(version: String, endpoints: Endpoint*) = {
-      primeRamlFor(version, endpoints: _*)
-      primeOasFor(version)
-    }
-
     def primeOasOnlyFor(version: String, endpoints: Endpoint*) = {
-      primeRamlFor(version)
       primeOasFor(version, endpoints: _*)
     }
 
@@ -83,7 +72,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
-      primeRamlFor("1.0")
       primeOasFor("1.0")
 
       intercept[IllegalStateException] {
@@ -96,7 +84,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
-      primeRamlFor("1.0")
       primeOasFailure("1.0", new RuntimeException("Boom"))
 
       intercept[IllegalStateException] {
@@ -108,8 +95,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     "handle api and scopes with RAML data only" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      primeRamlOnlyFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
@@ -133,7 +118,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
-      primeRamlFor("1.0")
       primeOasFailure("1.0", new RuntimeException("Boom"))
 
       intercept[IllegalStateException] {
@@ -147,7 +131,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
       primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
-      primeRamlFor("1.0", helloEndpoint, goodbyeEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
@@ -160,7 +143,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
       primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
-      primeRamlFor("1.0", goodbyeEndpoint, helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
@@ -173,7 +155,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
       primeOasFor("1.0", helloEndpoint.copy(authType = "NONE"))
-      primeRamlFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 

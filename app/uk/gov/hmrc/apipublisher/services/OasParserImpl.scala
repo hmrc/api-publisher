@@ -21,9 +21,7 @@ import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.models.OpenAPI
 
-import uk.gov.hmrc.ramltools.domain.{Endpoint, QueryParam}
-
-import uk.gov.hmrc.apipublisher.models.oas._
+import uk.gov.hmrc.apipublisher.models.oas.{Endpoint, QueryParam, _}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton

@@ -24,8 +24,7 @@ import io.swagger.v3.parser.core.models.ParseOptions
 import org.scalatest.Inside
 import utils.HmrcSpec
 
-import uk.gov.hmrc.ramltools.domain.QueryParam
-
+import uk.gov.hmrc.apipublisher.models.oas.QueryParam
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 class OasParserImplSpec extends HmrcSpec with ApplicationLogger {

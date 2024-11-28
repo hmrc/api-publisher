@@ -67,7 +67,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   trait Setup {
     WireMock.reset()
-    val mockRamlLoader               = mock[DocumentationRamlLoader]
     implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
@@ -75,7 +74,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
     lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
-      mockRamlLoader,
       mockOasFileLoader,
       app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
@@ -89,7 +87,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = false, oasParserMaxDuration = 3.seconds),
-      mockRamlLoader,
       mockOasFileLoader,
       app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
@@ -101,7 +98,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
     override lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
-      mockRamlLoader,
       mockOasFileLoader,
       app.injector.instanceOf[HttpClientV2],
       app.injector.instanceOf[Environment]
@@ -245,14 +241,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       badGatewayException.statusCode shouldBe BAD_GATEWAY
       badGatewayException.getMessage should include("<head><title>502 Bad Gateway</title></head>")
-    }
-  }
-
-  "getRaml" should {
-    "call the microservice to get the application.raml" in new Setup {
-      connector.getRaml(testService, "1.0")
-
-      verify(mockRamlLoader).load(testService.serviceUrl + "/api/conf/1.0/application.raml")
     }
   }
 
