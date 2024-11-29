@@ -139,6 +139,67 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       publishResponse.isSuccess shouldBe true
     }
 
+    Scenario("Publishing successful for an API with a RETIRED version") {
+
+      Given("A microservice is running with an API Definition without scopes")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithRetiredVersion)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      And("third party application is running")
+      tpaMock.register(delete(urlEqualTo(tpaVersion_1_0)).willReturn(aResponse()))
+      tpaMock.register(delete(urlEqualTo(tpaVersion_2_0)).willReturn(aResponse()))
+      tpaMock.register(delete(urlEqualTo(tpaVersion_3_0)).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+
+      Then("The subscriptions for RETIRED versions are deleted")
+      tpaMock.verifyThat(deleteRequestedFor(urlEqualTo(tpaVersion_1_0)))
+
+      tpaMock.verifyThat(0, deleteRequestedFor(urlEqualTo(tpaVersion_2_0)))
+
+      tpaMock.verifyThat(0, deleteRequestedFor(urlEqualTo(tpaVersion_3_0)))
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.isSuccess shouldBe true
+    }
+
     Scenario("A validation error occurs during Publish due to scopes in definition") {
 
       Given("A microservice is running with an API Definition")
@@ -422,6 +483,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
   val apiSubscriptionFieldsUrlVersion_1_0 = s"/definition/context/$urlEncodedApiContext/version/1.0"
   val apiSubscriptionFieldsUrlVersion_2_0 = s"/definition/context/$urlEncodedApiContext/version/2.0"
   val apiSubscriptionFieldsUrlVersion_3_0 = s"/definition/context/$urlEncodedApiContext/version/3.0"
+  val tpaVersion_1_0                      = s"/apis/$urlEncodedApiContext/versions/1.0/subscribers"
+  val tpaVersion_2_0                      = s"/apis/$urlEncodedApiContext/versions/2.0/subscribers"
+  val tpaVersion_3_0                      = s"/apis/$urlEncodedApiContext/versions/3.0/subscribers"
 
   val definitionJsonWithInvalidContext =
     s"""
@@ -694,6 +758,53 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |      {
        |        "version": "1.0",
        |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrl",
+       |            "description": "Callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          },
+       |          {
+       |            "name": "token",
+       |            "description": "Secure Token",
+       |            "hint": "Just a hint",
+       |            "type": "SecureToken"
+       |          }
+       |        ]
+       |      },
+       |      {
+       |        "version": "2.0",
+       |        "status": "PUBLISHED"
+       |      },
+       |      {
+       |        "version": "3.0",
+       |        "status": "PUBLISHED",
+       |        "fieldDefinitions": [
+       |          {
+       |            "name": "callbackUrlOnly",
+       |            "description": "Only a callback URL",
+       |            "hint": "Just a hint",
+       |            "type": "URL"
+       |          }
+       |        ]
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin
+
+  val definitionJsonWithRetiredVersion =
+    s"""
+       |{
+       |  "api": {
+       |    "name": "Test",
+       |    "description": "Test API",
+       |    "context": "$apiContext",
+       |    "versions": [
+       |      {
+       |        "version": "1.0",
+       |        "status": "RETIRED",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",

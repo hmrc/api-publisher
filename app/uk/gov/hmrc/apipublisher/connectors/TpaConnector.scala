@@ -19,7 +19,7 @@ package uk.gov.hmrc.apipublisher.connectors
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
+import play.api.http.Status.UNPROCESSABLE_ENTITY
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -38,9 +38,14 @@ class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(i
 
   // This only uses library code.
   // $COVERAGE-OFF$
-  def fetchApplications(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[List[ApplicationWithCollaborators]] = {
-    http.get(url"$serviceBaseUrl/application/?subscribesTo=${apiContext}&version=${versionNbr}")
-      .execute[List[ApplicationWithCollaborators]]
+  def deleteSubscriptions(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+    http.delete(url"$serviceBaseUrl/apis/$apiContext/versions/$versionNbr/subscribers")
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .map {
+        case Right(_)                                                         => (())
+        case Left(UpstreamErrorResponse(message, UNPROCESSABLE_ENTITY, _, _)) => throw new UnprocessableEntityException(message)
+        case Left(err)                                                        => throw err
+      }
   }
   // $COVERAGE-ON$
 }
