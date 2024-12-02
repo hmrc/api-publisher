@@ -36,8 +36,6 @@ class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(i
 
   protected val serviceBaseUrl: String = config.serviceBaseUrl
 
-  // This only uses library code.
-  // $COVERAGE-OFF$
   def deleteSubscriptions(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     http.delete(url"$serviceBaseUrl/apis/$apiContext/versions/$versionNbr/subscribers")
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
@@ -47,5 +45,4 @@ class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(i
         case Left(err)                                                        => throw err
       }
   }
-  // $COVERAGE-ON$
 }
