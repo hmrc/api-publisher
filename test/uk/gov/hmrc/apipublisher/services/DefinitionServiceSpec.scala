@@ -92,17 +92,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
         .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
-    "handle api and scopes with RAML data only" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      val result = await(service.getDefinition(aServiceLocation))
-
-      val expected = json[JsObject]("/expected/api-simple-raml.json")
-      result.value shouldBe ApiAndScopes(expected)
-    }
-
-    "handle api and scopes with OAS data only" in new Setup {
+    "handle api and scopes with OAS data" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
       MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
 
@@ -111,55 +101,6 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       val result = await(service.getDefinition(aServiceLocation))
 
       val expected = json[JsObject]("/expected/api-simple-oas.json")
-      result.value shouldBe ApiAndScopes(expected)
-    }
-
-    "handle api and scopes with bad OAS data only" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      primeOasFailure("1.0", new RuntimeException("Boom"))
-
-      intercept[IllegalStateException] {
-        await(service.getDefinition(aServiceLocation))
-      }
-        .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
-    }
-
-    "handle api and scopes with both RAML and OS data that matches" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
-
-      val result = await(service.getDefinition(aServiceLocation))
-
-      val expected = json[JsObject]("/expected/api-simple-hello-goodbye.json")
-      result.value shouldBe ApiAndScopes(expected)
-    }
-
-    "handle api and scopes with both RAML and OS data that matches except for ordering" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      primeOasFor("1.0", helloEndpoint, goodbyeEndpoint)
-
-      val result = await(service.getDefinition(aServiceLocation))
-
-      val expected = json[JsObject]("/expected/api-simple-hello-goodbye.json")
-      result.value shouldBe ApiAndScopes(expected)
-    }
-
-    "handle api and scopes with both RAML and OAS data but that do not match by publishing RAML" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
-
-      primeOasFor("1.0", helloEndpoint.copy(authType = "NONE"))
-
-      val result = await(service.getDefinition(aServiceLocation))
-
-      // Expectation matches RAML processing.
-      val expected = json[JsObject]("/expected/api-simple-raml.json")
       result.value shouldBe ApiAndScopes(expected)
     }
   }
