@@ -83,6 +83,9 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
     when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(true))
     when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(successful(()))
     when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(successful(()))
+
+    val apiWith2RetiredVersions: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
+    val apiAndScopesWith2RetiredVersions: ApiAndScopes = ApiAndScopes(apiWith2RetiredVersions)
   }
 
   "publishAPIDefinition" should {
@@ -93,6 +96,66 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(eqTo(expectedApiFieldDefinitions))(*)
+    }
+
+    "Publish is successful with 1 Retired version" in new Setup {
+
+      val retiredApi: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
+      val retiredApiAndScopes: ApiAndScopes = ApiAndScopes(retiredApi)
+
+      val retiredPublisherResponse = PublisherResponse(
+        name = "Test",
+        serviceName = "test",
+        context = "test",
+        description = "Test API",
+        versions = List(
+          PublisherApiVersion(version = "1.0", status = RETIRED),
+          PublisherApiVersion(version = "2.0", status = STABLE)
+        )
+      )
+
+      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
+
+      await(publisherService.publishAPIDefinition(testServiceLocation, retiredApiAndScopes)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
+
+      verify(mockApiDefinitionConnector).publishAPI(*)(*)
+      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(*)(*)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(*)
+      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(*)
+    }
+
+    "Publish is successful with 2 Retired versions and 1 stable version" in new Setup {
+
+      val retiredPublisherResponse = PublisherResponse(
+        name = "Test",
+        serviceName = "test",
+        context = "test",
+        description = "Test API",
+        versions = List(
+          PublisherApiVersion(version = "1.0", status = RETIRED),
+          PublisherApiVersion(version = "2.0", status = RETIRED),
+          PublisherApiVersion(version = "3.0", status = STABLE)
+        )
+      )
+
+      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
+
+      await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopesWith2RetiredVersions)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
+
+      verify(mockApiDefinitionConnector).publishAPI(*)(*)
+      verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(*)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(*)
+      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("3.0"))(*)
+    }
+
+    "Fail, propagating an error, when the tpaConnector fails" in new Setup {
+
+      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(failed(emulatedServiceError))
+
+      intercept[UnsupportedOperationException] {
+        await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopesWith2RetiredVersions))
+      } shouldBe emulatedServiceError
     }
 
     "Retrieve the api from the microservice but don't Publish it to api-definition, api-subscription-fields and api-documentation if publication is not allowed" in new Setup {
@@ -172,48 +235,9 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       Json.stringify(result.get) shouldBe s"""{"apiDefinitionErrors":$errorString}"""
     }
 
-    "Fail when status is retired and API has subscriptions" in new Setup {
-      val errorString = """"Version 1.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
-      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List(standardApp)))
-
-      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
-      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
-
-      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
-
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
-
-      result.isDefined shouldBe true
-      Json.stringify(result.get) shouldBe s"""{"statusErrors":[$errorString]}"""
-    }
-
-    "Fail when status is retired and two API versions have subscriptions" in new Setup {
-      val errorString1 = """"Version 1.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
-      val errorString2 = """"Version 2.0 cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).""""
-
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
-      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List(standardApp)))
-
-      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
-      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
-
-      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
-
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
-
-      result.isDefined shouldBe true
-      Json.stringify(result.get) shouldBe s"""{"statusErrors":[$errorString1,$errorString2]}"""
-    }
-
     "Succeed when status is retired but no API has subscriptions" in new Setup {
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
-      when(mockTpaConnector.fetchApplications(*, *)(*)).thenReturn(successful(List.empty))
 
       val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
       val apiAndScopes: ApiAndScopes = ApiAndScopes(api)

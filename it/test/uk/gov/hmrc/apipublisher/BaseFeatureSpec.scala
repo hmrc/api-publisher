@@ -56,6 +56,12 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
   val apiSubscriptionFieldsServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
   var apiSubscriptionFieldsMock: WireMock = _
 
+  val tpaPort: Int      = sys.env.getOrElse("WIREMOCK", "9607").toInt
+  val tpaHost           = "localhost"
+  var tpaUrl            = s"http://$tpaHost:$tpaPort"
+  val tpaServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(tpaPort))
+  var tpaMock: WireMock = _
+
   override def beforeEach(): Unit = {
     apiSubscriptionFieldsServer.start()
     apiSubscriptionFieldsMock = new WireMock(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
@@ -69,6 +75,9 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
     apiDefinitionServer.start()
     apiDefinitionMock = new WireMock(apiDefinitionHost, apiDefinitionPort)
 
+    tpaServer.start()
+    tpaMock = new WireMock(tpaHost, tpaPort)
+
   }
 
   override def afterEach(): Unit = {
@@ -76,6 +85,7 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
     apiScopeServer.stop()
     apiProducerServer.stop()
     apiDefinitionServer.stop()
+    tpaServer.stop()
   }
 
   def http(request: => Request[Either[String, String], Any]): Response[Either[String, String]] = {
