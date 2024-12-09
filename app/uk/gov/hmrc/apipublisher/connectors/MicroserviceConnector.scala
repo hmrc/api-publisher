@@ -35,8 +35,6 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
-import uk.gov.hmrc.ramltools.RAML
-import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
 import uk.gov.hmrc.apipublisher.models._
@@ -49,7 +47,6 @@ object MicroserviceConnector {
 @Singleton
 class MicroserviceConnector @Inject() (
     config: MicroserviceConnector.Config,
-    ramlLoader: RamlLoader,
     oasFileLoader: OASFileLoader,
     http: HttpClientV2,
     env: Environment
@@ -114,10 +111,6 @@ class MicroserviceConnector @Inject() (
     } else {
       apiAndScopes
     }
-  }
-
-  def getRaml(serviceLocation: ServiceLocation, version: String): Try[RAML] = {
-    ramlLoader.load(s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
   }
 
   def getOAS(serviceLocation: ServiceLocation, version: String): Future[OpenAPI] = {

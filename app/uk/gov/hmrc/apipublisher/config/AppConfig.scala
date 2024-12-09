@@ -27,18 +27,7 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
   lazy val appUrl                     = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl               = s"$appUrl/publish"
   lazy val preventAutoDeploy: Boolean = runModeConfiguration.getOptional[Boolean]("features.preventAutoDeploy").getOrElse(false)
-  lazy val ramlLoaderRewrites         = buildRamlLoaderRewrites(runModeConfiguration)
   lazy val publishToken               = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
   lazy val publishingKey              = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 
-  private def buildRamlLoaderRewrites(runModeConfiguration: Configuration): Map[String, String] = {
-
-    val from = runModeConfiguration.getOptional[String]("ramlLoaderUrlRewrite.from")
-      .getOrElse(throw new RuntimeException("ramlLoaderRewrite.from is not configured"))
-
-    val to = runModeConfiguration.getOptional[String]("ramlLoaderUrlRewrite.to")
-      .getOrElse(throw new RuntimeException("ramlLoaderRewrite.to is not configured"))
-
-    Map(from -> to)
-  }
 }

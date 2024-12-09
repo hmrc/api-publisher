@@ -21,10 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import io.swagger.v3.oas.models.OpenAPI
 
-import uk.gov.hmrc.ramltools.domain.Endpoint
-
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 
 object OasVersionDefinitionService {
 

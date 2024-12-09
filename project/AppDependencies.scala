@@ -9,7 +9,6 @@ object AppDependencies {
 
   private val dependencies = Seq(
     "uk.gov.hmrc"         %% "bootstrap-backend-play-30"       % bootstrapVersion,
-    "uk.gov.hmrc"         %% "raml-tools"                      % "1.24.0",
     "uk.gov.hmrc.mongo"   %% "hmrc-mongo-play-30"              % mongoVersion,
     "org.json"             % "json"                            % "20230227",
     "com.damnhandy"        % "handy-uri-templates"             % "2.1.8",

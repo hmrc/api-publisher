@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apipublisher.connectors
+package uk.gov.hmrc.apipublisher.models.oas
 
-import javax.inject.{Inject, Singleton}
+import play.api.libs.json.{Format, Json}
 
-import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
+case class QueryParam(name: String, required: Boolean)
 
-import uk.gov.hmrc.apipublisher.config.AppConfig
+case class Endpoint(
+    uriPattern: String,
+    endpointName: String,
+    method: String,
+    authType: String,
+    throttlingTier: String,
+    scope: Option[String],
+    queryParameters: Option[Seq[QueryParam]]
+  )
 
-@Singleton
-class DocumentationUrlRewriter @Inject() (appContext: AppConfig) extends UrlRewriter {
-  lazy val rewrites = appContext.ramlLoaderRewrites
+object Endpoint {
+
+  implicit val queryParamFormat: Format[QueryParam] = Json.format[QueryParam]
+  implicit val endpointFormat: Format[Endpoint]     = Json.format[Endpoint]
+
 }
-
-@Singleton
-class DocumentationRamlLoader @Inject() (urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)

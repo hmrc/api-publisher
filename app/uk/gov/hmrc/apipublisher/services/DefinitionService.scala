@@ -17,19 +17,19 @@
 package uk.gov.hmrc.apipublisher.services
 
 import javax.inject.Inject
-import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import cats.implicits._
 
+import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.ramltools.domain.Endpoint
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
 import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object DefinitionService {
@@ -41,7 +41,6 @@ object DefinitionService {
 
 class DefinitionService @Inject() (
     microserviceConnector: MicroserviceConnector,
-    ramlVersionDefinitionService: RamlVersionDefinitionService,
     oasVersionDefinitionService: OasVersionDefinitionService
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
@@ -86,9 +85,6 @@ class DefinitionService @Inject() (
   private def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[(List[Endpoint], ApiVersionSource)] = {
     lazy val describeService: String = s"${serviceLocation.serviceName} - v${version}"
 
-    val ramlVD = ramlVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
-      .orElse(successful(List.empty))
-
     val oasVD: Future[Either[Throwable, List[Endpoint]]] =
       oasVersionDefinitionService.getDetailForVersion(serviceLocation, context, version)
         .map(_.asRight[Throwable])
@@ -96,26 +92,11 @@ class DefinitionService @Inject() (
           case NonFatal(t) => Left(t)
         }
 
-    ramlVD.flatMap { raml =>
-      oasVD.map { oas =>
-        (raml, oas) match {
-          case (Nil, Right(Nil))                                                                   =>
-            throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
-          case (Nil, Left(t))                                                                      =>
-            throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName} due to failure in OAS Parsing - [${t.getMessage()}]")
-          case (ramlEndpoints, Right(Nil))                                                         =>
-            logger.info(s"${describeService} : Using RAML to publish")
-            (ramlEndpoints, ApiVersionSource.RAML)
-          case (ramlEndpoints, Left(t))                                                            =>
-            logger.info(s"${describeService} : Using RAML to publish due to failure in OAS Parsing - [${t.getMessage()}]")
-            (ramlEndpoints, ApiVersionSource.RAML)
-          case (Nil, Right(oasEndpoints))                                                          => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, ApiVersionSource.OAS)
-          case (ramlEndpoints, Right(oasEndpoints)) if (ramlEndpoints.toSet == oasEndpoints.toSet) =>
-            logger.info(s"${describeService} : Both RAML and OAS match for publishing")
-            (oasEndpoints, ApiVersionSource.OAS)
-          case (ramlEndpoints, Right(oasEndpoints))                                                =>
-            logger.warn(s"${describeService} : Mismatched RAML <$ramlEndpoints>  OAS <$oasEndpoints>"); (ramlEndpoints, ApiVersionSource.RAML)
-        }
+    oasVD.map { oas =>
+      oas match {
+        case Right(Nil)          => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName}")
+        case Left(t)             => throw new IllegalStateException(s"No endpoints defined for $version of ${serviceLocation.serviceName} due to failure in OAS Parsing - [${t.getMessage()}]")
+        case Right(oasEndpoints) => logger.info(s"${describeService} : Using OAS to publish"); (oasEndpoints, ApiVersionSource.OAS)
       }
     }
   }
