@@ -24,10 +24,10 @@ import utils.AsyncHmrcSpec
 
 import play.api.libs.json._
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.ramltools.domain.Endpoint
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val aServiceLocation           = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))

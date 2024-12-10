@@ -41,55 +41,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   Feature("Publish API on notification") {
 
-    Scenario("Publishing successful for an API with a valid definition and RAML") {
-
-      Given("A microservice is running with an API Definition without scopes")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.raml")).willReturn(aResponse().withBody(raml_1_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.raml")).willReturn(aResponse().withBody(raml_2_0)))
-      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.raml")).willReturn(aResponse().withBody(raml_3_0)))
-
-      And("api definition is running")
-      // TOOD - restore when api definition no longer rejects updated api
-      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
-
-      And("api subscription fields is running")
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
-      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
-
-      When("publisher is triggered")
-      val publishResponse = http(
-        basicRequest
-          .post(uri"$serverUrl/publish")
-          .header(CONTENT_TYPE, JSON)
-          .header(AUTHORIZATION, encodedPublishingKey)
-          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
-      )
-
-      Then("The field definitions are validated")
-      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The definition is published to the API Definition microservice")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
-
-      Then("The field definitions are published to the API Subscription Fields microservice")
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
-
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
-
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
-    }
-
     Scenario("Publishing successful for an API with a valid definition and OAS") {
 
       Given("A microservice is running with an API Definition without scopes")
@@ -947,52 +898,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       |  "serviceUrl": "http://127.0.0.1:21112",
       |  "serviceVersions": [ "1.0", "2.0", "3.0" ]
       |}
-    """.stripMargin
-
-  val raml_1_0 =
-    """
-      |#%RAML 1.0
-      |---
-      |title: Hello World
-      |version: 1.0
-      |
-      |/hello:
-      |  get:
-      |    displayName: "Say Hello"
-    """.stripMargin
-
-  val raml_2_0 =
-    """
-      |#%RAML 1.0
-      |---
-      |title: Hello World
-      |version: 2.0
-      |
-      |annotationTypes:
-      |  scope:
-      |
-      |/hello:
-      |  get:
-      |    displayName: "Say Hello"
-      |    (scope): "read:hello"
-      |
-    """.stripMargin
-
-  val raml_3_0 =
-    """
-      |#%RAML 1.0
-      |---
-      |title: Hello World
-      |version: 3.0
-      |
-      |annotationTypes:
-      |  scope:
-      |
-      |/hello:
-      |  get:
-      |    displayName: "Say Hello"
-      |    (scope): "read:hello"
-      |
     """.stripMargin
 
   val oas_1_0 =
