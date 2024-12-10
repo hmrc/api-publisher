@@ -49,7 +49,15 @@ class PublisherService @Inject() (
       for {
         _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation)
         _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
+        _ <- deleteRetiredSubscriptions()
       } yield apiDetailsWithServiceLocation
+    }
+
+    def deleteRetiredSubscriptions() = {
+      Future.sequence(
+        apiAndScopes.retiredVersionNumbers.toList
+          .map { version => tpaConnector.deleteSubscriptions(apiAndScopes.apiContext, version) }
+      )
     }
 
     def publishFieldDefinitions(fieldDefinitions: Seq[ApiFieldDefinitions]): Future[Unit] = {
@@ -80,43 +88,18 @@ class PublisherService @Inject() (
       }
     }
 
-    def validateStatusAndSubscriptions()(implicit hc: HeaderCarrier) = {
-      def hasAnySubscribers(apiContext: String, version: String): Future[(String, Boolean)] = {
-        tpaConnector.fetchApplications(apiAndScopes.apiContext, version).map(as => (version, as.nonEmpty))
-      }
-
-      val vs: Future[List[String]] = Future.sequence(
-        apiAndScopes.retiredVersionNumbers.toList
-          .map { version => hasAnySubscribers(apiAndScopes.apiContext, version) }
-      )
-        .map {
-          _.filter(x => x._2).map(_._1)
-        }
-
-      vs.map { versions =>
-        versions.map { v =>
-          JsString(s"Version $v cannot be retired as it still has active subscriptions. Talk to SDST (SDSTeam@hmrc.gov.uk).")
-        } match {
-          case Nil    => None
-          case h :: t => Some(JsArray(h :: t))
-        }
-      }
-    }
-
     def checkForErrors(): Future[Option[JsObject]] = {
       for {
         apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-        statusErrors    <- validateStatusAndSubscriptions()
         fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
       } yield {
-        if (apiErrors.isEmpty && fieldDefnErrors.isEmpty && statusErrors.isEmpty) {
+        if (apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
           None
         } else {
           Some(
             JsObject(
               Seq.empty[(String, JsValue)] ++
                 apiErrors.map("apiDefinitionErrors" -> _) ++
-                statusErrors.map("statusErrors" -> _) ++
                 fieldDefnErrors.map("fieldDefinitionErrors" -> _)
             )
           )
