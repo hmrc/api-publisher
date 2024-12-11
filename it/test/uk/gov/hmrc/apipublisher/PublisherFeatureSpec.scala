@@ -434,9 +434,9 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
   val apiSubscriptionFieldsUrlVersion_1_0 = s"/definition/context/$urlEncodedApiContext/version/1.0"
   val apiSubscriptionFieldsUrlVersion_2_0 = s"/definition/context/$urlEncodedApiContext/version/2.0"
   val apiSubscriptionFieldsUrlVersion_3_0 = s"/definition/context/$urlEncodedApiContext/version/3.0"
-  val tpaVersion_1_0                      = s"/apis/$urlEncodedApiContext/versions/1.0/subscribers"
-  val tpaVersion_2_0                      = s"/apis/$urlEncodedApiContext/versions/2.0/subscribers"
-  val tpaVersion_3_0                      = s"/apis/$urlEncodedApiContext/versions/3.0/subscribers"
+  val tpaVersion_1_0                      = s"/apis/$apiContext/versions/1.0/subscribers"
+  val tpaVersion_2_0                      = s"/apis/$apiContext/versions/2.0/subscribers"
+  val tpaVersion_3_0                      = s"/apis/$apiContext/versions/3.0/subscribers"
 
   val definitionJsonWithInvalidContext =
     s"""

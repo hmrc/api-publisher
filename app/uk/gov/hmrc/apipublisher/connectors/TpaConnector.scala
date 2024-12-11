@@ -37,7 +37,8 @@ class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(i
   protected val serviceBaseUrl: String = config.serviceBaseUrl
 
   def deleteSubscriptions(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[Unit] = {
-    http.delete(url"$serviceBaseUrl/apis/$apiContext/versions/$versionNbr/subscribers")
+    val url = s"$serviceBaseUrl/apis/$apiContext/versions/$versionNbr/subscribers"
+    http.delete(url"$url")
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
       .map {
         case Right(_)                                                         => (())
