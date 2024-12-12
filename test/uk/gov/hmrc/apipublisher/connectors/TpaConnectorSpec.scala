@@ -50,7 +50,7 @@ class TpaConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOn
 
     val connector = new TpaConnector(tpaConfig, app.injector.instanceOf[HttpClientV2])
 
-    val apiContext        = "hello"
+    val apiContext        = "test/hello"
     val apiVersion        = "1.0"
     val url               = s"/apis/$apiContext/versions/$apiVersion/subscribers"
     val errorResponseBody = """{"code":"INTERNAL_ERROR","message":"Something is wrong"}"""
