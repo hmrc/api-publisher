@@ -32,7 +32,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
-import play.api.libs.json.{JsArray, JsObject, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
@@ -52,8 +52,8 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
-  val apiAndScopeDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
-  val apiAndScopeDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
+  val producerApiDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
+  val producerApiDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
 
   val invalidContextInDefinition           = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
   val invalidDefinitionWithScopeInEndpoint = handleGetFileAndClose("/input/api-definition-with-endpoints-and-scopes-defined.json")
@@ -62,8 +62,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val api                         = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
   val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
-
-  val scopes = parse(getClass.getResourceAsStream("/input/scopes.json")).as[JsArray]
 
   trait Setup {
     WireMock.reset()
@@ -122,48 +120,48 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   "getAPIDefinition" should {
     "Return the api definition" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(api)
+      await(connector.getProducerApiDefinition(testService)).value shouldBe ProducerApiDefinition(api)
     }
 
     "Accept api definition for private API without whitelisted application IDs" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinitionWithoutWhitelisting)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinitionWithoutWhitelisting)))
 
-      await(connector.getAPIAndScopes(testService)).value shouldBe ApiAndScopes(apiWithoutWhitelistedAppIDs)
+      await(connector.getProducerApiDefinition(testService)).value shouldBe ProducerApiDefinition(apiWithoutWhitelistedAppIDs)
     }
 
     "Default categories to OTHER when API is not in categories map" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(apiAndScopeDefinition)))
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value.categories should contain only OTHER
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only OTHER
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value.categories should contain only CUSTOMS
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only CUSTOMS
     }
 
     "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-without-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only EXAMPLE
     }
 
     "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-empty-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getAPIAndScopes(testService)).value.categories should contain only EXAMPLE
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only EXAMPLE
     }
 
     "Return DefinitionFileNoBodyReturned if the API endpoint returns 204" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NO_CONTENT)))
 
-      await(connector.getAPIAndScopes(testService)) match {
+      await(connector.getProducerApiDefinition(testService)) match {
         case Left(DefinitionFileNoBodyReturned(_)) => succeed
         case _                                     => fail()
       }
@@ -173,7 +171,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileNotFound if the API endpoint returns 404" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(NOT_FOUND)))
 
-      val result = await(connector.getAPIAndScopes(testService)).left.value
+      val result = await(connector.getProducerApiDefinition(testService)).left.value
       result shouldBe DefinitionFileNotFound(
         ServiceLocation("test.example.com", "http://127.0.0.1:21112")
       )
@@ -182,7 +180,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileFailedSchemaValidation if context in API definition is invalid" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidContextInDefinition)))
 
-      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
         Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
@@ -191,7 +189,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileFailedSchemaValidation if the API definition has scope in endpoint" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopeInEndpoint)))
 
-      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
         Json.parse("""{"schemaLocation":"#/properties/api","pointerToViolation":"#/api","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/access","pointerToViolation":"#/api/versions/0/access","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [whitelistApplicationIds] is not permitted"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [test] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
@@ -200,7 +198,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileFailedSchemaValidation if the API definition has empty scopes" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithEmptyScopes)))
 
-      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
         Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
@@ -209,7 +207,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "return DefinitionFileFailedSchemaValidation if the API definition has scopes" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopes)))
 
-      val result         = await(connector.getAPIAndScopes(testService)).left.value
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
         Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
@@ -218,7 +216,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Not fail if the API definition is invalid but it's configured to not do validation" in new SetupWithNoApiDefinitionValidation {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidContextInDefinition)))
 
-      val result: Either[PublishError, ApiAndScopes] = await(connector.getAPIAndScopes(testService))
+      val result: Either[PublishError, ProducerApiDefinition] = await(connector.getProducerApiDefinition(testService))
 
       result.isRight shouldBe true
     }
@@ -236,7 +234,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withStatus(BAD_GATEWAY).withBody(badGatewayResponse)))
 
       val badGatewayException = intercept[UpstreamErrorResponse] {
-        await(connector.getAPIAndScopes(testService))
+        await(connector.getProducerApiDefinition(testService))
       }
 
       badGatewayException.statusCode shouldBe BAD_GATEWAY

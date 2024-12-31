@@ -43,8 +43,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
     Scenario("Publishing successful for an API with a valid definition and OAS") {
 
-      Given("A microservice is running with an API Definition without scopes")
-      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithoutScopes)))
+      Given("A microservice is running with an API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
@@ -92,7 +92,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
 
     Scenario("Publishing successful for an API with a RETIRED version") {
 
-      Given("A microservice is running with an API Definition without scopes")
+      Given("A microservice is running with an API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithRetiredVersion)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
@@ -698,7 +698,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |}
     """.stripMargin
 
-  val definitionJsonWithoutScopes =
+  val definitionJson =
     s"""
        |{
        |  "api": {
@@ -824,71 +824,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       |    }
       |  ]
       |}
-    """.stripMargin
-
-  val api =
-    s"""
-       |{
-       |  "serviceName" : "test.example.com",
-       |  "serviceBaseUrl" : "http://127.0.0.1:21112",
-       |  "name" : "Test",
-       |  "description" : "Test API",
-       |  "context" : "$apiContext",
-       |  "versions" : [
-       |    {
-       |      "version" : "1.0",
-       |      "status" : "PUBLISHED",
-       |        "endpoints": [
-       |          {
-       |            "uriPattern": "/hello",
-       |            "endpointName":"Say Hello",
-       |            "method": "GET",
-       |            "authType": "NONE",
-       |            "throttlingTier": "UNLIMITED"
-       |          }
-       |        ]
-       |    },
-       |    {
-       |      "version" : "2.0",
-       |      "status" : "PUBLISHED",
-       |        "endpoints": [
-       |          {
-       |            "uriPattern": "/hello",
-       |            "endpointName":"Say Hello",
-       |            "method": "GET",
-       |            "authType": "NONE",
-       |            "throttlingTier": "UNLIMITED",
-       |            "scope": "read:hello"
-       |          }
-       |        ]
-       |    },
-       |    {
-       |      "version" : "3.0",
-       |      "status" : "PUBLISHED",
-       |        "endpoints": [
-       |          {
-       |            "uriPattern": "/hello",
-       |            "endpointName":"Say Hello",
-       |            "method": "GET",
-       |            "authType": "NONE",
-       |            "throttlingTier": "UNLIMITED",
-       |            "scope": "read:hello"
-       |          }
-       |        ]
-       |    }
-       |  ]
-       |}
-    """.stripMargin
-
-  val scopes =
-    """
-      |[
-      |    {
-      |      "key": "read:hello",
-      |      "name": "Say Hello",
-      |      "description": "Ability to Say Hello"
-      |    }
-      |]
     """.stripMargin
 
   val apiDocumentationRegistration =

@@ -36,27 +36,27 @@ class PublisherService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  def publishAPIDefinition(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
+  def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
 
     val apiDetailsWithServiceLocation: JsObject = {
-      apiAndScopes.apiWithoutFieldDefinitions ++ Json.obj(
+      producerApiDefinition.apiWithoutFieldDefinitions ++ Json.obj(
         "serviceBaseUrl" -> serviceLocation.serviceUrl,
         "serviceName"    -> serviceLocation.serviceName
       )
     }
 
-    def publish(apiAndScopes: ApiAndScopes): Future[JsObject] = {
+    def publish(producerApiDefinition: ProducerApiDefinition): Future[JsObject] = {
       for {
         _ <- apiDefinitionConnector.publishAPI(apiDetailsWithServiceLocation)
-        _ <- publishFieldDefinitions(apiAndScopes.fieldDefinitions)
+        _ <- publishFieldDefinitions(producerApiDefinition.fieldDefinitions)
         _ <- deleteRetiredSubscriptions()
       } yield apiDetailsWithServiceLocation
     }
 
     def deleteRetiredSubscriptions() = {
       Future.sequence(
-        apiAndScopes.retiredVersionNumbers.toList
-          .map { version => tpaConnector.deleteSubscriptions(apiAndScopes.apiContext, version) }
+        producerApiDefinition.retiredVersionNumbers.toList
+          .map { version => tpaConnector.deleteSubscriptions(producerApiDefinition.apiContext, version) }
       )
     }
 
@@ -68,21 +68,21 @@ class PublisherService @Inject() (
       }
     }
 
-    def checkApprovedAndPublish(apiAndScopes: ApiAndScopes): Future[PublicationResult] = {
+    def checkApprovedAndPublish(producerApiDefinition: ProducerApiDefinition): Future[PublicationResult] = {
       for {
-        isApproved <- checkApproval(serviceLocation, apiAndScopes.apiName, apiAndScopes.description)
-        api        <- if (isApproved) publish(apiAndScopes) else successful(apiDetailsWithServiceLocation)
+        isApproved <- checkApproval(serviceLocation, producerApiDefinition.apiName, producerApiDefinition.description)
+        api        <- if (isApproved) publish(producerApiDefinition) else successful(apiDetailsWithServiceLocation)
       } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 
-    checkApprovedAndPublish(apiAndScopes)
+    checkApprovedAndPublish(producerApiDefinition)
 
   }
 
-  def validation(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    def conditionalValidateApiDefinition(apiAndScopes: ApiAndScopes, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
+  def validation(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    def conditionalValidateApiDefinition(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
       if (validateApiDefinition) {
-        apiDefinitionConnector.validateAPIDefinition(apiAndScopes.apiWithoutFieldDefinitions)
+        apiDefinitionConnector.validateAPIDefinition(producerApiDefinition.apiWithoutFieldDefinitions)
       } else {
         successful(None)
       }
@@ -90,8 +90,8 @@ class PublisherService @Inject() (
 
     def checkForErrors(): Future[Option[JsObject]] = {
       for {
-        apiErrors       <- conditionalValidateApiDefinition(apiAndScopes, validateApiDefinition)
-        fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(apiAndScopes.fieldDefinitions.flatMap(_.fieldDefinitions))
+        apiErrors       <- conditionalValidateApiDefinition(producerApiDefinition, validateApiDefinition)
+        fieldDefnErrors <- apiSubscriptionFieldsConnector.validateFieldDefinitions(producerApiDefinition.fieldDefinitions.flatMap(_.fieldDefinitions))
       } yield {
         if (apiErrors.isEmpty && fieldDefnErrors.isEmpty) {
           None

@@ -74,7 +74,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
           .post(uri"$serverUrl/validate")
           .header(CONTENT_TYPE, JSON)
           .header(AUTHORIZATION, encodedPublishingKey)
-          .body(apiAndScope)
+          .body(producerApiDefinitionWithScope)
       )
 
       Then("the controller should return 400 with the API Definition error message")
@@ -98,16 +98,9 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
     server.stop()
   }
 
-  val apiAndScope: String =
+  val producerApiDefinitionWithScope: String =
     """
       |{
-      |  "scopes": [
-      |    {
-      |      "key": "read:hello",
-      |      "name": "Say Hello",
-      |      "description": "Ability to Say Hello"
-      |    }
-      |  ],
       |  "api": {
       |    "name": "Test",
       |    "description": "Test API",

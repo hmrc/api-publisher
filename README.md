@@ -1,7 +1,7 @@
 # API Publisher
 When an API is published through the publish-api Jenkins job,
-the API Publisher retrieves its API definition and OAS or RAML specification, 
-then publish its definition to the API Definition service and its scope to the API Scope service.
+the API Publisher retrieves its API definition and OAS specification, 
+then publishes its definition to the API Definition service.
 
 ## What uses this service?
 * The publish-api Jenkins job
@@ -9,10 +9,9 @@ then publish its definition to the API Definition service and its scope to the A
 
 ## What does this service use?
 * [API Definition](https://github.com/HMRC/api-definition)
-* [API Scope](https://github.com/HMRC/api-scope)
 * [API Subscription Fields](https://github.com/hmrc/api-subscription-fields)
 * Metrics/Grafana/Kibana
-* Additionally this calls every configured API microservice (asks for API definition and RAML files)
+* Additionally this calls every configured API microservice (asks for API definition and OAS files)
 
 ## Endpoints
 
@@ -32,7 +31,7 @@ Jenkins uses this endpoint to notify of a new microservice
 
 ### Responses
 #### 200 OK
-The request was successful and the API Definition and Scopes have been published
+The request was successful and the API Definition has been published
 ##### Response Payload Example
 ```json
 {
@@ -135,14 +134,7 @@ The response will contain information regarding why the request could not be und
         "fieldDefinitions":[]
       }
     ]
-  },
-  "scopes": [
-    {
-      "key":"hello",
-      "name":"Say Hello",
-      "description":"Ability to Say Hello"
-    }
-  ]
+  }
 }
 ```
 
@@ -154,13 +146,6 @@ No response as the request was successful
 {
   "statusCode": 400,
   "message": "Invalid Json: No content to map due to end-of-input\n at [Source: (org.apache.pekko.util.ByteIterator$ByteArrayIterator$$anon$1); line: 1, column: 0]"
-}
-```
-#### 400 Bad Request - Scope Changed Error
-This response is related to the inability to change scopes when publishing.
-```json
-{
-  "scopeChangedErrors": "Updating scopes while publishing is no longer supported. See https://confluence.tools.tax.service.gov.uk/display/TEC/2021/09/07/Changes+to+scopes for more information"
 }
 ```
 #### 400 Bad Request - API Publisher Unknown Error

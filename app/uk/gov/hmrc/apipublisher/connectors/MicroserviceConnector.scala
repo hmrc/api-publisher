@@ -69,7 +69,7 @@ class MicroserviceConnector @Inject() (
     }
   }
 
-  def getAPIAndScopes(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ApiAndScopes]] = {
+  def getProducerApiDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
     import play.api.http.Status.{NOT_FOUND, UNPROCESSABLE_ENTITY}
 
     import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -87,29 +87,29 @@ class MicroserviceConnector @Inject() (
       .map(_.map(defaultCategories))
   }
 
-  private def validateDefinition(definition: JsObject): Either[PublishError, ApiAndScopes] = {
-    val apiAndScopes = ApiAndScopes((definition \ "api").as[JsObject])
+  private def validateDefinition(definition: JsObject): Either[PublishError, ProducerApiDefinition] = {
+    val producerApiDefinition = ProducerApiDefinition((definition \ "api").as[JsObject])
     if (config.validateApiDefinition) {
       val definitionJsonObj = new JSONObject(definition.toString)
       Try(apiDefinitionSchema.validate(definitionJsonObj)) match {
-        case Success(_)                       => Right(apiAndScopes)
+        case Success(_)                       => Right(producerApiDefinition)
         case Failure(ex: ValidationException) =>
           logger.error(s"FAILED_TO_PUBLISH - Validation of API definition failed: ${ex.toJSON.toString(2)}", ex)
           Left(DefinitionFileFailedSchemaValidation(Json.parse(ex.toJSON.toString)))
         case Failure(ex)                      => Left(DefinitionFileFailedSchemaValidation(Json.parse(s"""{"Unexpected exception": "$ex.message"}""")))
       }
     } else {
-      Right(apiAndScopes)
+      Right(producerApiDefinition)
     }
   }
 
-  private def defaultCategories(apiAndScopes: ApiAndScopes): ApiAndScopes = {
-    if (apiAndScopes.categories.isEmpty) {
-      val defaultCategories = categoryMap.getOrElse(apiAndScopes.apiName, Seq(OTHER))
-      val updatedApi        = apiAndScopes.api ++ Json.obj("categories" -> defaultCategories)
-      apiAndScopes.copy(api = updatedApi)
+  private def defaultCategories(producerApiDefinition: ProducerApiDefinition): ProducerApiDefinition = {
+    if (producerApiDefinition.categories.isEmpty) {
+      val defaultCategories = categoryMap.getOrElse(producerApiDefinition.apiName, Seq(OTHER))
+      val updatedApi        = producerApiDefinition.api ++ Json.obj("categories" -> defaultCategories)
+      producerApiDefinition.copy(api = updatedApi)
     } else {
-      apiAndScopes
+      producerApiDefinition
     }
   }
 

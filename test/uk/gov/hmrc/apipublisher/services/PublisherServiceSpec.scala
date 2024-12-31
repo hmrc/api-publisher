@@ -35,11 +35,11 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
   val testServiceLocation: ServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
-  val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
-  val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
+  val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  val producerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(api)
 
-  val apiWithoutFieldDefinitions: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
-  val apiAndScopesWithoutFieldDefinitions: ApiAndScopes = ApiAndScopes(apiWithoutFieldDefinitions)
+  val apiWithoutFieldDefinitions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
+  val producerApiDefinitionWithoutFieldDefinitions: ProducerApiDefinition = ProducerApiDefinition(apiWithoutFieldDefinitions)
 
   val apiContext = "test"
 
@@ -84,15 +84,15 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
     when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(successful(()))
     when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(successful(()))
 
-    val apiWith2RetiredVersions: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
-    val apiAndScopesWith2RetiredVersions: ApiAndScopes = ApiAndScopes(apiWith2RetiredVersions)
+    val apiWith2RetiredVersions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
+    val producerApiDefinitionWith2RetiredVersions: ProducerApiDefinition = ProducerApiDefinition(apiWith2RetiredVersions)
   }
 
   "publishAPIDefinition" should {
 
     "Retrieve the api from the microservice and Publish it to api-definition, api-subscription-fields and api-documentation if publication is allowed" in new Setup {
 
-      await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = true, publisherResponse)
+      await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition)) shouldBe PublicationResult(approved = true, publisherResponse)
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(eqTo(expectedApiFieldDefinitions))(*)
@@ -100,8 +100,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
     "Publish is successful with 1 Retired version" in new Setup {
 
-      val retiredApi: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
-      val retiredApiAndScopes: ApiAndScopes = ApiAndScopes(retiredApi)
+      val retiredApi: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
+      val retiredProducerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(retiredApi)
 
       val retiredPublisherResponse = PublisherResponse(
         name = "Test",
@@ -116,7 +116,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
       when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
 
-      await(publisherService.publishAPIDefinition(testServiceLocation, retiredApiAndScopes)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
+      await(publisherService.publishAPIDefinition(testServiceLocation, retiredProducerApiDefinition)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(*)(*)
@@ -140,7 +140,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
       when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
 
-      await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopesWith2RetiredVersions)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
+      await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinitionWith2RetiredVersions)) shouldBe PublicationResult(
+        approved = true,
+        retiredPublisherResponse
+      )
 
       verify(mockApiDefinitionConnector).publishAPI(*)(*)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
@@ -154,7 +157,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
-        await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopesWith2RetiredVersions))
+        await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinitionWith2RetiredVersions))
       } shouldBe emulatedServiceError
     }
 
@@ -162,14 +165,14 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
       when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(false))
 
-      await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopes)) shouldBe PublicationResult(approved = false, publisherResponse)
+      await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition)) shouldBe PublicationResult(approved = false, publisherResponse)
 
       verifyZeroInteractions(mockApiDefinitionConnector)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
     }
 
     "When publication allowed and api does not have subscription fields, publish API to api-definition and api-documentation only" in new Setup {
-      await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopesWithoutFieldDefinitions)) shouldBe PublicationResult(approved = true, publisherResponse)
+      await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinitionWithoutFieldDefinitions)) shouldBe PublicationResult(approved = true, publisherResponse)
 
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
     }
@@ -179,7 +182,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
-        await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopes))
+        await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition))
       } shouldBe emulatedServiceError
     }
 
@@ -188,7 +191,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
-        await(publisherService.publishAPIDefinition(testServiceLocation, apiAndScopes))
+        await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition))
       } shouldBe emulatedServiceError
     }
   }
@@ -199,7 +202,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      await(publisherService.validation(apiAndScopes, true))
+      await(publisherService.validation(producerApiDefinition, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
@@ -212,7 +215,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
 
-      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+      val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
@@ -226,7 +229,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse("""{"error":"blah"}"""))))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+      val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
@@ -239,10 +242,10 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
       when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
 
-      val api: JsObject              = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
-      val apiAndScopes: ApiAndScopes = ApiAndScopes(api)
+      val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
+      val producerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(api)
 
-      val result: Option[JsValue] = await(publisherService.validation(apiAndScopes, true))
+      val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
       verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
       verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)

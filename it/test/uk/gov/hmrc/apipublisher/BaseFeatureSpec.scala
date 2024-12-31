@@ -44,12 +44,6 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
   val apiProducerServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
   var apiProducerMock: WireMock = _
 
-  val apiScopePort: Int      = sys.env.getOrElse("WIREMOCK", "9690").toInt
-  val apiScopeHost           = "localhost"
-  var apiScopeUrl            = s"http://$apiScopeHost:$apiScopePort"
-  val apiScopeServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiScopePort))
-  var apiScopeMock: WireMock = _
-
   val apiSubscriptionFieldsPort: Int      = sys.env.getOrElse("WIREMOCK", "9650").toInt
   val apiSubscriptionFieldsHost           = "localhost"
   var apiSubscriptionFieldsUrl            = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
@@ -66,9 +60,6 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
     apiSubscriptionFieldsServer.start()
     apiSubscriptionFieldsMock = new WireMock(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
 
-    apiScopeServer.start()
-    apiScopeMock = new WireMock(apiScopeHost, apiScopePort)
-
     apiProducerServer.start()
     apiProducerMock = new WireMock(apiProducerHost, apiProducerPort)
 
@@ -82,7 +73,6 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
 
   override def afterEach(): Unit = {
     apiSubscriptionFieldsServer.stop()
-    apiScopeServer.stop()
     apiProducerServer.stop()
     apiDefinitionServer.stop()
     tpaServer.stop()
