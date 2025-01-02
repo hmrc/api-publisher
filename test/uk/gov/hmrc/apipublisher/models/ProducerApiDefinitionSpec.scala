@@ -22,23 +22,23 @@ import play.api.libs.json._
 
 import uk.gov.hmrc.apipublisher.models
 
-class ApiAndScopesSpec extends AsyncHmrcSpec {
+class ProducerApiDefinitionSpec extends AsyncHmrcSpec {
 
   "API Name should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").apiName shouldEqual "Test"
+    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").apiName shouldEqual "Test"
   }
 
   "API Description should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").description.get shouldEqual "Test API"
+    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").description.get shouldEqual "Test API"
   }
 
   "API version numbers should be extracted from the JSON definition" in {
-    apiAndScope("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain.only("1.0", "2.0", "3.0")
+    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain.only("1.0", "2.0", "3.0")
   }
 
   "Field definitions should be extracted from the JSON definition" in {
-    val apiAndScopes                                          = ApiAndScopes(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject])
-    val apiContext                                            = apiAndScopes.apiContext
+    val producerApiDefinition                                 = ProducerApiDefinition(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject])
+    val apiContext                                            = producerApiDefinition.apiContext
     val expectedApiWithoutFieldDefinitions                    = json("/input/api-with-endpoints.json").as[JsObject]
     val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
       models.ApiFieldDefinitions(apiContext, "1.0", (json("/input/field-definitions_1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]),
@@ -46,11 +46,11 @@ class ApiAndScopesSpec extends AsyncHmrcSpec {
       models.ApiFieldDefinitions(apiContext, "2.1", (json("/input/field-definitions_2.1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]])
     )
 
-    apiAndScopes.fieldDefinitions shouldBe expectedApiFieldDefinitions
-    apiAndScopes.apiWithoutFieldDefinitions shouldBe expectedApiWithoutFieldDefinitions
+    producerApiDefinition.fieldDefinitions shouldBe expectedApiFieldDefinitions
+    producerApiDefinition.apiWithoutFieldDefinitions shouldBe expectedApiWithoutFieldDefinitions
   }
 
-  private def apiAndScope(resource: String) = json(resource).as[ApiAndScopes]
+  private def producerApiDefinition(resource: String) = json(resource).as[ProducerApiDefinition]
 
   private def json(resource: String) = Json.parse(getClass.getResourceAsStream(resource))
 }

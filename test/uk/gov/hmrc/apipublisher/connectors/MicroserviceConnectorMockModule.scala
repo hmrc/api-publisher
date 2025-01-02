@@ -22,7 +22,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.quality.Strictness
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{DefinitionFileNoBodyReturned, ProducerApiDefinition, ServiceLocation}
 
 trait MicroserviceConnectorMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -30,18 +30,18 @@ trait MicroserviceConnectorMockModule {
   trait BaseMicroserviceConnectorMock {
     def aMock: MicroserviceConnector
 
-    object GetAPIAndScopes {
+    object GetProducerApiDefinition {
 
       def findsNone(serviceLocation: ServiceLocation) =
-        when(aMock.getAPIAndScopes(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
+        when(aMock.getProducerApiDefinition(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
 
       def fails = {
         val errorMessage = "something went wrong"
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(failed(new RuntimeException(errorMessage)))
+        when(aMock.getProducerApiDefinition(*)(*)).thenReturn(failed(new RuntimeException(errorMessage)))
       }
 
-      def returns(in: ApiAndScopes) = {
-        when(aMock.getAPIAndScopes(*)(*)).thenReturn(successful(Right(in)))
+      def returns(in: ProducerApiDefinition) = {
+        when(aMock.getProducerApiDefinition(*)(*)).thenReturn(successful(Right(in)))
       }
     }
 

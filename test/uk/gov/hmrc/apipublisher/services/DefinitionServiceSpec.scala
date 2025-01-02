@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
-import uk.gov.hmrc.apipublisher.models.{ApiAndScopes, DefinitionFileNoBodyReturned, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{DefinitionFileNoBodyReturned, ProducerApiDefinition, ServiceLocation}
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 
@@ -62,15 +62,15 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
   }
 
   "getDefinition" should {
-    "handle no api and scopes for service location" in new Setup {
-      MicroserviceConnectorMock.GetAPIAndScopes.findsNone(aServiceLocation)
+    "handle no producer api definition for service location" in new Setup {
+      MicroserviceConnectorMock.GetProducerApiDefinition.findsNone(aServiceLocation)
 
       await(service.getDefinition(aServiceLocation)).left.value shouldBe DefinitionFileNoBodyReturned(aServiceLocation)
     }
 
-    "handle api and scopes with no data" in new Setup {
+    "handle producer api definition with no data" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
+      MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasFor("1.0")
 
@@ -80,9 +80,9 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
         .getMessage shouldBe "No endpoints defined for 1.0 of test"
     }
 
-    "handle api and scopes with bad OAS" in new Setup {
+    "handle producer api definition with bad OAS" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
+      MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasFailure("1.0", new RuntimeException("Boom"))
 
@@ -92,16 +92,16 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
         .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
-    "handle api and scopes with OAS data" in new Setup {
+    "handle producer api definition with OAS data" in new Setup {
       val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
-      MicroserviceConnectorMock.GetAPIAndScopes.returns(ApiAndScopes(api))
+      MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasOnlyFor("1.0", helloEndpoint)
 
       val result = await(service.getDefinition(aServiceLocation))
 
       val expected = json[JsObject]("/expected/api-simple-oas.json")
-      result.value shouldBe ApiAndScopes(expected)
+      result.value shouldBe ProducerApiDefinition(expected)
     }
   }
 }

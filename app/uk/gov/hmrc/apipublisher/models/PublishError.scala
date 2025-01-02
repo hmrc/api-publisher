@@ -29,7 +29,7 @@ case class DefinitionFileNotFound(serviceLocation: ServiceLocation) extends Publ
 }
 
 case class DefinitionFileUnprocessableEntity(serviceLocation: ServiceLocation, validationMessage: String) extends PublishError {
-  val message = s"Unable to read result as an ApiAndScopes for service ${serviceLocation.serviceName}: $validationMessage"
+  val message = s"Unable to read result as a ProducerApiDefinition for service ${serviceLocation.serviceName}: $validationMessage"
 }
 
 import play.api.libs.json._

@@ -55,7 +55,7 @@ object ApiVersionSource {
   }
 }
 
-case class ApiAndScopes(api: JsObject) {
+case class ProducerApiDefinition(api: JsObject) {
 
   private lazy val versions: JsArray = (api \ "versions").as[JsArray]
 
@@ -121,20 +121,14 @@ case class ApiAndScopes(api: JsObject) {
   }
 }
 
-object ApiAndScopes {
-  implicit val formats: Format[ApiAndScopes] = Json.format[ApiAndScopes]
+object ProducerApiDefinition {
+  implicit val formats: Format[ProducerApiDefinition] = Json.format[ProducerApiDefinition]
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])
 
 object OptionalFieldDefinitions {
   implicit val reads: Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
-}
-
-case class Scope(key: String, name: String, description: String)
-
-object Scope {
-  implicit val formats: Format[Scope] = Json.format[Scope]
 }
 
 case class ServiceLocation(serviceName: String, serviceUrl: String, metadata: Option[Map[String, String]] = None)

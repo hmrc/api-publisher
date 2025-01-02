@@ -16,7 +16,8 @@ object AppDependencies {
     "org.typelevel"       %% "cats-core"                       % "2.10.0",
     "com.github.erosb"     % "everit-json-schema"              % "1.14.4",
     "uk.gov.hmrc"         %% "api-platform-application-domain" % appDomainVersion,
-    "io.swagger.parser.v3" % "swagger-parser"                  % "2.1.14"
+    "io.swagger.parser.v3" % "swagger-parser"                  % "2.1.14",
+    "commons-io"           % "commons-io"                      % "2.14.0" // to fix CVE-2024-47554 until swagger-parser can be upgraded above 2.1.14
   )
 
   private val testDependencies = Seq(

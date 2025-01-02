@@ -47,18 +47,18 @@ class DefinitionService @Inject() (
 
   val E = EitherTHelper.make[PublishError]
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ApiAndScopes]] = {
+  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
     (
       for {
-        baseApiAndScopes     <- E.fromEitherF(microserviceConnector.getAPIAndScopes(serviceLocation))
-        detailedApiAndScopes <- E.liftF(addDetailFromSpecification(serviceLocation, baseApiAndScopes))
-      } yield detailedApiAndScopes
+        baseProducerApiDefinition     <- E.fromEitherF(microserviceConnector.getProducerApiDefinition(serviceLocation))
+        detailedProducerApiDefinition <- E.liftF(addDetailFromSpecification(serviceLocation, baseProducerApiDefinition))
+      } yield detailedProducerApiDefinition
     )
       .value
   }
 
-  private def addDetailFromSpecification(serviceLocation: ServiceLocation, apiAndScopes: ApiAndScopes): Future[ApiAndScopes] = {
-    val api      = apiAndScopes.api
+  private def addDetailFromSpecification(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition): Future[ProducerApiDefinition] = {
+    val api      = producerApiDefinition.api
     val context  = (api \ "context").asOpt[String]
     val versions = (api \ "versions").as[List[JsObject]]
 
@@ -78,7 +78,7 @@ class DefinitionService @Inject() (
       )
 
     fDetailedVersions.map { detailsVersions =>
-      apiAndScopes.copy(api = api + ("versions" -> JsArray(detailsVersions)))
+      producerApiDefinition.copy(api = api + ("versions" -> JsArray(detailsVersions)))
     }
   }
 

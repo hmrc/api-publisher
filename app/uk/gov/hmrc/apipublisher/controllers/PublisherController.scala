@@ -113,14 +113,14 @@ class PublisherController @Inject() (
     import cats.implicits._
     val E = EitherTHelper.make[PublishError]
 
-    def validateApi(apiAndScopes: ApiAndScopes): Future[Either[PublishError, ApiAndScopes]] = {
-      publisherService.validation(apiAndScopes, validateApiDefinition = false).map(_.toRight(apiAndScopes).map(GenericValidationFailure(_)).swap)
+    def validateApi(producerApiDefinition: ProducerApiDefinition): Future[Either[PublishError, ProducerApiDefinition]] = {
+      publisherService.validation(producerApiDefinition, validateApiDefinition = false).map(_.toRight(producerApiDefinition).map(GenericValidationFailure(_)).swap)
     }
 
-    def publishApiAndScopes(apiAndScopes: ApiAndScopes): Future[Result] = {
-      publisherService.publishAPIDefinition(serviceLocation, apiAndScopes).map {
+    def publishApi(producerApiDefinition: ProducerApiDefinition): Future[Result] = {
+      publisherService.publishAPIDefinition(serviceLocation, producerApiDefinition).map {
         case PublicationResult(true, publisherResponse)  =>
-          logger.info(s"Successfully published API Definition and Scopes for ${serviceLocation.serviceName}")
+          logger.info(s"Successfully published API Definition for ${serviceLocation.serviceName}")
           Ok(Json.toJson(publisherResponse))
         case PublicationResult(false, publisherResponse) =>
           logger.info(s"Publication awaiting approval for ${serviceLocation.serviceName}")
@@ -130,13 +130,13 @@ class PublisherController @Inject() (
 
     (
       for {
-        apiAndScopes      <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
-        _                 <- E.fromEitherF(validateApi(apiAndScopes))
-        publisherResponse <- E.liftF(publishApiAndScopes(apiAndScopes))
+        producerApiDefinition <- E.fromEitherF(definitionService.getDefinition(serviceLocation))
+        _                     <- E.fromEitherF(validateApi(producerApiDefinition))
+        publisherResponse     <- E.liftF(publishApi(producerApiDefinition))
       } yield publisherResponse
     )
       .leftSemiflatTap { err: PublishError =>
-        logger.error(s"Failed to publish api and scopes due to ${err.message}")
+        logger.error(s"Failed to publish api due to ${err.message}")
         successful(err) // Thrown away
       }
       .leftMap(mapBusinessErrorsToResults)
@@ -147,17 +147,17 @@ class PublisherController @Inject() (
   def validate: Action[JsValue] = Action.async(controllerComponents.parsers.json) { implicit request =>
     (
       for {
-        _            <- ER.fromEither(ensureAuthorised.toRight(()).swap)
-        apiAndScopes <- ER.fromEither(validateRequestPayload[ApiAndScopes])
-        validation   <- ER.fromEitherF(
-                          publisherService.validation(apiAndScopes, validateApiDefinition = true)
-                            .map(_.toRight(NoContent))
-                        )
-                          .swap
-                          .leftMap { jsv =>
-                            logger.error(s"Failed to publish api and scopes due to ${jsv.toString}")
-                            BadRequest(Json.toJson(jsv))
-                          }
+        _                     <- ER.fromEither(ensureAuthorised.toRight(()).swap)
+        producerApiDefinition <- ER.fromEither(validateRequestPayload[ProducerApiDefinition])
+        validation            <- ER.fromEitherF(
+                                   publisherService.validation(producerApiDefinition, validateApiDefinition = true)
+                                     .map(_.toRight(NoContent))
+                                 )
+                                   .swap
+                                   .leftMap { jsv =>
+                                     logger.error(s"Failed to publish api due to ${jsv.toString}")
+                                     BadRequest(Json.toJson(jsv))
+                                   }
       } yield validation
     )
       .merge
