@@ -25,25 +25,24 @@ import uk.gov.hmrc.apipublisher.models
 class ProducerApiDefinitionSpec extends AsyncHmrcSpec {
 
   "API Name should be extracted from the JSON definition" in {
-    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").apiName shouldEqual "Test"
+    producerApiDefinition("/input/valid-api-definition.json").apiName shouldEqual "Test"
   }
 
   "API Description should be extracted from the JSON definition" in {
-    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").description.get shouldEqual "Test API"
+    producerApiDefinition("/input/valid-api-definition.json").description.get shouldEqual "Test API"
   }
 
   "API version numbers should be extracted from the JSON definition" in {
-    producerApiDefinition("/input/api-definition-with-endpoints-and-scopes-defined.json").versionNumbers should contain.only("1.0", "2.0", "3.0")
+    producerApiDefinition("/input/valid-api-definition.json").versionNumbers should contain.only("1.0", "2.0", "3.0")
   }
 
   "Field definitions should be extracted from the JSON definition" in {
     val producerApiDefinition                                 = ProducerApiDefinition(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject])
     val apiContext                                            = producerApiDefinition.apiContext
-    val expectedApiWithoutFieldDefinitions                    = json("/input/api-with-endpoints.json").as[JsObject]
+    val expectedApiWithoutFieldDefinitions                    = json("/input/valid-api.json").as[JsObject]
     val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
       models.ApiFieldDefinitions(apiContext, "1.0", (json("/input/field-definitions_1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-      models.ApiFieldDefinitions(apiContext, "2.0", (json("/input/field-definitions_2.json") \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-      models.ApiFieldDefinitions(apiContext, "2.1", (json("/input/field-definitions_2.1.json") \ "fieldDefinitions").as[Seq[FieldDefinition]])
+      models.ApiFieldDefinitions(apiContext, "2.0", (json("/input/field-definitions_2.json") \ "fieldDefinitions").as[Seq[FieldDefinition]])
     )
 
     producerApiDefinition.fieldDefinitions shouldBe expectedApiFieldDefinitions

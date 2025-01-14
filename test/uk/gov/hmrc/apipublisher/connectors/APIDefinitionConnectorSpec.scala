@@ -41,7 +41,7 @@ class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wi
   val apiDefinitionHost = "localhost"
   val wireMockServer    = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
 
-  val definition = fromURL(getClass.getResource("/input/api-with-endpoints.json")).mkString
+  val definition = fromURL(getClass.getResource("/input/valid-api.json")).mkString
   val api        = Json.parse(definition).as[JsObject]
 
   trait Setup {

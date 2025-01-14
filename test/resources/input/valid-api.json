@@ -9,18 +9,18 @@
       "access" : {
         "type" : "PRIVATE"
       },
-      "status" : "PUBLISHED"
+      "status" : "STABLE"
     },
     {
       "version" : "2.0",
       "access" : {
         "type" : "PUBLIC"
       },
-      "status" : "PUBLISHED"
+      "status" : "STABLE"
     },
     {
       "version" : "3.0",
-      "status" : "PROTOTYPED"
+      "status" : "BETA"
     }
   ]
 }

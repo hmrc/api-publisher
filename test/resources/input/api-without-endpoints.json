@@ -7,21 +7,20 @@
     {
       "version" : "1.0",
       "access" : {
-        "type" : "PRIVATE",
-        "whitelistedApplicationIds" : ["76327c12-17fa-4a51-8a8b-23f7251fae1b","76327c12-17fa-4a51-8a8b-23f7251fae1a"]
+        "type" : "PRIVATE"
       },
-      "status" : "PUBLISHED"
+      "status" : "STABLE"
     },
     {
       "version" : "2.0",
       "access" : {
         "type" : "PUBLIC"
       },
-      "status" : "PUBLISHED"
+      "status" : "STABLE"
     },
     {
       "version" : "3.0",
-      "status" : "PROTOTYPED"
+      "status" : "BETA"
     }
   ]
 }
