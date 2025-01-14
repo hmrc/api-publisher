@@ -35,7 +35,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
   val testServiceLocation: ServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
-  val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   val producerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(api)
 
   val apiWithoutFieldDefinitions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/valid-api.json")).as[JsObject]

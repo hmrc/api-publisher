@@ -37,7 +37,7 @@ class ProducerApiDefinitionSpec extends AsyncHmrcSpec {
   }
 
   "Field definitions should be extracted from the JSON definition" in {
-    val producerApiDefinition                                 = ProducerApiDefinition(api = json("/input/api-with-endpoints-and-fields.json").as[JsObject])
+    val producerApiDefinition                                 = ProducerApiDefinition(api = json("/input/api-with-fields.json").as[JsObject])
     val apiContext                                            = producerApiDefinition.apiContext
     val expectedApiWithoutFieldDefinitions                    = json("/input/valid-api.json").as[JsObject]
     val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(

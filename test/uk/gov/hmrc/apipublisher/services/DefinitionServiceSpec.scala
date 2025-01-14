@@ -69,7 +69,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "handle producer api definition with no data" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api = json[JsObject]("/input/api-with-one-version.json")
       MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasFor("1.0")
@@ -81,7 +81,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "handle producer api definition with bad OAS" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api = json[JsObject]("/input/api-with-one-version.json")
       MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasFailure("1.0", new RuntimeException("Boom"))
@@ -93,7 +93,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     "handle producer api definition with OAS data" in new Setup {
-      val api = json[JsObject]("/input/api_no_endpoints_one_version.json")
+      val api = json[JsObject]("/input/api-with-one-version.json")
       MicroserviceConnectorMock.GetProducerApiDefinition.returns(ProducerApiDefinition(api))
 
       primeOasOnlyFor("1.0", helloEndpoint)

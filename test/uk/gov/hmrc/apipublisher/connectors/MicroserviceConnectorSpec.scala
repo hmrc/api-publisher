@@ -57,10 +57,10 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
   val invalidContextInDefinition           = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
   val invalidDefinitionWithEmptyScopes     = handleGetFileAndClose("/input/api-definition-no-scopes-defined.json")
   val invalidDefinitionWithScopes          = handleGetFileAndClose("/input/invalid-api-definition-with-scopes.json")
-  val invalidEndpointsInDefinition         = handleGetFileAndClose("/input/invalid-endpoints-in-api-definition.json")
-  val invalidWhitelistedAppIdsInDefinition = handleGetFileAndClose("/input/invalid-whitelistedapplicationIds-in-api-definition.json")
-  val invalidPublishedStatusInDefinition   = handleGetFileAndClose("/input/invalid-published-status-in-api-definition.json")
-  val invalidPrototypedStatusInDefinition  = handleGetFileAndClose("/input/invalid-prototyped-status-in-api-definition.json")
+  val invalidEndpointsInDefinition         = handleGetFileAndClose("/input/invalid-api-definition-with-endpoints.json")
+  val invalidWhitelistedAppIdsInDefinition = handleGetFileAndClose("/input/invalid-api-definition-with-whitelistedapplicationIds.json")
+  val invalidPublishedStatusInDefinition   = handleGetFileAndClose("/input/invalid-api-definition-with-published-status.json")
+  val invalidPrototypedStatusInDefinition  = handleGetFileAndClose("/input/invalid-api-definition-with-prototyped-status.json")
 
   val api = parse(getClass.getResourceAsStream("/input/valid-api.json")).as[JsObject]
 
