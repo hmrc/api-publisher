@@ -23,8 +23,7 @@ Details of an API version
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
-| `status` | _string_ | Required | PROTOTYPED<br>PUBLISHED<br>ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. PROTOTYPED and PUBLISHED should not be used. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB) |
-| `endpoints` | _None_ | Optional |  | DEPRECATED |
+| `status` | _string_ | Required | ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB) |
 | `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA |
 | `access` | _object_ | Optional | [access](#access) | Used to indicate whether this API version is public or private. If absent, the API defaults to public. |
 | `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version. |
@@ -34,7 +33,6 @@ Used to indicate whether this API version is public or private. If absent, the A
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
 | `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
-| `whitelistedApplicationIds` | _string[]_ | Optional |  | DEPRECATED. This is no longer used. Please contact SDST to add applications to the allowlist. |
 | `isTrial` | _boolean_ | Optional | False (default) | Whether this API version is a private trial |
 ### `fieldDefinitions`
 Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.

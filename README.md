@@ -116,21 +116,9 @@ The response will contain information regarding why the request could not be und
         "version":"1.0",
         "access":
         {
-          "type":"PRIVATE",
-          "whitelistApplicationIds":[
-            "<An application ID>"
-          ]
+          "type":"PRIVATE"
         },
-        "status":"PUBLISHED",
-        "endpoints":[
-          {
-            "uriPattern":"/endpoint-uri",
-            "endpointName":"An endpoint",
-            "method":"GET",
-            "authType":"NONE",
-            "throttlingTier":"UNLIMITED"
-          }
-        ],
+        "status":"STABLE",
         "fieldDefinitions":[]
       }
     ]

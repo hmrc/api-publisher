@@ -448,7 +448,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED"
+       |        "status": "STABLE"
        |      }
        |    ]
        |  }
@@ -472,7 +472,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -490,11 +490,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |      },
        |      {
        |        "version": "2.0",
-       |        "status": "PUBLISHED"
+       |        "status": "STABLE"
        |      },
        |      {
        |        "version": "3.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrlOnly",
@@ -521,7 +521,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -539,11 +539,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |      },
        |      {
        |        "version": "2.0",
-       |        "status": "PUBLISHED"
+       |        "status": "STABLE"
        |      },
        |      {
        |        "version": "3.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrlOnly",
@@ -568,7 +568,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |      "fieldDefinitions": [
        |          {
        |            "description": "What is your callback URL?",
@@ -605,7 +605,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |      "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -641,7 +641,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |      "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -671,7 +671,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |      "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -708,7 +708,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |    "versions": [
        |      {
        |        "version": "1.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
@@ -726,11 +726,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |      },
        |      {
        |        "version": "2.0",
-       |        "status": "PUBLISHED"
+       |        "status": "STABLE"
        |      },
        |      {
        |        "version": "3.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrlOnly",
@@ -773,11 +773,11 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
        |      },
        |      {
        |        "version": "2.0",
-       |        "status": "PUBLISHED"
+       |        "status": "STABLE"
        |      },
        |      {
        |        "version": "3.0",
-       |        "status": "PUBLISHED",
+       |        "status": "STABLE",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrlOnly",

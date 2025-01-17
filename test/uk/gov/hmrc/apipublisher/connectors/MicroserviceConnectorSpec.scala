@@ -52,16 +52,17 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val testService = ServiceLocation("test.example.com", apiProducerUrl)
 
-  val producerApiDefinition                    = handleGetFileAndClose("/input/api-definition-without-endpoints.json")
-  val producerApiDefinitionWithoutWhitelisting = handleGetFileAndClose("/input/api-definition-without-endpoints-without-whitelistedAppIds.json")
+  val producerApiDefinition = handleGetFileAndClose("/input/valid-api-definition.json")
 
   val invalidContextInDefinition           = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
-  val invalidDefinitionWithScopeInEndpoint = handleGetFileAndClose("/input/api-definition-with-endpoints-and-scopes-defined.json")
-  val invalidDefinitionWithEmptyScopes     = handleGetFileAndClose("/input/api-definition-with-endpoints-no-scopes-defined.json")
+  val invalidDefinitionWithEmptyScopes     = handleGetFileAndClose("/input/api-definition-no-scopes-defined.json")
   val invalidDefinitionWithScopes          = handleGetFileAndClose("/input/invalid-api-definition-with-scopes.json")
+  val invalidEndpointsInDefinition         = handleGetFileAndClose("/input/invalid-api-definition-with-endpoints.json")
+  val invalidWhitelistedAppIdsInDefinition = handleGetFileAndClose("/input/invalid-api-definition-with-whitelistedapplicationIds.json")
+  val invalidPublishedStatusInDefinition   = handleGetFileAndClose("/input/invalid-api-definition-with-published-status.json")
+  val invalidPrototypedStatusInDefinition  = handleGetFileAndClose("/input/invalid-api-definition-with-prototyped-status.json")
 
-  val api                         = parse(getClass.getResourceAsStream("/input/api-without-endpoints.json")).as[JsObject]
-  val apiWithoutWhitelistedAppIDs = parse(getClass.getResourceAsStream("/input/api-without-endpoints-without-whitelistedAppIDs.json")).as[JsObject]
+  val api = parse(getClass.getResourceAsStream("/input/valid-api.json")).as[JsObject]
 
   trait Setup {
     WireMock.reset()
@@ -125,12 +126,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       await(connector.getProducerApiDefinition(testService)).value shouldBe ProducerApiDefinition(api)
     }
 
-    "Accept api definition for private API without whitelisted application IDs" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinitionWithoutWhitelisting)))
-
-      await(connector.getProducerApiDefinition(testService)).value shouldBe ProducerApiDefinition(apiWithoutWhitelistedAppIDs)
-    }
-
     "Default categories to OTHER when API is not in categories map" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinition)))
 
@@ -182,16 +177,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
       val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
-        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
-      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-    }
-
-    "return DefinitionFileFailedSchemaValidation if the API definition has scope in endpoint" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopeInEndpoint)))
-
-      val result         = await(connector.getProducerApiDefinition(testService)).left.value
-      val expectedErrors =
-        Json.parse("""{"schemaLocation":"#/properties/api","pointerToViolation":"#/api","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/access","pointerToViolation":"#/api/versions/0/access","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [whitelistApplicationIds] is not permitted"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"},{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [test] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}],"message":"2 schema violations found"}""")
+        Json.parse("""{"schemaLocation":"#/properties/api/properties/context","pointerToViolation":"#/api/context","causingExceptions":[],"keyword":"pattern","message":"string [t] does not match pattern ^[a-z]+[a-z/\\-]{4,}$"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 
@@ -210,6 +196,42 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       val result         = await(connector.getProducerApiDefinition(testService)).left.value
       val expectedErrors =
         Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has endpoints" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidEndpointsInDefinition)))
+
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"pointerToViolation":"#/api/versions/0","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [endpoints] is not permitted"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has whitelistedApplicationIds" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidWhitelistedAppIdsInDefinition)))
+
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/access","pointerToViolation":"#/api/versions/0/access","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [whitelistedApplicationIds] is not permitted"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has PUBLISHED status" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidPublishedStatusInDefinition)))
+
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/status","pointerToViolation":"#/api/versions/0/status","causingExceptions":[{"pointerToViolation":"#/api/versions/0/status","causingExceptions":[],"keyword":"enum","message":"PUBLISHED is not a valid enum value"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}""")
+      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
+    }
+
+    "return DefinitionFileFailedSchemaValidation if the API definition has PROTOTYPED status" in new Setup {
+      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidPrototypedStatusInDefinition)))
+
+      val result         = await(connector.getProducerApiDefinition(testService)).left.value
+      val expectedErrors =
+        Json.parse("""{"schemaLocation":"#/properties/api/properties/versions/items","pointerToViolation":"#/api/versions/0","causingExceptions":[{"schemaLocation":"#/properties/api/properties/versions/items/properties/status","pointerToViolation":"#/api/versions/0/status","causingExceptions":[{"pointerToViolation":"#/api/versions/0/status","causingExceptions":[],"keyword":"enum","message":"PROTOTYPED is not a valid enum value"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}],"keyword":"allOf","message":"#: only 1 subschema matches out of 2"}""")
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 

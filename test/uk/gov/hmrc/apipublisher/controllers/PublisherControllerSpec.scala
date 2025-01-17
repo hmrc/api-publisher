@@ -50,7 +50,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
   private val sharedSecret = UUID.randomUUID().toString
 
-  private val api                   = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  private val api                   = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   private val producerApiDefinition = ProducerApiDefinition(api)
 
   private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
@@ -202,8 +202,8 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "fail when an UnprocessableEntityException is thrown" in new Setup {
 
-      val errorString = "TESTING! Scope blah has not been defined"
-      val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-with-endpoints-and-scopes-defined.json"))
+      val errorString = "Testing error"
+      val input       = Json.parse(getClass.getResourceAsStream("/input/valid-api-definition.json"))
       when(mockPublisherService.validation(eqTo(input.as[ProducerApiDefinition]), *)(*))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 

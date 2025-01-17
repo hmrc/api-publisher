@@ -72,20 +72,15 @@
                 "pattern": "^[0-9\\.P]+$"
               },
               "status": {
-                "description": "The current lifecycle status. PROTOTYPED and PUBLISHED should not be used. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB)",
+                "description": "The current lifecycle status. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB)",
                 "type": "string",
                 "enum": [
-                  "PROTOTYPED",
-                  "PUBLISHED",
                   "ALPHA",
                   "BETA",
                   "STABLE",
                   "DEPRECATED",
                   "RETIRED"
                 ]
-              },
-              "endpoints": {
-                "description": "DEPRECATED"
               },
               "endpointsEnabled": {
                 "description": "Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA",
@@ -103,13 +98,6 @@
                       "PUBLIC",
                       "PRIVATE"
                     ]
-                  },
-                  "whitelistedApplicationIds": {
-                    "description": "DEPRECATED. This is no longer used. Please contact SDST to add applications to the allowlist.",
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
                   },
                   "isTrial": {
                     "description": "Whether this API version is a private trial",

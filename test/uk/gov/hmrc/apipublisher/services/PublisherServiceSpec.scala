@@ -35,18 +35,17 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
 
   val testServiceLocation: ServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
-  val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints-and-fields.json")).as[JsObject]
+  val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   val producerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(api)
 
-  val apiWithoutFieldDefinitions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-endpoints.json")).as[JsObject]
+  val apiWithoutFieldDefinitions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/valid-api.json")).as[JsObject]
   val producerApiDefinitionWithoutFieldDefinitions: ProducerApiDefinition = ProducerApiDefinition(apiWithoutFieldDefinitions)
 
-  val apiContext = "test"
+  val apiContext = "test/api"
 
   val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
     models.ApiFieldDefinitions(apiContext, "1.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-    models.ApiFieldDefinitions(apiContext, "2.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-    models.ApiFieldDefinitions(apiContext, "2.1", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]])
+    models.ApiFieldDefinitions(apiContext, "2.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]])
   )
 
   val expectedApiDocumentationRegistration: RegistrationRequest = RegistrationRequest("test", "http://example.com", Seq("1.0", "2.0", "3.0"))
@@ -56,12 +55,11 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
   val publisherResponse = PublisherResponse(
     name = "Test",
     serviceName = "test",
-    context = "test",
+    context = "test/api",
     description = "Test API",
     versions = List(
       PublisherApiVersion(version = "1.0", status = STABLE),
       PublisherApiVersion(version = "2.0", status = STABLE),
-      PublisherApiVersion(version = "2.1", status = STABLE),
       PublisherApiVersion(version = "3.0", status = BETA)
     )
   )
