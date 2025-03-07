@@ -27,6 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
+import uk.gov.hmrc.apipublisher.models.ApprovalState.{APPROVED, NEW}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
@@ -44,6 +45,11 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
       APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), Some(false))
     )
+
+    val allServices = Seq(
+      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, state = NEW),
+      APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), state = APPROVED)
+    )
   }
 
   "The ApprovalServiceSpec" should {
@@ -56,6 +62,16 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       result shouldBe unapprovedServices
       verify(mockApiApprovalRepository).fetchUnapprovedServices()
+    }
+
+    "Return a list of all services" in new Setup {
+
+      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(allServices))
+
+      val result = await(underTest.fetchAllServices())
+
+      result shouldBe allServices
+      verify(mockApiApprovalRepository).fetchAllServices()
     }
 
     "Allow publication of previously unknown services when PreventAutoDeploy is disabled" in new Setup {

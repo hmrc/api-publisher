@@ -50,6 +50,7 @@ class PublisherController @Inject() (
   private val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
   private val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
   private val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
+  private val FAILED_TO_FETCH_ALL_SERVICES        = "FAILED_TO_FETCH_ALL_SERVICES"
   private val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
   private val ER = EitherTHelper.make[Result]
@@ -168,6 +169,12 @@ class PublisherController @Inject() (
     approvalService.fetchUnapprovedServices().map {
       result => Ok(Json.toJson(result))
     } recover recovery(FAILED_TO_FETCH_UNAPPROVED_SERVICES)
+  }
+
+  def fetchAllServices(): Action[AnyContent] = Action.async { _ =>
+    approvalService.fetchAllServices().map {
+      result => Ok(Json.toJson(result))
+    } recover recovery(FAILED_TO_FETCH_ALL_SERVICES)
   }
 
   def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async { _ =>

@@ -35,6 +35,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)
 
+  def fetchAllServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchAllServices().map(_.toList)
+
   def createOrUpdateServiceApproval(apiApproval: APIApproval): Future[Boolean] = {
 
     def calculateApiApprovalStatus(existingApiApproval: Option[APIApproval]): Boolean =
