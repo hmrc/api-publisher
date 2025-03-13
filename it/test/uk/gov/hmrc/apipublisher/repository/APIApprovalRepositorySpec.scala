@@ -23,6 +23,7 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import uk.gov.hmrc.apipublisher.models.APIApproval
+import uk.gov.hmrc.apipublisher.models.ApprovalState.{APPROVED, FAILED, NEW, RESUBMITTED}
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
     with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -108,6 +109,35 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval4))
 
       val result = await(repository.fetchUnapprovedServices())
+
+      result.size shouldBe 0
+    }
+  }
+
+  "fetchAll" should {
+
+    "return a list containing all services" in {
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2))
+      await(repository.save(apiApproval3))
+      await(repository.save(apiApproval4))
+
+      val result = await(repository.fetchAllServices())
+
+      result.size shouldBe 4
+      result.contains(apiApproval1) shouldBe true
+      result.contains(apiApproval2) shouldBe true
+      result.contains(apiApproval3) shouldBe true
+      result.contains(apiApproval4) shouldBe true
+    }
+
+    "return an empty list is there are no services" in {
+      val result = await(repository.fetchAllServices())
 
       result.size shouldBe 0
     }

@@ -66,4 +66,9 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     )).toFuture()
       .map(_.toList)
   }
+
+  def fetchAllServices(): Future[Seq[APIApproval]] = {
+    collection.find.toFuture().map(_.toList)
+  }
+
 }

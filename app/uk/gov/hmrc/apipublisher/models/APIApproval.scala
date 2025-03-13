@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apipublisher.models
 
 import java.time.Instant
+import scala.collection.immutable.ListSet
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
@@ -29,11 +30,33 @@ case class APIApproval(
     approved: Option[Boolean] = Some(false),
     createdOn: Option[Instant] = Some(Instant.now()),
     approvedOn: Option[Instant] = None,
-    approvedBy: Option[Actor] = None
+    approvedBy: Option[Actor] = None,
+    state: ApprovalState = ApprovalState.NEW
   ) {
   def isApproved: Boolean = approved.getOrElse(false)
 }
 
 object APIApproval {
-  implicit val apiApprovalFormat: Format[APIApproval] = Json.format[APIApproval]
+  implicit val apiApprovalFormat: Format[APIApproval] = Json.using[Json.WithDefaultValues].format[APIApproval]
+}
+
+sealed trait ApprovalState
+
+object ApprovalState {
+  case object NEW         extends ApprovalState
+  case object FAILED      extends ApprovalState
+  case object APPROVED    extends ApprovalState
+  case object RESUBMITTED extends ApprovalState
+
+  /* The order of the following declarations is important since it defines the ordering of the enumeration.
+   * Be very careful when changing this, code may be relying on certain values being larger/smaller than others. */
+  val values = ListSet(NEW, FAILED, APPROVED, RESUBMITTED)
+
+  def apply(text: String): Option[ApprovalState] = ApprovalState.values.find(_.toString.toUpperCase == text.toUpperCase())
+
+  def unsafeApply(text: String): ApprovalState = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid ApprovalState"))
+
+  import play.api.libs.json.Format
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
+  implicit val format: Format[ApprovalState] = SealedTraitJsonFormatting.createFormatFor[ApprovalState]("ApprovalState", apply)
 }

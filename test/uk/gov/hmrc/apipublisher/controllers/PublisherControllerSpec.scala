@@ -250,6 +250,26 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
   }
 
+  "fetch all services" should {
+
+    "retrieve a list of all services" in new Setup {
+
+      when(mockApprovalService.fetchAllServices()).thenReturn(successful(List(employeeServiceApproval, marriageAllowanceApproval)))
+      val result = underTest.fetchAllServices()(FakeRequest())
+
+      status(result) shouldEqual OK
+      contentAsJson(result) shouldEqual Json.toJson(Seq(employeeServiceApproval, marriageAllowanceApproval))
+    }
+
+    "retrieve an empty list when there are no services" in new Setup {
+      when(mockApprovalService.fetchAllServices()).thenReturn(successful(List.empty))
+      val result = underTest.fetchAllServices()(FakeRequest())
+
+      status(result) shouldEqual OK
+      contentAsJson(result) shouldEqual Json.toJson(Seq.empty[APIApproval])
+    }
+  }
+
   "fetch service summary" should {
 
     "retrieve the summary of a service when of a known service is requested" in new Setup {
