@@ -20,15 +20,20 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import com.mongodb.client.model.ReplaceOptions
-import org.mongodb.scala.model.Filters.{equal, exists, or}
+import org.bson.BsonValue
+import org.mongodb.scala.bson.Document
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters.{equal, exists, in, or}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.APIApproval._
+import uk.gov.hmrc.apipublisher.models.ApprovalState._
+import uk.gov.hmrc.apipublisher.models._
 
 @Singleton
 class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -71,4 +76,41 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find.toFuture().map(_.toList)
   }
 
+  def searchServices(searchCriteria: ServicesSearch): Future[Seq[APIApproval]] = {
+    val statusFilters = convertFilterToStatusQueryClause(searchCriteria.filters)
+    runQuery(statusFilters)
+  }
+
+  private def convertFilterToStatusQueryClause(filters: List[ServicesSearchFilter]): Bson = {
+
+    def statusMatch(states: ApprovalState*): Bson = {
+      if (states.isEmpty) {
+        Document()
+      } else {
+        val bsonStates = states.map(s => Codecs.toBson(s))
+        in("state", bsonStates: _*)
+      }
+    }
+
+    def getFilterState(filter: ServicesSearchFilter): ApprovalState = {
+      filter match {
+        case New         => NEW
+        case Approved    => APPROVED
+        case Failed      => FAILED
+        case Resubmitted => RESUBMITTED
+      }
+    }
+
+    val statusFilters = filters.collect { case sf: ServicesSearchFilter => sf }
+    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+  }
+
+  private def runQuery(statusFilters: Bson) = {
+    collection.aggregate[BsonValue](
+      Seq(
+        filter(statusFilters)
+      )
+    ).map(Codecs.fromBson[APIApproval])
+      .toFuture()
+  }
 }

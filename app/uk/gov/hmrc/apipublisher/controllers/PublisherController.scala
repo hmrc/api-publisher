@@ -21,10 +21,11 @@ import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 import org.everit.json.schema.ValidationException
 
-import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.Json.{JsValueWrapper, toJson}
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -51,6 +52,7 @@ class PublisherController @Inject() (
   private val FAILED_TO_VALIDATE                  = "FAILED_TO_VALIDATE"
   private val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
   private val FAILED_TO_FETCH_ALL_SERVICES        = "FAILED_TO_FETCH_ALL_SERVICES"
+  private val FAILED_TO_SEARCH_SERVICES           = "FAILED_TO_SEARCH_SERVICES"
   private val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
 
   private val ER = EitherTHelper.make[Result]
@@ -175,6 +177,13 @@ class PublisherController @Inject() (
     approvalService.fetchAllServices().map {
       result => Ok(Json.toJson(result))
     } recover recovery(FAILED_TO_FETCH_ALL_SERVICES)
+  }
+
+  def searchServices(): Action[AnyContent] = Action.async { request =>
+    Try(ServicesSearch.fromQueryString(request.queryString)) match {
+      case Success(search) => approvalService.searchServices(search).map(apis => Ok(toJson(apis))) recover recovery(FAILED_TO_SEARCH_SERVICES)
+      case Failure(e)      => successful(BadRequest(error(ErrorCode.BAD_QUERY_PARAMETER, e.getMessage)))
+    }
   }
 
   def fetchServiceSummary(serviceName: String): Action[AnyContent] = Action.async { _ =>

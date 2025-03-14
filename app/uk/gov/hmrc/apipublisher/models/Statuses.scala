@@ -26,6 +26,7 @@ object ErrorCode extends Enumeration {
   val UNEXPECTED_ERROR        = Value("API_UNEXPECTED_ERROR")
   val UNKNOWN_ERROR           = Value("API_PUBLISHER_UNKNOWN_ERROR")
   val UNAUTHORIZED            = Value("UNAUTHORIZED")
+  val BAD_QUERY_PARAMETER     = Value("BAD_QUERY_PARAMETER")
 }
 
 sealed trait ScopesDefinedResult

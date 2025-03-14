@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -36,6 +36,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)
 
   def fetchAllServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchAllServices().map(_.toList)
+
+  def searchServices(searchCriteria: ServicesSearch): Future[List[APIApproval]] = apiApprovalRepository.searchServices(searchCriteria).map(_.toList)
 
   def createOrUpdateServiceApproval(apiApproval: APIApproval): Future[Boolean] = {
 
