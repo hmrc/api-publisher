@@ -22,8 +22,8 @@ import utils.AsyncHmrcSpec
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import uk.gov.hmrc.apipublisher.models.APIApproval
 import uk.gov.hmrc.apipublisher.models.ApprovalState.{APPROVED, FAILED, NEW, RESUBMITTED}
+import uk.gov.hmrc.apipublisher.models._
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
     with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -143,4 +143,75 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     }
   }
 
+  "searchServices" should {
+
+    "return expected result of 1 for approved status search" in {
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2))
+      await(repository.save(apiApproval3))
+      await(repository.save(apiApproval4))
+
+      val filters        = List(Approved)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.size shouldBe 1
+      result.contains(apiApproval3) shouldBe true
+    }
+
+    "return expected result of 2 for approved and failed status search" in {
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2))
+      await(repository.save(apiApproval3))
+      await(repository.save(apiApproval4))
+
+      val filters        = List(Approved, Failed)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.size shouldBe 2
+      result.contains(apiApproval2) shouldBe true
+      result.contains(apiApproval3) shouldBe true
+    }
+
+    "return expected result of 4 for all statuses search" in {
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2))
+      await(repository.save(apiApproval3))
+      await(repository.save(apiApproval4))
+
+      val filters        = List(New, Approved, Failed, Resubmitted)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.size shouldBe 4
+      result.contains(apiApproval1) shouldBe true
+      result.contains(apiApproval2) shouldBe true
+      result.contains(apiApproval3) shouldBe true
+      result.contains(apiApproval4) shouldBe true
+    }
+
+    "return an empty list is there are no services" in {
+      val filters        = List(Approved)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.size shouldBe 0
+    }
+  }
 }
