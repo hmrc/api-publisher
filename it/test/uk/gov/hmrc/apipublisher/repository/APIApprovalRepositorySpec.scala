@@ -22,7 +22,7 @@ import utils.AsyncHmrcSpec
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import uk.gov.hmrc.apipublisher.models.ApprovalState.{APPROVED, FAILED, NEW, RESUBMITTED}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models._
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
@@ -117,10 +117,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
   "fetchAll" should {
 
     "return a list containing all services" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), status = RESUBMITTED)
 
       await(repository.save(apiApproval1))
       await(repository.save(apiApproval2))
@@ -146,10 +146,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
   "searchServices" should {
 
     "return expected result of 1 for approved status search" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), status = RESUBMITTED)
 
       await(repository.save(apiApproval1))
       await(repository.save(apiApproval2))
@@ -165,10 +165,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     }
 
     "return expected result of 2 for approved and failed status search" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), status = RESUBMITTED)
 
       await(repository.save(apiApproval1))
       await(repository.save(apiApproval2))
@@ -185,10 +185,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     }
 
     "return expected result of 4 for all statuses search" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), state = NEW)
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), state = FAILED)
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), state = APPROVED)
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), state = RESUBMITTED)
+      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = NEW)
+      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = FAILED)
+      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = APPROVED)
+      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), status = RESUBMITTED)
 
       await(repository.save(apiApproval1))
       await(repository.save(apiApproval2))

@@ -32,7 +32,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apipublisher.models.APIApproval._
-import uk.gov.hmrc.apipublisher.models.ApprovalState._
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus._
 import uk.gov.hmrc.apipublisher.models._
 
 @Singleton
@@ -83,16 +83,16 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def convertFilterToStatusQueryClause(filters: List[ServicesSearchFilter]): Bson = {
 
-    def statusMatch(states: ApprovalState*): Bson = {
+    def statusMatch(states: ApprovalStatus*): Bson = {
       if (states.isEmpty) {
         Document()
       } else {
         val bsonStates = states.map(s => Codecs.toBson(s))
-        in("state", bsonStates: _*)
+        in("status", bsonStates: _*)
       }
     }
 
-    def getFilterState(filter: ServicesSearchFilter): ApprovalState = {
+    def getFilterState(filter: ServicesSearchFilter): ApprovalStatus = {
       filter match {
         case New         => NEW
         case Approved    => APPROVED
