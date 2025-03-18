@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalState.{APPROVED, NEW}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, NEW}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, Approved, New, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
@@ -47,8 +47,8 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     )
 
     val allServices = Seq(
-      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, state = NEW),
-      APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), state = APPROVED)
+      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, status = NEW),
+      APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), status = APPROVED)
     )
   }
 

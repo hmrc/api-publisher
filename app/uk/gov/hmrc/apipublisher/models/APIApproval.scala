@@ -31,7 +31,7 @@ case class APIApproval(
     createdOn: Option[Instant] = Some(Instant.now()),
     approvedOn: Option[Instant] = None,
     approvedBy: Option[Actor] = None,
-    state: ApprovalState = ApprovalState.NEW
+    status: ApprovalStatus = ApprovalStatus.NEW
   ) {
   def isApproved: Boolean = approved.getOrElse(false)
 }
@@ -40,23 +40,23 @@ object APIApproval {
   implicit val apiApprovalFormat: Format[APIApproval] = Json.using[Json.WithDefaultValues].format[APIApproval]
 }
 
-sealed trait ApprovalState
+sealed trait ApprovalStatus
 
-object ApprovalState {
-  case object NEW         extends ApprovalState
-  case object FAILED      extends ApprovalState
-  case object APPROVED    extends ApprovalState
-  case object RESUBMITTED extends ApprovalState
+object ApprovalStatus {
+  case object NEW         extends ApprovalStatus
+  case object FAILED      extends ApprovalStatus
+  case object APPROVED    extends ApprovalStatus
+  case object RESUBMITTED extends ApprovalStatus
 
   /* The order of the following declarations is important since it defines the ordering of the enumeration.
    * Be very careful when changing this, code may be relying on certain values being larger/smaller than others. */
   val values = ListSet(NEW, FAILED, APPROVED, RESUBMITTED)
 
-  def apply(text: String): Option[ApprovalState] = ApprovalState.values.find(_.toString.toUpperCase == text.toUpperCase())
+  def apply(text: String): Option[ApprovalStatus] = ApprovalStatus.values.find(_.toString.toUpperCase == text.toUpperCase())
 
-  def unsafeApply(text: String): ApprovalState = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid ApprovalState"))
+  def unsafeApply(text: String): ApprovalStatus = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid ApprovalStatus"))
 
   import play.api.libs.json.Format
   import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
-  implicit val format: Format[ApprovalState] = SealedTraitJsonFormatting.createFormatFor[ApprovalState]("ApprovalState", apply)
+  implicit val format: Format[ApprovalStatus] = SealedTraitJsonFormatting.createFormatFor[ApprovalStatus]("ApprovalStatus", apply)
 }
