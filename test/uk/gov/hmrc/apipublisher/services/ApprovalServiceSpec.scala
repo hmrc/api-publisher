@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, NEW}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, Approved, New, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
@@ -180,7 +180,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiApproval                   = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
-        apiApproval.copy(approved = Some(true), createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(gatekeeperUser))
+        apiApproval.copy(approved = Some(true), status = APPROVED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(gatekeeperUser))
 
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
       when(mockApiApprovalRepository.save(expectedApproval)).thenReturn(successful(expectedApproval))
@@ -196,6 +196,29 @@ APIApproval(testService,http://localhost/myservice,testServiceName,Some(Test Ser
       when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
       val ex = intercept[UnknownApiServiceException] {
         await(underTest.approveService("testService", gatekeeperUser))
+      }
+      ex.getMessage.contains("testService") shouldBe true
+      verify(mockApiApprovalRepository).fetch("testService")
+    }
+
+    "Allow an existing Service to be declined" in new Setup {
+      val apiApproval                   = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
+      val expectedApproval: APIApproval =
+        apiApproval.copy(approved = Some(false), status = FAILED, createdOn = existingApiApproval.createdOn)
+
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(expectedApproval)).thenReturn(successful(expectedApproval))
+      val result = await(underTest.declineService("testService"))
+
+      result shouldBe ServiceLocation("testService", "http://localhost/myservice")
+      verify(mockApiApprovalRepository).save(expectedApproval)
+    }
+
+    "Raise an exception if an attempt is made to decline an unknown service" in new Setup {
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
+      val ex = intercept[UnknownApiServiceException] {
+        await(underTest.declineService("testService"))
       }
       ex.getMessage.contains("testService") shouldBe true
       verify(mockApiApprovalRepository).fetch("testService")

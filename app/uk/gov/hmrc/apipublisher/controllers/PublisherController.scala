@@ -53,7 +53,8 @@ class PublisherController @Inject() (
   private val FAILED_TO_FETCH_UNAPPROVED_SERVICES = "FAILED_TO_FETCH_UNAPPROVED_SERVICES"
   private val FAILED_TO_FETCH_ALL_SERVICES        = "FAILED_TO_FETCH_ALL_SERVICES"
   private val FAILED_TO_SEARCH_SERVICES           = "FAILED_TO_SEARCH_SERVICES"
-  private val FAILED_TO_APPROVE_SERVICES          = "FAILED_TO_APPROVE_SERVICES"
+  private val FAILED_TO_APPROVE_SERVICE           = "FAILED_TO_APPROVE_SERVICE"
+  private val FAILED_TO_DECLINE_SERVICE           = "FAILED_TO_DECLINE_SERVICE"
 
   private val ER = EitherTHelper.make[Result]
 
@@ -201,7 +202,11 @@ class PublisherController @Inject() (
                              case other                                           => other
                            }
       } yield result
-    } recover recovery(FAILED_TO_APPROVE_SERVICES)
+    } recover recovery(FAILED_TO_APPROVE_SERVICE)
+  }
+
+  def decline(serviceName: String): Action[AnyContent] = Action.async { _ =>
+    approvalService.declineService(serviceName).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
   }
 
   private def base64Decode(stringToDecode: String): String = {

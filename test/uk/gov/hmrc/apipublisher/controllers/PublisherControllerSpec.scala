@@ -354,7 +354,30 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       status(result) shouldBe BAD_REQUEST
       verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
     }
+  }
 
+  "decline service" should {
+    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/approve")
+      .withHeaders("content-type" -> "application/json")
+      .withBody(Json.toJson(ApproveServiceRequest(serviceName, actor)))
+
+    "decline a known service" in new Setup {
+
+      when(mockApprovalService.declineService(serviceName)).thenReturn(successful(serviceLocation))
+
+      val result = underTest.decline(serviceName)(fakeRequest)
+
+      status(result) shouldBe NO_CONTENT
+    }
+
+    "raise an error when attempting to decline an unknown service" in new Setup {
+      when(mockApprovalService.declineService("unknown-service"))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Decline Service. Unknown Service Name: unknown-service")))
+
+      val result = underTest.decline("unknown-service")(fakeRequest)
+
+      status(result) shouldBe NOT_FOUND
+    }
   }
 
   def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
