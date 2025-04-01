@@ -19,6 +19,7 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 
 import uk.gov.hmrc.apipublisher.connectors.OASFileLoader.{MicroserviceOASFileLocator, OASFileLocator}
+import uk.gov.hmrc.apipublisher.scheduled.MigrateApprovedFlagJob
 import uk.gov.hmrc.apipublisher.services.{OasParserImpl, OasVersionDefinitionService}
 
 class Module extends AbstractModule {
@@ -27,5 +28,6 @@ class Module extends AbstractModule {
     bind(classOf[SwaggerParserExtension]).toInstance(new OpenAPIV3Parser)
     bind(classOf[OASFileLocator]).toInstance(MicroserviceOASFileLocator)
     bind(classOf[OasVersionDefinitionService.OasParser]).toInstance(new OasParserImpl)
+    bind(classOf[MigrateApprovedFlagJob]).asEagerSingleton()
   }
 }

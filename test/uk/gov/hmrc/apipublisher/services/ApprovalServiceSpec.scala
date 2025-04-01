@@ -18,7 +18,7 @@ package uk.gov.hmrc.apipublisher.services
 
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 
 import utils.AsyncHmrcSpec
 
@@ -243,6 +243,41 @@ APIApproval(testService,http://localhost/myservice,testServiceName,Some(Test Ser
       verify(mockApiApprovalRepository).fetch("testService")
     }
 
-  }
+    "Migrate from approved flag to status field, for all api approvals in db" in new Setup {
+      val services = Seq(
+        APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, approved = Some(false)),
+        APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", None, approved = Some(true))
+      )
 
+      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(services))
+      when(mockApiApprovalRepository.save(services(0).copy(status = NEW))).thenReturn(successful(services(0).copy(status = NEW)))
+      when(mockApiApprovalRepository.save(services(1).copy(status = APPROVED))).thenReturn(successful(services(1).copy(status = APPROVED)))
+
+      val result = await(underTest.migrateApprovedFlag())
+
+      result should contain theSameElementsAs Seq(
+        services(0).copy(status = NEW),
+        services(1).copy(status = APPROVED)
+      )
+
+      verify(mockApiApprovalRepository).fetchAllServices()
+    }
+
+    "Migrate from approved flag to status field, for all api approvals in db fails if one of the saves fails" in new Setup {
+      val services = Seq(
+        APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, approved = Some(false)),
+        APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", None, approved = Some(true))
+      )
+
+      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(services))
+      when(mockApiApprovalRepository.save(services(0).copy(status = NEW))).thenReturn(failed(new RuntimeException("errorMessage")))
+      when(mockApiApprovalRepository.save(services(1).copy(status = APPROVED))).thenReturn(successful(services(1).copy(status = APPROVED)))
+
+      intercept[RuntimeException] {
+        await(underTest.migrateApprovedFlag())
+      }
+
+      verify(mockApiApprovalRepository).fetchAllServices()
+    }
+  }
 }

@@ -4,8 +4,8 @@ object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
 
   val bootstrapVersion    = "9.11.0"
-  val mongoVersion        = "2.5.0"
-  val appDomainVersion    = "0.74.0"
+  val mongoVersion        = "2.6.0"
+  val appDomainVersion    = "0.76.0"
 
   private val dependencies = Seq(
     "uk.gov.hmrc"         %% "bootstrap-backend-play-30"       % bootstrapVersion,
