@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.services
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
+
 import utils.AsyncHmrcSpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
@@ -29,8 +30,6 @@ import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, NEW}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, Approved, New, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
-
-import scala.language.postfixOps
 
 class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
 
@@ -233,7 +232,7 @@ APIApproval(testService,http://localhost/myservice,testServiceName,Some(Test Ser
 
       val result = await(underTest.migrateApprovedFlag())
 
-      result  should contain theSameElementsAs Seq(
+      result should contain theSameElementsAs Seq(
         services(0).copy(status = NEW),
         services(1).copy(status = APPROVED)
       )

@@ -88,9 +88,9 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     }
 
     for {
-      approvals <- apiApprovalRepository.fetchAllServices()
+      approvals       <- apiApprovalRepository.fetchAllServices()
       updatedApprovals = approvals.map(migrateApprovedFlagToStatus)
-      res <- Future.sequence(updatedApprovals.map(apiApprovalRepository.save))
+      res             <- Future.sequence(updatedApprovals.map(apiApprovalRepository.save))
     } yield res
   }
 }

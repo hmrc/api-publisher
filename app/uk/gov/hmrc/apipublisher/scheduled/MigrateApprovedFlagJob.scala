@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.apipublisher.scheduled
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.apache.pekko.actor.ActorSystem
+
 import play.api.Configuration
-import uk.gov.hmrc.apipublisher.services.ApprovalService
-import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 import uk.gov.hmrc.mongo.TimestampSupport
 import uk.gov.hmrc.mongo.lock.{MongoLockRepository, ScheduledLockService}
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
+import uk.gov.hmrc.apipublisher.services.ApprovalService
+import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 // $COVERAGE-OFF$
 
@@ -39,8 +41,6 @@ class MigrateApprovedFlagJob @Inject() (
     actorSystem: ActorSystem,
     ec: ExecutionContext
   ) extends ApplicationLogger {
-
-
 
   val initialDelay = configuration.get[FiniteDuration]("migrateApprovedFlag.initialDelay")
   val interval     = configuration.get[FiniteDuration]("migrateApprovedFlag.interval")
