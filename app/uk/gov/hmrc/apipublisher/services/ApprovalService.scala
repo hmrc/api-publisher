@@ -25,6 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, NEW}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -80,4 +81,16 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
       case Some(a) => Future.successful(a)
       case None    => Future.failed(UnknownApiServiceException(s"Unable to Find Service. Unknown Service Name: $serviceName"))
     }
+
+  def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
+    def migrateApprovedFlagToStatus(approval: APIApproval) = {
+      approval.copy(status = if (approval.isApproved) APPROVED else NEW)
+    }
+
+    for {
+      approvals       <- apiApprovalRepository.fetchAllServices()
+      updatedApprovals = approvals.map(migrateApprovedFlagToStatus)
+      res             <- Future.sequence(updatedApprovals.map(apiApprovalRepository.save))
+    } yield res
+  }
 }
