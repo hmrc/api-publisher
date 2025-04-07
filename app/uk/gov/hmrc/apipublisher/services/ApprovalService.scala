@@ -55,7 +55,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
             approved = Some(isApproved),
             createdOn = existingApproval.createdOn,
             approvedOn = existingApproval.approvedOn,
-            approvedBy = existingApproval.approvedBy
+            approvedBy = existingApproval.approvedBy,
+            status = existingApproval.status
           ))
         case _                      => apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved)))
       }
