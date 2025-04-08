@@ -19,15 +19,12 @@ package uk.gov.hmrc.apipublisher.services
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
-
 import utils.AsyncHmrcSpec
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, Approved, New, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
@@ -127,6 +124,26 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe true
+      verify(mockApiApprovalRepository).save(expectedApproval)
+    }
+
+    "Allow publication of previously failed service" in new Setup {
+      val apiApproval                 = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
+      val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
+      val existingApiApproval         = apiApproval.copy(
+        status = FAILED,
+        createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))),
+        approvedBy = Some(user),
+        approvedOn = Some(instant)
+      )
+
+      val expectedApproval: APIApproval = apiApproval.copy(status = RESUBMITTED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(user))
+      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+
+      val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
+
+      result shouldBe false
       verify(mockApiApprovalRepository).save(expectedApproval)
     }
 
