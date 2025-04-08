@@ -68,14 +68,14 @@ class PublisherService @Inject() (
       }
     }
 
-    def checkApprovedAndPublish(producerApiDefinition: ProducerApiDefinition): Future[PublicationResult] = {
+    def createOrUpdateApprovalAndPublish(producerApiDefinition: ProducerApiDefinition): Future[PublicationResult] = {
       for {
-        isApproved <- checkApproval(serviceLocation, producerApiDefinition.apiName, producerApiDefinition.description)
+        isApproved <- createOrUpdateApproval(serviceLocation, producerApiDefinition.apiName, producerApiDefinition.description)
         api        <- if (isApproved) publish(producerApiDefinition) else successful(apiDetailsWithServiceLocation)
       } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 
-    checkApprovedAndPublish(producerApiDefinition)
+    createOrUpdateApprovalAndPublish(producerApiDefinition)
 
   }
 
@@ -110,7 +110,7 @@ class PublisherService @Inject() (
     checkForErrors()
   }
 
-  def checkApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
+  def createOrUpdateApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription)
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }
