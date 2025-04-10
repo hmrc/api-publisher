@@ -52,6 +52,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       ),
       replaceIndexes = true
     ) {
+  override lazy val requiresTtlIndex: Boolean = false
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
     val query = equal("serviceName", Codecs.toBson(apiApproval.serviceName))

@@ -16,32 +16,23 @@
 
 package uk.gov.hmrc.apipublisher
 
-import java.nio.charset.StandardCharsets
-import java.util.{Base64, UUID}
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatest.EitherValues
-import sttp.client3.{UriContext, basicRequest}
-import sttp.model.StatusCode
-
 import play.api.http.Status.NOT_FOUND
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
-import play.api.test.TestServer
-
+import sttp.client3.{UriContext, basicRequest}
+import sttp.model.StatusCode
 import uk.gov.hmrc.apipublisher.models.ErrorCode
 
-class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
+import scala.language.postfixOps
 
-  val publishingKey: String        = UUID.randomUUID().toString
-  val encodedPublishingKey: String = new String(Base64.getEncoder.encode(publishingKey.getBytes), StandardCharsets.UTF_8)
-
-  var server: TestServer = _
+class PublisherFeatureSpec extends BaseFeatureSpec
+  with EitherValues {
 
   Feature("Publish API on notification") {
 
-    Scenario("Publishing successful for an API with a valid definition and OAS") {
+    Scenario("Publishing fails for a new API with a valid definition and OAS") {
 
       Given("A microservice is running with an API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
@@ -71,20 +62,29 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
         .withHeader(CONTENT_TYPE, containing(JSON)))
 
-      Then("The definition is published to the API Definition microservice")
-      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
-        .withHeader(CONTENT_TYPE, containing(JSON)))
+      Then("No calls to API Definition microservice were sent")
+      apiDefinitionMock.verifyThat(
+        0,
+        postRequestedFor(urlEqualTo("/api-definition"))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+      )
 
-      Then("The field definitions are published to the API Subscription Fields microservice")
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+      Then("The field definitions are not published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(
+        0,
+        putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+          .withRequestBody(equalToJson(fieldDefinitions_1_0))
+      )
 
       apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
 
-      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
-        .withHeader(CONTENT_TYPE, containing(JSON))
-        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+      apiSubscriptionFieldsMock.verifyThat(
+        0,
+        putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+          .withRequestBody(equalToJson(fieldDefinitions_3_0))
+      )
 
       And("api-publisher responded with status 2xx")
       publishResponse.isSuccess shouldBe true
@@ -416,17 +416,6 @@ class PublisherFeatureSpec extends BaseFeatureSpec with EitherValues {
         "message" -> JsString("Unable to find definition for service test.example.com")
       )
     }
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    server = TestServer.apply(port, GuiceApplicationBuilder().configure("publishingKey" -> publishingKey).build())
-    server.start()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    server.stop()
   }
 
   val apiContext                          = "test/api/context"
