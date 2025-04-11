@@ -16,21 +16,252 @@
 
 package uk.gov.hmrc.apipublisher
 
+import scala.concurrent.Await.result
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatest.EitherValues
+import sttp.client3.{UriContext, basicRequest}
+import sttp.model.StatusCode
+
 import play.api.http.Status.NOT_FOUND
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
-import sttp.client3.{UriContext, basicRequest}
-import sttp.model.StatusCode
-import uk.gov.hmrc.apipublisher.models.ErrorCode
 
-import scala.language.postfixOps
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ErrorCode}
+import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
 class PublisherFeatureSpec extends BaseFeatureSpec
-  with EitherValues {
+    with EitherValues {
 
   Feature("Publish API on notification") {
+
+    Scenario("Publishing successful for an API with a valid definition and OAS") {
+
+      Given("A microservice is running with an API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.isSuccess shouldBe true
+
+      When("API is approved")
+      val approveResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/service/test.example.com/approve")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "actor": {"user": "Gatekeeper User"} }""")
+      )
+
+      Then("approval response is status 2xx")
+      approveResponse.isSuccess shouldBe true
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The definition is published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(postRequestedFor(urlEqualTo("/api-definition"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      Then("The field definitions are published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_1_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+        .withHeader(CONTENT_TYPE, containing(JSON))
+        .withRequestBody(equalToJson(fieldDefinitions_3_0)))
+
+      result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
+        case None                        => fail
+        case Some(approval: APIApproval) => approval.status == APPROVED
+      }
+    }
+
+    Scenario("NEW API Approval is declined") {
+
+      Given("A microservice is running with an API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      Then("The field definitions are validated")
+      apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
+        .withHeader(CONTENT_TYPE, containing(JSON)))
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.isSuccess shouldBe true
+
+      When("API is declined")
+      val declineResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/service/test.example.com/decline")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "actor": {"user": "Gatekeeper User"} }""")
+      )
+
+      Then("decline response is status 2xx")
+      declineResponse.isSuccess shouldBe true
+
+      Then("The definition is not published to the API Definition microservice")
+      apiDefinitionMock.verifyThat(
+        0,
+        postRequestedFor(urlEqualTo("/api-definition"))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+      )
+
+      Then("The field definitions are not published to the API Subscription Fields microservice")
+      apiSubscriptionFieldsMock.verifyThat(
+        0,
+        putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+          .withRequestBody(equalToJson(fieldDefinitions_1_0))
+      )
+
+      apiSubscriptionFieldsMock.verifyThat(0, putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_2_0)))
+
+      apiSubscriptionFieldsMock.verifyThat(
+        0,
+        putRequestedFor(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0))
+          .withHeader(CONTENT_TYPE, containing(JSON))
+          .withRequestBody(equalToJson(fieldDefinitions_3_0))
+      )
+
+      result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
+        case None                        => fail
+        case Some(approval: APIApproval) => approval.status == FAILED
+      }
+    }
+
+    Scenario("NEW API Approval is declined then RESUBMITTED and finally APPROVED and successfully published") {
+
+      Given("A microservice is running with an API Definition")
+      apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJson)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
+
+      And("api definition is running")
+      // TOOD - restore when api definition no longer rejects updated api
+      apiDefinitionMock.register(post(urlEqualTo("/api-definition")).willReturn(aResponse()))
+
+      And("api subscription fields is running")
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_1_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(put(urlEqualTo(apiSubscriptionFieldsUrlVersion_3_0)).willReturn(aResponse()))
+      apiSubscriptionFieldsMock.register(post(urlEqualTo("/validate")).willReturn(aResponse()))
+
+      When("publisher is triggered")
+      val publishResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      And("api-publisher responded with status 2xx")
+      publishResponse.isSuccess shouldBe true
+
+      When("API is declined")
+      val declineResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/service/test.example.com/decline")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "actor": {"user": "Gatekeeper User"} }""")
+      )
+
+      Then("decline response is status 2xx")
+      declineResponse.isSuccess shouldBe true
+
+      And("API Approval has status of FAILED")
+      result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
+        case None                        => fail
+        case Some(approval: APIApproval) => approval.status == FAILED
+      }
+
+      When("publisher is triggered again")
+      val publishResponse2 = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      And("API Approval has status of RESUBMITTED")
+      result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
+        case None                        => fail
+        case Some(approval: APIApproval) => approval.status == RESUBMITTED
+      }
+
+      And("api-publisher responded with status 2xx")
+      publishResponse2.isSuccess shouldBe true
+
+      When("API is approved")
+      val approveResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/service/test.example.com/approve")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "actor": {"user": "Gatekeeper User"} }""")
+      )
+
+      Then("approval response is status 2xx")
+      approveResponse.isSuccess shouldBe true
+
+      And("API Approval has status of APPROVED")
+      result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
+        case None                        => fail
+        case Some(approval: APIApproval) => approval.status == APPROVED
+      }
+    }
 
     Scenario("Publishing fails for a new API with a valid definition and OAS") {
 
@@ -120,6 +351,18 @@ class PublisherFeatureSpec extends BaseFeatureSpec
           .header(AUTHORIZATION, encodedPublishingKey)
           .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
       )
+
+      When("API is approved")
+      val approveResponse = http(
+        basicRequest
+          .post(uri"$serverUrl/service/test.example.com/approve")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "actor": {"user": "Gatekeeper User"} }""")
+      )
+
+      Then("approval response is status 2xx")
+      approveResponse.isSuccess shouldBe true
 
       Then("The field definitions are validated")
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
