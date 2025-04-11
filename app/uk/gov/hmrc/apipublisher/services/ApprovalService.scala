@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -42,30 +42,21 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def createOrUpdateServiceApproval(apiApproval: APIApproval): Future[Boolean] = {
 
-    def calculateApiApprovalStatus(existingApiApproval: Option[APIApproval]): Boolean =
-      (appContext.preventAutoDeploy, existingApiApproval) match {
-        case (false, _)   => true
-        case (_, Some(e)) => e.isApproved
-        case (_, _)       => false
-      }
-
-    def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval], isApproved: Boolean): Future[APIApproval] =
+    def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval]): Future[APIApproval] =
       maybeExistingApiApproval match {
         case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(
-            approved = Some(isApproved),
+            status = if (existingApproval.status == FAILED) RESUBMITTED else existingApproval.status,
             createdOn = existingApproval.createdOn,
             approvedOn = existingApproval.approvedOn,
-            approvedBy = existingApproval.approvedBy,
-            status = existingApproval.status
+            approvedBy = existingApproval.approvedBy
           ))
-        case _                      => apiApprovalRepository.save(apiApproval.copy(approved = Some(isApproved)))
+        case _                      => apiApprovalRepository.save(apiApproval)
       }
 
     for {
       maybeExistingApiApproval <- apiApprovalRepository.fetch(apiApproval.serviceName)
-      isApproved                = calculateApiApprovalStatus(maybeExistingApiApproval)
-      _                        <- saveApproval(apiApproval, maybeExistingApiApproval, isApproved)
-    } yield isApproved
+      savedApproval            <- saveApproval(apiApproval, maybeExistingApiApproval)
+    } yield savedApproval.isApproved
   }
 
   def approveService(serviceName: String, actor: Actors.GatekeeperUser): Future[ServiceLocation] =
@@ -94,7 +85,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
     def migrateApprovedFlagToStatus(approval: APIApproval) = {
-      approval.copy(status = if (approval.isApproved) APPROVED else NEW)
+      approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
     }
 
     for {

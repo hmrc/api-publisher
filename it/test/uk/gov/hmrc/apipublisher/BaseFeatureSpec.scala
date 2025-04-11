@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apipublisher
 
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
+
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -23,14 +26,33 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import sttp.client3.{Request, Response, SimpleHttpClient}
+
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+
+import uk.gov.hmrc.apipublisher.models.APIApproval
+import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
 abstract class BaseFeatureSpec extends AnyFeatureSpec
     with GivenWhenThen with ScalaFutures
-    with BeforeAndAfterEach with Matchers {
+    with BeforeAndAfterEach with Matchers with GuiceOneServerPerSuite
+    with DefaultPlayMongoRepositorySupport[APIApproval] {
 
-  val port      = 12121
-  val serverUrl = s"http://localhost:$port"
+  val serverUrl                    = s"http://localhost:$port"
+  val encodedPublishingKey: String = new String(Base64.getEncoder.encode(app.configuration.get[String]("publishingKey").getBytes), StandardCharsets.UTF_8)
+
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .configure(Map(
+      "mongodb.uri"   -> mongoUri,
+      "publishingKey" -> UUID.randomUUID().toString
+    ))
+    .build()
+
+  override protected val repository: PlayMongoRepository[APIApproval] = app.injector.instanceOf[APIApprovalRepository]
 
   val apiDefinitionPort: Int      = sys.env.getOrElse("WIREMOCK", "9604").toInt
   val apiDefinitionHost           = "localhost"
@@ -56,26 +78,38 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
   val tpaServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(tpaPort))
   var tpaMock: WireMock = _
 
-  override def beforeEach(): Unit = {
+  override def beforeAll(): Unit = {
+    apiDefinitionServer.start()
+    apiProducerServer.start()
     apiSubscriptionFieldsServer.start()
+    tpaServer.start()
+  }
+
+  override def afterAll(): Unit = {
+    apiDefinitionServer.stop()
+    apiProducerServer.stop()
+    apiSubscriptionFieldsServer.stop()
+    tpaServer.stop()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    apiSubscriptionFieldsServer.resetRequests()
     apiSubscriptionFieldsMock = new WireMock(apiSubscriptionFieldsHost, apiSubscriptionFieldsPort)
 
-    apiProducerServer.start()
+    apiProducerServer.resetRequests()
     apiProducerMock = new WireMock(apiProducerHost, apiProducerPort)
 
-    apiDefinitionServer.start()
+    apiDefinitionServer.resetRequests()
     apiDefinitionMock = new WireMock(apiDefinitionHost, apiDefinitionPort)
 
-    tpaServer.start()
+    tpaServer.resetRequests()
     tpaMock = new WireMock(tpaHost, tpaPort)
 
   }
 
   override def afterEach(): Unit = {
-    apiSubscriptionFieldsServer.stop()
-    apiProducerServer.stop()
-    apiDefinitionServer.stop()
-    tpaServer.stop()
+    super.afterEach()
   }
 
   def http(request: => Request[Either[String, String], Any]): Response[Either[String, String]] = {

@@ -23,11 +23,10 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
 
-  lazy val appName                    = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl                     = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
-  lazy val publisherUrl               = s"$appUrl/publish"
-  lazy val preventAutoDeploy: Boolean = runModeConfiguration.getOptional[Boolean]("features.preventAutoDeploy").getOrElse(false)
-  lazy val publishToken               = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
-  lazy val publishingKey              = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
+  lazy val appName       = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl        = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  lazy val publisherUrl  = s"$appUrl/publish"
+  lazy val publishToken  = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
+  lazy val publishingKey = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 
 }
