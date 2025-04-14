@@ -22,6 +22,8 @@ import scala.collection.immutable.ListSet
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
+
 case class APIApproval(
     serviceName: String,
     serviceUrl: String,
@@ -33,7 +35,7 @@ case class APIApproval(
     approvedBy: Option[Actor] = None,
     status: ApprovalStatus = ApprovalStatus.NEW
   ) {
-  def isApproved: Boolean = approved.getOrElse(false)
+  def isApproved: Boolean = status == APPROVED
 }
 
 object APIApproval {
