@@ -237,6 +237,23 @@ APIApproval(testService,http://localhost/myservice,testServiceName,Some(Test Ser
       verify(mockApiApprovalRepository).fetchAllServices()
     }
 
+    "Migrate from approved flag to status field, when status is APPROVED, set approved flag to true" in new Setup {
+      val services = Seq(
+        APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, status = APPROVED, approved = Some(false))
+      )
+
+      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(services))
+      when(mockApiApprovalRepository.save(services(0).copy(approved = Some(true)))).thenReturn(successful(services(0).copy(approved = Some(true))))
+
+      val result = await(underTest.migrateApprovedFlag())
+
+      result should contain theSameElementsAs Seq(
+        services(0).copy(approved = Some(true))
+      )
+
+      verify(mockApiApprovalRepository).fetchAllServices()
+    }
+
     "Migrate from approved flag to status field, for all api approvals in db fails if one of the saves fails" in new Setup {
       val services = Seq(
         APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, approved = Some(false)),

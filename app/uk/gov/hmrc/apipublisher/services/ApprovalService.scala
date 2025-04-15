@@ -86,7 +86,12 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
     def migrateApprovedFlagToStatus(approval: APIApproval) = {
-      approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
+      if (approval.status == APPROVED) {
+        // one time fix for qa data
+        approval.copy(approved = Some(true))
+      } else {
+        approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
+      }
     }
 
     for {
