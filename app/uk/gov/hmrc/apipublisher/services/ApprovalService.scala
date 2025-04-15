@@ -45,6 +45,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval]): Future[APIApproval] =
       maybeExistingApiApproval match {
         case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(
+            approved = existingApproval.approved,
             status = if (existingApproval.status == FAILED) RESUBMITTED else existingApproval.status,
             createdOn = existingApproval.createdOn,
             approvedOn = existingApproval.approvedOn,
@@ -85,7 +86,12 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
     def migrateApprovedFlagToStatus(approval: APIApproval) = {
-      approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
+      if (approval.status == APPROVED) {
+        // one time fix for qa data
+        approval.copy(approved = Some(true))
+      } else {
+        approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
+      }
     }
 
     for {
