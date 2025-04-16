@@ -18,14 +18,14 @@ package uk.gov.hmrc.apipublisher
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatest.EitherValues
-import play.api.http.Status.BAD_REQUEST
-import play.api.libs.json.Json
-import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
 
-class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
+import play.api.http.Status.BAD_REQUEST
+import play.api.libs.json.Json
+import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 
+class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
 
   val malformedJson = """{ "some" "invalid"" "json" }"""
 
@@ -71,7 +71,6 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
       assert((body \ "apiDefinitionErrors").as[String] contains """'{"error":"invalid"}'""")
     }
   }
-
 
   val producerApiDefinitionWithScope: String =
     """
