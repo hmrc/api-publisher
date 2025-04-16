@@ -21,6 +21,7 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
@@ -111,7 +112,8 @@ class PublisherService @Inject() (
   }
 
   def checkApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
-    val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription)
+    val state       = ApiApprovalState(actor = Some(Process("Jenkins publish job")), statusChangedTo = Some(ApprovalStatus.NEW))
+    val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription, stateHistory = Seq(state))
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }
 }
