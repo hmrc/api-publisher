@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -86,12 +86,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
     def migrateApprovedFlagToStatus(approval: APIApproval) = {
-      if (approval.status == APPROVED) {
-        // one time fix for qa data
-        approval.copy(approved = Some(true))
-      } else {
-        approval.copy(status = if (approval.approved.contains(true)) APPROVED else NEW)
-      }
+      approval.copy(status = if (approval.approved.contains(true)) APPROVED else approval.status)
     }
 
     for {
