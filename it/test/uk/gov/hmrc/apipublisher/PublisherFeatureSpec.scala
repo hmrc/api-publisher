@@ -64,8 +64,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec
           .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
       )
 
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
+      And("api-publisher responded with status 202")
+      publishResponse.code shouldBe StatusCode.Accepted
 
       When("API is approved")
       val approveResponse = http(
@@ -102,6 +102,19 @@ class PublisherFeatureSpec extends BaseFeatureSpec
         case None                        => fail
         case Some(approval: APIApproval) => approval.status == APPROVED
       }
+
+      When("publisher is triggered")
+      val publishResponse2 = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      And("api-publisher responded with status 200")
+      publishResponse2.code shouldBe StatusCode.Ok
+
     }
 
     Scenario("NEW API Approval is declined") {
@@ -134,8 +147,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       apiSubscriptionFieldsMock.verifyThat(postRequestedFor(urlEqualTo("/validate"))
         .withHeader(CONTENT_TYPE, containing(JSON)))
 
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
+      And("api-publisher responded with status 202")
+      publishResponse.code shouldBe StatusCode.Accepted
 
       When("API is declined")
       val declineResponse = http(
@@ -205,8 +218,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec
           .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
       )
 
-      And("api-publisher responded with status 2xx")
-      publishResponse.isSuccess shouldBe true
+      And("api-publisher responded with status 202")
+      publishResponse.code shouldBe StatusCode.Accepted
 
       When("API is declined")
       val declineResponse = http(
@@ -241,8 +254,8 @@ class PublisherFeatureSpec extends BaseFeatureSpec
         case Some(approval: APIApproval) => approval.status == RESUBMITTED
       }
 
-      And("api-publisher responded with status 2xx")
-      publishResponse2.isSuccess shouldBe true
+      And("api-publisher responded with status 202")
+      publishResponse2.code shouldBe StatusCode.Accepted
 
       When("API is approved")
       val approveResponse = http(
@@ -261,6 +274,18 @@ class PublisherFeatureSpec extends BaseFeatureSpec
         case None                        => fail
         case Some(approval: APIApproval) => approval.status == APPROVED
       }
+
+      When("publisher is triggered")
+      val publishResponse3 = http(
+        basicRequest
+          .post(uri"$serverUrl/publish")
+          .header(CONTENT_TYPE, JSON)
+          .header(AUTHORIZATION, encodedPublishingKey)
+          .body(s"""{"serviceName":"test.example.com", "serviceUrl": "$apiProducerUrl", "metadata": { "third-party-api" : "true" } }""")
+      )
+
+      And("api-publisher responded with status 200")
+      publishResponse3.code shouldBe StatusCode.Ok
     }
 
     Scenario("Publishing fails for a new API with a valid definition and OAS") {
