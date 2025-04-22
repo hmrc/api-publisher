@@ -104,7 +104,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval))
 
       // Update and Approve Service
-      val updatedAPIApproval = APIApproval("testService", "http://localhost:9000/updatedService", "MyUpdatedService", Some("Updated description"), Some(true))
+      val updatedAPIApproval = APIApproval("testService", "http://localhost:9000/updatedService", "MyUpdatedService", Some("Updated description"), status = APPROVED)
       await(repository.save(updatedAPIApproval))
 
       val result = await(repository.fetch(apiApproval.serviceName)).get

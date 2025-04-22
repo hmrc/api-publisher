@@ -19,11 +19,9 @@ package uk.gov.hmrc.apipublisher.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.http.HeaderCarrier
-
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -69,14 +67,14 @@ class PublisherService @Inject() (
       }
     }
 
-    def checkApprovedAndPublish(producerApiDefinition: ProducerApiDefinition): Future[PublicationResult] = {
+    def createOrUpdateApprovalAndPublish(producerApiDefinition: ProducerApiDefinition): Future[PublicationResult] = {
       for {
-        isApproved <- checkApproval(serviceLocation, producerApiDefinition.apiName, producerApiDefinition.description)
+        isApproved <- createOrUpdateApproval(serviceLocation, producerApiDefinition.apiName, producerApiDefinition.description)
         api        <- if (isApproved) publish(producerApiDefinition) else successful(apiDetailsWithServiceLocation)
       } yield PublicationResult(isApproved, api.as[PublisherResponse])
     }
 
-    checkApprovedAndPublish(producerApiDefinition)
+    createOrUpdateApprovalAndPublish(producerApiDefinition)
 
   }
 
@@ -111,7 +109,7 @@ class PublisherService @Inject() (
     checkForErrors()
   }
 
-  def checkApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
+  def createOrUpdateApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
     val state       = ApiApprovalState(actor = Some(Process("Jenkins publish job")), statusChangedTo = Some(ApprovalStatus.NEW))
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription, stateHistory = Seq(state))
     approvalService.createOrUpdateServiceApproval(apiApproval)
