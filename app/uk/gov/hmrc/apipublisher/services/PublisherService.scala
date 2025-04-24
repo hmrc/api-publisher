@@ -16,12 +16,16 @@
 
 package uk.gov.hmrc.apipublisher.services
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -31,9 +35,10 @@ class PublisherService @Inject() (
     apiDefinitionConnector: APIDefinitionConnector,
     apiSubscriptionFieldsConnector: APISubscriptionFieldsConnector,
     tpaConnector: TpaConnector,
-    approvalService: ApprovalService
+    approvalService: ApprovalService,
+    val clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
   def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
 
@@ -110,7 +115,7 @@ class PublisherService @Inject() (
   }
 
   def createOrUpdateApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
-    val state       = ApiApprovalState(actor = Some(Process("Jenkins publish job")), statusChangedTo = Some(ApprovalStatus.NEW))
+    val state       = ApiApprovalState(actor = Process("Publish process"), status = ApprovalStatus.NEW, notes = Some("Publish process"), changedAt = instant())
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription, stateHistory = Seq(state))
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }

@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ServiceLocation, ServicesSearch}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiApprovalState, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -60,10 +60,11 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     } yield savedApproval.isApproved
   }
 
-  def approveService(serviceName: String, actor: Actors.GatekeeperUser): Future[ServiceLocation] =
+  def approveService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
-      approval <- fetchServiceApproval(serviceName)
-      _        <- apiApprovalRepository.save(approval.copy(approved = Some(true), status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor)))
+      approval    <- fetchServiceApproval(serviceName)
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = APPROVED, notes = notes, changedAt = instant())
+      _           <- apiApprovalRepository.save(approval.copy(approved = Some(true), status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor), stateHistory = stateHistory))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)

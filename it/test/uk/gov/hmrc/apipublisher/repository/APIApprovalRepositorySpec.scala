@@ -21,13 +21,14 @@ import utils.AsyncHmrcSpec
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
 import uk.gov.hmrc.apipublisher.models._
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
-    with BeforeAndAfterEach with BeforeAndAfterAll {
+    with BeforeAndAfterEach with BeforeAndAfterAll with FixedClock {
 
   protected def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -50,15 +51,20 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
   }
 
   trait Setup {
-    val newState = ApiApprovalState(statusChangedTo = Some(ApprovalStatus.NEW))
+    val actor        = Actors.GatekeeperUser("Dave Brown")
+    val processActor = Actors.Process("Publish process")
+    val notes        = Some("Good for approval")
+
+    val newState = ApiApprovalState(status = ApprovalStatus.NEW, actor = processActor, notes = Some("Publish process"), changedAt = instant)
 
     val failedState      = ApiApprovalState(
-      actor = Some(GatekeeperUser("SDST")),
-      statusChangedTo = Some(ApprovalStatus.FAILED),
-      comment = Some("API does not meet requirements and is Declined")
+      actor = actor,
+      status = ApprovalStatus.FAILED,
+      notes = Some("API does not meet requirements and is Declined"),
+      changedAt = instant
     )
-    val resubmittedState = ApiApprovalState(statusChangedTo = Some(ApprovalStatus.RESUBMITTED))
-    val approvedState    = failedState.copy(statusChangedTo = Some(ApprovalStatus.APPROVED), comment = Some("API has met all requirements and is Approved"))
+    val resubmittedState = ApiApprovalState(status = ApprovalStatus.RESUBMITTED, actor = processActor, notes = Some("Publish process"), changedAt = instant)
+    val approvedState    = failedState.copy(status = ApprovalStatus.APPROVED, actor = actor, notes = Some("API has met all requirements and is Approved"))
 
     val stateHistory = Seq(newState, failedState, resubmittedState)
 

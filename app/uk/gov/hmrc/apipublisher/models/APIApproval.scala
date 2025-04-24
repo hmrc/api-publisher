@@ -25,10 +25,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
 
 case class ApiApprovalState(
-    actor: Option[Actor] = None,
-    changedAt: Option[Instant] = Some(Instant.now()),
-    statusChangedTo: Option[ApprovalStatus] = None,
-    comment: Option[String] = None
+    actor: Actor,
+    changedAt: Instant,
+    status: ApprovalStatus,
+    notes: Option[String] = None
   )
 
 object ApiApprovalState {

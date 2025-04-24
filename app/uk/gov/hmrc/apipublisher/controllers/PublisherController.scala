@@ -196,7 +196,7 @@ class PublisherController @Inject() (
   def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
       for {
-        serviceLocation <- approvalService.approveService(serviceName, body.actor)
+        serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
         result          <- publishService(serviceLocation).map {
                              case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
                              case other                                           => other
