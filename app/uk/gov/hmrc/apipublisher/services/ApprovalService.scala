@@ -80,6 +80,16 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
       ServiceLocation(approval.serviceName, approval.serviceUrl)
     }
 
+  def addComment(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
+    for {
+      approval    <- fetchServiceApproval(serviceName)
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = approval.status, notes = notes, changedAt = instant())
+      _           <- apiApprovalRepository.save(approval.copy(stateHistory = stateHistory))
+    } yield {
+      logger.info(s"Added comment for service $serviceName")
+      ServiceLocation(approval.serviceName, approval.serviceUrl)
+    }
+
   def fetchServiceApproval(serviceName: String): Future[APIApproval] =
     apiApprovalRepository.fetch(serviceName).flatMap {
       case Some(a) => Future.successful(a)

@@ -384,6 +384,32 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
   }
 
+  "add comment for an API approval" should {
+    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/comment")
+      .withHeaders("content-type" -> "application/json")
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
+
+    "add comment for a known service" in new Setup {
+
+      when(mockApprovalService.addComment(*, *, *)).thenReturn(successful(serviceLocation))
+
+      val result = underTest.addComment(serviceName)(fakeRequest)
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockApprovalService).addComment(serviceName, actor, notes)
+    }
+
+    "raise an error when attempting to add a comment to an unknown service" in new Setup {
+      when(mockApprovalService.addComment(*, *, *))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Add Comment. Unknown Service Name: unknown-service")))
+
+      val result = underTest.addComment("unknown-service")(fakeRequest)
+
+      status(result) shouldBe NOT_FOUND
+      verify(mockApprovalService).addComment("unknown-service", actor, notes)
+    }
+  }
+
   def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
     FakeRequest().withHeaders(("Authorization", base64Encode(token))).withBody(Json.toJson(data))
   }

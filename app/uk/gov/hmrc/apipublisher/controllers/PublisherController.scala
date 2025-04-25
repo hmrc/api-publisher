@@ -55,6 +55,7 @@ class PublisherController @Inject() (
   private val FAILED_TO_SEARCH_SERVICES           = "FAILED_TO_SEARCH_SERVICES"
   private val FAILED_TO_APPROVE_SERVICE           = "FAILED_TO_APPROVE_SERVICE"
   private val FAILED_TO_DECLINE_SERVICE           = "FAILED_TO_DECLINE_SERVICE"
+  private val FAILED_TO_ADD_COMMENT               = "FAILED_TO_ADD_COMMENT"
 
   private val ER = EitherTHelper.make[Result]
 
@@ -213,7 +214,7 @@ class PublisherController @Inject() (
 
   def addComment(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+      approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
     }
   }
 

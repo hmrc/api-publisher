@@ -54,6 +54,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     val serviceName   = "testService"
     val approvalNotes = Some("Good for approval")
     val declineNotes  = Some("Failed")
+    val notes         = Some("New note")
     val processActor  = Actors.Process("Publish process")
     val newState      = ApiApprovalState(status = ApprovalStatus.NEW, actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
     val approvedState = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = APPROVED, notes = approvalNotes)
@@ -208,6 +209,30 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockApiApprovalRepository.fetch(*)).thenReturn(successful(None))
       val ex = intercept[UnknownApiServiceException] {
         await(underTest.declineService(serviceName, gatekeeperUser, declineNotes))
+      }
+      ex.getMessage.contains(serviceName) shouldBe true
+      verify(mockApiApprovalRepository).fetch(serviceName)
+    }
+
+    "Add a comment to an existing Service" in new Setup {
+      val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
+      val expectedApproval: APIApproval =
+        existingApiApproval.copy(
+          stateHistory = existingApiApproval.stateHistory :+ existingApiApproval.stateHistory.head.copy(actor = gatekeeperUser, changedAt = instant, notes = notes)
+        )
+
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+      val result = await(underTest.addComment(serviceName, gatekeeperUser, notes))
+
+      result shouldBe ServiceLocation(serviceName, "http://localhost/myservice")
+      verify(mockApiApprovalRepository).save(expectedApproval)
+    }
+
+    "Raise an exception if an attempt is made to add a comment to an unknown service" in new Setup {
+      when(mockApiApprovalRepository.fetch(*)).thenReturn(successful(None))
+      val ex = intercept[UnknownApiServiceException] {
+        await(underTest.addComment(serviceName, gatekeeperUser, notes))
       }
       ex.getMessage.contains(serviceName) shouldBe true
       verify(mockApiApprovalRepository).fetch(serviceName)
