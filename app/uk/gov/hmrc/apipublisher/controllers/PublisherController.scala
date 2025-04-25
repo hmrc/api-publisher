@@ -194,7 +194,7 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
       for {
         serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
         result          <- publishService(serviceLocation).map {
@@ -206,7 +206,13 @@ class PublisherController @Inject() (
   }
 
   def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[DeclineServiceRequest] { body: DeclineServiceRequest =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
+      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+    }
+  }
+
+  def addComment(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
       approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
     }
   }

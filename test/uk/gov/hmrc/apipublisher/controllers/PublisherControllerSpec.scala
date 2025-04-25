@@ -320,7 +320,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   "approve service" should {
     val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/approve")
       .withHeaders("content-type" -> "application/json")
-      .withBody(Json.toJson(ApproveServiceRequest(serviceName, actor, notes)))
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
 
     "approve a known service" in new Setup {
 
@@ -361,7 +361,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   "decline service" should {
     val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/decline")
       .withHeaders("content-type" -> "application/json")
-      .withBody(Json.toJson(DeclineServiceRequest(serviceName, actor, notes)))
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
 
     "decline a known service" in new Setup {
 
