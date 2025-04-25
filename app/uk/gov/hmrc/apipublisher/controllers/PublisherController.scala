@@ -206,7 +206,7 @@ class PublisherController @Inject() (
   }
 
   def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
+    withJsonBody[DeclineServiceRequest] { body: DeclineServiceRequest =>
       approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
     }
   }
