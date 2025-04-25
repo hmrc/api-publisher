@@ -70,10 +70,11 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
       ServiceLocation(approval.serviceName, approval.serviceUrl)
     }
 
-  def declineService(serviceName: String): Future[ServiceLocation] =
+  def declineService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
-      approval <- fetchServiceApproval(serviceName)
-      _        <- apiApprovalRepository.save(approval.copy(approved = Some(false), status = FAILED))
+      approval    <- fetchServiceApproval(serviceName)
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = FAILED, notes = notes, changedAt = instant())
+      _           <- apiApprovalRepository.save(approval.copy(approved = Some(false), status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
     } yield {
       logger.info(s"Declined service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)

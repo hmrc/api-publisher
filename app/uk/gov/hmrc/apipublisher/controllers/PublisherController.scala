@@ -205,8 +205,10 @@ class PublisherController @Inject() (
     } recover recovery(FAILED_TO_APPROVE_SERVICE)
   }
 
-  def decline(serviceName: String): Action[AnyContent] = Action.async { _ =>
-    approvalService.declineService(serviceName).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+  def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
+      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+    }
   }
 
   private def base64Decode(stringToDecode: String): String = {
