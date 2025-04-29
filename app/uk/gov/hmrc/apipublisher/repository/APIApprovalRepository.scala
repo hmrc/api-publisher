@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apipublisher.repository
 
-import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +28,6 @@ import org.mongodb.scala.model.Filters.{equal, exists, in, or}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
@@ -38,7 +36,7 @@ import uk.gov.hmrc.apipublisher.models.ApprovalStatus._
 import uk.gov.hmrc.apipublisher.models._
 
 @Singleton
-class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(implicit val ec: ExecutionContext)
+class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[APIApproval](
       collectionName = "apiapproval",
       mongoComponent = mongo,
@@ -53,7 +51,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
         )
       ),
       replaceIndexes = true
-    ) with ClockNow {
+    ) {
   override lazy val requiresTtlIndex: Boolean = false
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
