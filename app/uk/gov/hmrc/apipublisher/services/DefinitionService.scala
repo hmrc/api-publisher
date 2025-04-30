@@ -66,13 +66,16 @@ class DefinitionService @Inject() (
       Future.sequence(
         versions.map { versionObj =>
           val versionNbr = (versionObj \ "version").as[String]
-          val details    = getDetailForVersion(serviceLocation, context, versionNbr)
 
-          details.map {
-            case (endpoints, source) =>
-              versionObj +
-                ("endpoints"     -> Json.toJson(endpoints).as[JsArray]) +
-                ("versionSource" -> JsString(source.asText))
+          if (producerApiDefinition.retiredVersionNumbers.contains(versionNbr)) {
+            Future.successful(versionObj + ("endpoints" -> JsArray.empty) + ("versionSource" -> JsString(ApiVersionSource.UNKNOWN.asText)))
+          } else {
+            getDetailForVersion(serviceLocation, context, versionNbr).map {
+              case (endpoints, source) =>
+                versionObj +
+                  ("endpoints"     -> Json.toJson(endpoints).as[JsArray]) +
+                  ("versionSource" -> JsString(source.asText))
+            }
           }
         }
       )
