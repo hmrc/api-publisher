@@ -99,7 +99,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
         .withRequestBody(equalToJson(fieldDefinitions_3_0)))
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
-        case None                        => fail()
+        case None                        => fail
         case Some(approval: APIApproval) => approval.status == APPROVED
       }
 
@@ -187,7 +187,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       )
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
-        case None                        => fail()
+        case None                        => fail
         case Some(approval: APIApproval) => approval.status == FAILED
       }
     }
@@ -235,7 +235,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("API Approval has status of FAILED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
-        case None                        => fail()
+        case None                        => fail
         case Some(approval: APIApproval) => approval.status == FAILED
       }
 
@@ -250,7 +250,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("API Approval has status of RESUBMITTED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
-        case None                        => fail()
+        case None                        => fail
         case Some(approval: APIApproval) => approval.status == RESUBMITTED
       }
 
@@ -271,7 +271,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("API Approval has status of APPROVED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
-        case None                        => fail()
+        case None                        => fail
         case Some(approval: APIApproval) => approval.status == APPROVED
       }
 
@@ -350,6 +350,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       Given("A microservice is running with an API Definition")
       apiProducerMock.register(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(definitionJsonWithRetiredVersion)))
+      apiProducerMock.register(get(urlEqualTo("/api/conf/1.0/application.yaml")).willReturn(aResponse().withBody(oas_1_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/2.0/application.yaml")).willReturn(aResponse().withBody(oas_2_0)))
       apiProducerMock.register(get(urlEqualTo("/api/conf/3.0/application.yaml")).willReturn(aResponse().withBody(oas_3_0)))
 
