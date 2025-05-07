@@ -59,6 +59,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
   val serviceName                       = "employee-paye"
   val actor                             = Actors.GatekeeperUser("Dave Brown")
+  val notes                             = Some("Good for approval")
 
   private val publisherResponse = PublisherResponse(
     name = "Example API",
@@ -319,11 +320,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   "approve service" should {
     val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/approve")
       .withHeaders("content-type" -> "application/json")
-      .withBody(Json.toJson(ApproveServiceRequest(serviceName, actor)))
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
 
     "approve a known service" in new Setup {
 
-      when(mockApprovalService.approveService(serviceName, Actors.GatekeeperUser("Dave Brown"))).thenReturn(successful(serviceLocation))
+      when(mockApprovalService.approveService(*, *, *)).thenReturn(successful(serviceLocation))
       when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
         approved = true,
         publisherResponse
@@ -332,11 +333,12 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.approve(serviceName)(fakeRequest)
 
       status(result) shouldBe NO_CONTENT
+      verify(mockApprovalService).approveService(serviceName, actor, notes)
       verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
-      when(mockApprovalService.approveService("unknown-service", Actors.GatekeeperUser("Dave Brown")))
+      when(mockApprovalService.approveService("unknown-service", actor, notes))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 
       val result = underTest.approve("unknown-service")(fakeRequest)
@@ -346,7 +348,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "raise an error when attempting to approve without the correct body" in new Setup {
-      when(mockApprovalService.approveService("unknown-service", Actors.GatekeeperUser("Dave Brown")))
+      when(mockApprovalService.approveService("unknown-service", actor, notes))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Approve Service. Unknown Service Name: unknown-service")))
 
       val result = underTest.approve("unknown-service")(FakeRequest().withHeaders("content-type" -> "application/json"))
@@ -357,26 +359,54 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   }
 
   "decline service" should {
-    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/approve")
+    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/decline")
       .withHeaders("content-type" -> "application/json")
-      .withBody(Json.toJson(ApproveServiceRequest(serviceName, actor)))
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
 
     "decline a known service" in new Setup {
 
-      when(mockApprovalService.declineService(serviceName)).thenReturn(successful(serviceLocation))
+      when(mockApprovalService.declineService(*, *, *)).thenReturn(successful(serviceLocation))
 
       val result = underTest.decline(serviceName)(fakeRequest)
 
       status(result) shouldBe NO_CONTENT
+      verify(mockApprovalService).declineService(serviceName, actor, notes)
     }
 
     "raise an error when attempting to decline an unknown service" in new Setup {
-      when(mockApprovalService.declineService("unknown-service"))
+      when(mockApprovalService.declineService(*, *, *))
         .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Decline Service. Unknown Service Name: unknown-service")))
 
       val result = underTest.decline("unknown-service")(fakeRequest)
 
       status(result) shouldBe NOT_FOUND
+      verify(mockApprovalService).declineService("unknown-service", actor, notes)
+    }
+  }
+
+  "add comment for an API approval" should {
+    val fakeRequest = FakeRequest("POST", s"/service/${serviceName}/comment")
+      .withHeaders("content-type" -> "application/json")
+      .withBody(Json.toJson(ApiApprovalRequest(serviceName, actor, notes)))
+
+    "add comment for a known service" in new Setup {
+
+      when(mockApprovalService.addComment(*, *, *)).thenReturn(successful(serviceLocation))
+
+      val result = underTest.addComment(serviceName)(fakeRequest)
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockApprovalService).addComment(serviceName, actor, notes)
+    }
+
+    "raise an error when attempting to add a comment to an unknown service" in new Setup {
+      when(mockApprovalService.addComment(*, *, *))
+        .thenReturn(Future.failed(UnknownApiServiceException(s"Unable to Add Comment. Unknown Service Name: unknown-service")))
+
+      val result = underTest.addComment("unknown-service")(fakeRequest)
+
+      status(result) shouldBe NOT_FOUND
+      verify(mockApprovalService).addComment("unknown-service", actor, notes)
     }
   }
 

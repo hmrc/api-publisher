@@ -23,6 +23,7 @@ import utils.AsyncHmrcSpec
 
 import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaboratorsFixtures
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
@@ -31,7 +32,7 @@ import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 
-class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaboratorsFixtures {
+class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaboratorsFixtures with FixedClock {
 
   val testServiceLocation: ServiceLocation = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
 
@@ -75,7 +76,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with ApplicationWithCollaborato
       mockApiDefinitionConnector,
       mockApiSubscriptionFieldsConnector,
       mockTpaConnector,
-      mockApprovalService
+      mockApprovalService,
+      clock
     )
 
     when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(true))

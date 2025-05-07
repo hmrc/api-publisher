@@ -24,6 +24,17 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
 
+case class ApiApprovalState(
+    actor: Actor,
+    changedAt: Instant,
+    status: ApprovalStatus,
+    notes: Option[String] = None
+  )
+
+object ApiApprovalState {
+  implicit val stateFormat: Format[ApiApprovalState] = Json.format[ApiApprovalState]
+}
+
 case class APIApproval(
     serviceName: String,
     serviceUrl: String,
@@ -33,7 +44,8 @@ case class APIApproval(
     createdOn: Option[Instant] = Some(Instant.now()),
     approvedOn: Option[Instant] = None,
     approvedBy: Option[Actor] = None,
-    status: ApprovalStatus = ApprovalStatus.NEW
+    status: ApprovalStatus = ApprovalStatus.NEW,
+    stateHistory: Seq[ApiApprovalState] = Seq.empty
   ) {
   def isApproved: Boolean = status == APPROVED
 }

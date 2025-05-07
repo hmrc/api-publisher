@@ -10,3 +10,4 @@ GET         /services/search                 uk.gov.hmrc.apipublisher.controller
 GET         /service/:serviceName/summary    uk.gov.hmrc.apipublisher.controllers.PublisherController.fetchServiceSummary(serviceName)
 POST        /service/:serviceName/approve    uk.gov.hmrc.apipublisher.controllers.PublisherController.approve(serviceName)
 POST        /service/:serviceName/decline    uk.gov.hmrc.apipublisher.controllers.PublisherController.decline(serviceName)
+POST        /service/:serviceName/comment    uk.gov.hmrc.apipublisher.controllers.PublisherController.addComment(serviceName)

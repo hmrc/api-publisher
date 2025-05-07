@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, Approved, New, ServiceLocation, ServicesSearch}
+import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
 class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -50,6 +50,16 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, status = NEW),
       APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), status = APPROVED)
     )
+
+    val serviceName   = "testService"
+    val approvalNotes = Some("Good for approval")
+    val declineNotes  = Some("Failed")
+    val notes         = Some("New note")
+    val processActor  = Actors.Process("Publish process")
+    val newState      = ApiApprovalState(status = ApprovalStatus.NEW, actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
+    val approvedState = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = APPROVED, notes = approvalNotes)
+    val failedState   = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = FAILED, notes = declineNotes)
+    val apiApproval   = APIApproval(serviceName, "http://localhost/myservice", "testServiceName", Some("Test Service Description"), stateHistory = Seq(newState))
   }
 
   "The ApprovalServiceSpec" should {
@@ -85,9 +95,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "Prevent publication of previously unknown services" in new Setup {
-      val apiApproval = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
-
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(None))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false)))).thenReturn(successful(apiApproval.copy(approved = Some(false))))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
@@ -97,10 +105,9 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "Prevent publication of previously disabled service" in new Setup {
-      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val existingApiApproval = apiApproval.copy(approved = Some(false), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
       when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
         .thenReturn(successful(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
 
@@ -111,17 +118,17 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "Allow publication of previously enabled service" in new Setup {
-      val apiApproval                 = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
       val existingApiApproval         = apiApproval.copy(
         status = APPROVED,
         createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))),
         approvedBy = Some(user),
-        approvedOn = Some(instant)
+        approvedOn = Some(instant),
+        stateHistory = apiApproval.stateHistory :+ approvedState
       )
 
       val expectedApproval: APIApproval = apiApproval.copy(status = APPROVED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(user))
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
       when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
@@ -131,7 +138,6 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "Allow publication of previously failed service" in new Setup {
-      val apiApproval                 = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
       val existingApiApproval         = apiApproval.copy(
         status = FAILED,
@@ -141,7 +147,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       )
 
       val expectedApproval: APIApproval = apiApproval.copy(status = RESUBMITTED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(user))
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
       when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
@@ -151,70 +157,103 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "Allow an existing Service to be approved" in new Setup {
-      val apiApproval                   = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
-        apiApproval.copy(approved = Some(true), status = APPROVED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(gatekeeperUser))
+        apiApproval.copy(
+          approved = Some(true),
+          status = APPROVED,
+          createdOn = existingApiApproval.createdOn,
+          approvedOn = Some(instant),
+          approvedBy = Some(gatekeeperUser),
+          stateHistory = apiApproval.stateHistory :+ approvedState
+        )
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
-      when(mockApiApprovalRepository.save(expectedApproval)).thenReturn(successful(expectedApproval))
-      val result = await(underTest.approveService("testService", gatekeeperUser))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+      val result = await(underTest.approveService(serviceName, gatekeeperUser, approvedState.notes))
 
-      result shouldBe ServiceLocation("testService", "http://localhost/myservice")
+      result shouldBe ServiceLocation(serviceName, "http://localhost/myservice")
       verify(mockApiApprovalRepository).save(expectedApproval)
     }
-    /*
-APIApproval(testService,http://localhost/myservice,testServiceName,Some(Test Service Description),Some(true),Some(2024-10-30T15:50:15.134280169Z),Some(2020-01-02T03:04:05.006Z),Some(GatekeeperUser(Dave Brown)))
-     */
+
     "Raise an exception if an attempt is made to approve an unknown service" in new Setup {
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(None))
       val ex = intercept[UnknownApiServiceException] {
-        await(underTest.approveService("testService", gatekeeperUser))
+        await(underTest.approveService(serviceName, gatekeeperUser, approvalNotes))
       }
-      ex.getMessage.contains("testService") shouldBe true
-      verify(mockApiApprovalRepository).fetch("testService")
+      ex.getMessage.contains(serviceName) shouldBe true
+      verify(mockApiApprovalRepository).fetch(serviceName)
     }
 
     "Allow an existing Service to be declined" in new Setup {
-      val apiApproval                   = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
-        apiApproval.copy(approved = Some(false), status = FAILED, createdOn = existingApiApproval.createdOn)
+        apiApproval.copy(
+          approved = Some(false),
+          status = FAILED,
+          createdOn = existingApiApproval.createdOn,
+          approvedOn = None,
+          approvedBy = None,
+          stateHistory = apiApproval.stateHistory :+ failedState
+        )
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
-      when(mockApiApprovalRepository.save(expectedApproval)).thenReturn(successful(expectedApproval))
-      val result = await(underTest.declineService("testService"))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+      val result = await(underTest.declineService(serviceName, gatekeeperUser, declineNotes))
 
-      result shouldBe ServiceLocation("testService", "http://localhost/myservice")
+      result shouldBe ServiceLocation(serviceName, "http://localhost/myservice")
       verify(mockApiApprovalRepository).save(expectedApproval)
     }
 
     "Raise an exception if an attempt is made to decline an unknown service" in new Setup {
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
+      when(mockApiApprovalRepository.fetch(*)).thenReturn(successful(None))
       val ex = intercept[UnknownApiServiceException] {
-        await(underTest.declineService("testService"))
+        await(underTest.declineService(serviceName, gatekeeperUser, declineNotes))
       }
-      ex.getMessage.contains("testService") shouldBe true
-      verify(mockApiApprovalRepository).fetch("testService")
+      ex.getMessage.contains(serviceName) shouldBe true
+      verify(mockApiApprovalRepository).fetch(serviceName)
+    }
+
+    "Add a comment to an existing Service" in new Setup {
+      val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
+      val expectedApproval: APIApproval =
+        existingApiApproval.copy(
+          stateHistory = existingApiApproval.stateHistory :+ existingApiApproval.stateHistory.head.copy(actor = gatekeeperUser, changedAt = instant, notes = notes)
+        )
+
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+      val result = await(underTest.addComment(serviceName, gatekeeperUser, notes))
+
+      result shouldBe ServiceLocation(serviceName, "http://localhost/myservice")
+      verify(mockApiApprovalRepository).save(expectedApproval)
+    }
+
+    "Raise an exception if an attempt is made to add a comment to an unknown service" in new Setup {
+      when(mockApiApprovalRepository.fetch(*)).thenReturn(successful(None))
+      val ex = intercept[UnknownApiServiceException] {
+        await(underTest.addComment(serviceName, gatekeeperUser, notes))
+      }
+      ex.getMessage.contains(serviceName) shouldBe true
+      verify(mockApiApprovalRepository).fetch(serviceName)
     }
 
     "Return a summary of a service when requested" in new Setup {
-      val apiApproval         = APIApproval("testService", "http://localhost/myservice", "testServiceName", Some("Test Service Description"))
       val existingApiApproval = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(Some(existingApiApproval)))
-      val result = await(underTest.fetchServiceApproval("testService"))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      val result = await(underTest.fetchServiceApproval(serviceName))
 
       result shouldBe apiApproval.copy(createdOn = existingApiApproval.createdOn)
-      verify(mockApiApprovalRepository).fetch("testService")
+      verify(mockApiApprovalRepository).fetch(serviceName)
     }
 
     "Raise an exception if a summary of an unknown service when requested" in new Setup {
-      when(mockApiApprovalRepository.fetch("testService")).thenReturn(successful(None))
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(None))
       intercept[UnknownApiServiceException] {
-        await(underTest.fetchServiceApproval("testService"))
+        await(underTest.fetchServiceApproval(serviceName))
       }
-      verify(mockApiApprovalRepository).fetch("testService")
+      verify(mockApiApprovalRepository).fetch(serviceName)
     }
 
     "Migrate from approved flag to status field, for all api approvals in db" in new Setup {

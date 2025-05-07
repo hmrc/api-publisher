@@ -55,6 +55,7 @@ class PublisherController @Inject() (
   private val FAILED_TO_SEARCH_SERVICES           = "FAILED_TO_SEARCH_SERVICES"
   private val FAILED_TO_APPROVE_SERVICE           = "FAILED_TO_APPROVE_SERVICE"
   private val FAILED_TO_DECLINE_SERVICE           = "FAILED_TO_DECLINE_SERVICE"
+  private val FAILED_TO_ADD_COMMENT               = "FAILED_TO_ADD_COMMENT"
 
   private val ER = EitherTHelper.make[Result]
 
@@ -194,9 +195,9 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApproveServiceRequest] { body: ApproveServiceRequest =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
       for {
-        serviceLocation <- approvalService.approveService(serviceName, body.actor)
+        serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
         result          <- publishService(serviceLocation).map {
                              case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
                              case other                                           => other
@@ -205,8 +206,16 @@ class PublisherController @Inject() (
     } recover recovery(FAILED_TO_APPROVE_SERVICE)
   }
 
-  def decline(serviceName: String): Action[AnyContent] = Action.async { _ =>
-    approvalService.declineService(serviceName).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+  def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
+      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+    }
+  }
+
+  def addComment(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
+      approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
+    }
   }
 
   private def base64Decode(stringToDecode: String): String = {
