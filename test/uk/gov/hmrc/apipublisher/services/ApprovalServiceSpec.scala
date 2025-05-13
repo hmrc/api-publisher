@@ -56,9 +56,9 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     val declineNotes  = Some("Failed")
     val notes         = Some("New note")
     val processActor  = Actors.Process("Publish process")
-    val newState      = ApiApprovalState(status = ApprovalStatus.NEW, actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
-    val approvedState = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = APPROVED, notes = approvalNotes)
-    val failedState   = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = FAILED, notes = declineNotes)
+    val newState      = ApiApprovalState(status = Some(ApprovalStatus.NEW), actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
+    val approvedState = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(APPROVED), notes = approvalNotes)
+    val failedState   = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(FAILED), notes = declineNotes)
     val apiApproval   = APIApproval(serviceName, "http://localhost/myservice", "testServiceName", Some("Test Service Description"), stateHistory = Seq(newState))
   }
 
@@ -218,7 +218,12 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
         existingApiApproval.copy(
-          stateHistory = existingApiApproval.stateHistory :+ existingApiApproval.stateHistory.head.copy(actor = gatekeeperUser, changedAt = instant, notes = notes)
+          stateHistory = existingApiApproval.stateHistory :+ existingApiApproval.stateHistory.head.copy(
+            actor = gatekeeperUser,
+            changedAt = instant,
+            notes = notes,
+            status = None
+          )
         )
 
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))

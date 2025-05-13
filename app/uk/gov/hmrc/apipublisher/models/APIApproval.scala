@@ -27,7 +27,7 @@ import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
 case class ApiApprovalState(
     actor: Actor,
     changedAt: Instant,
-    status: ApprovalStatus,
+    status: Option[ApprovalStatus] = None,
     notes: Option[String] = None
   )
 

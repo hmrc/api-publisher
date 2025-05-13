@@ -115,7 +115,7 @@ class PublisherService @Inject() (
   }
 
   def createOrUpdateApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
-    val state       = ApiApprovalState(actor = Process("Publish process"), status = ApprovalStatus.NEW, notes = Some("Publish process"), changedAt = instant())
+    val state       = ApiApprovalState(actor = Process("Publish process"), status = Some(ApprovalStatus.NEW), notes = Some("Publish process"), changedAt = instant())
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription, stateHistory = Seq(state))
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }
