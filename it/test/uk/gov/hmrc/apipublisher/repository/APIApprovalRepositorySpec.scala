@@ -55,16 +55,16 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     val processActor = Actors.Process("Publish process")
     val notes        = Some("Good for approval")
 
-    val newState = ApiApprovalState(status = ApprovalStatus.NEW, actor = processActor, notes = Some("Publish process"), changedAt = instant)
+    val newState = ApiApprovalState(status = Some(ApprovalStatus.NEW), actor = processActor, notes = Some("Publish process"), changedAt = instant)
 
     val failedState      = ApiApprovalState(
       actor = actor,
-      status = ApprovalStatus.FAILED,
+      status = Some(ApprovalStatus.FAILED),
       notes = Some("API does not meet requirements and is Declined"),
       changedAt = instant
     )
-    val resubmittedState = ApiApprovalState(status = ApprovalStatus.RESUBMITTED, actor = processActor, notes = Some("Publish process"), changedAt = instant)
-    val approvedState    = failedState.copy(status = ApprovalStatus.APPROVED, actor = actor, notes = Some("API has met all requirements and is Approved"))
+    val resubmittedState = ApiApprovalState(status = Some(ApprovalStatus.RESUBMITTED), actor = processActor, notes = Some("Publish process"), changedAt = instant)
+    val approvedState    = failedState.copy(status = Some(ApprovalStatus.APPROVED), actor = actor, notes = Some("API has met all requirements and is Approved"))
 
     val stateHistory = Seq(newState, failedState, resubmittedState)
 

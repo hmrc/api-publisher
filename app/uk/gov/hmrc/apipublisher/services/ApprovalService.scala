@@ -63,7 +63,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def approveService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = APPROVED, notes = notes, changedAt = instant())
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(APPROVED), notes = notes, changedAt = instant())
       _           <- apiApprovalRepository.save(approval.copy(approved = Some(true), status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor), stateHistory = stateHistory))
     } yield {
       logger.info(s"Approved service $serviceName")
@@ -73,7 +73,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def declineService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = FAILED, notes = notes, changedAt = instant())
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(FAILED), notes = notes, changedAt = instant())
       _           <- apiApprovalRepository.save(approval.copy(approved = Some(false), status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
     } yield {
       logger.info(s"Declined service $serviceName")
@@ -83,7 +83,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def addComment(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = approval.status, notes = notes, changedAt = instant())
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = None, notes = notes, changedAt = instant())
       _           <- apiApprovalRepository.save(approval.copy(stateHistory = stateHistory))
     } yield {
       logger.info(s"Added comment for service $serviceName")
