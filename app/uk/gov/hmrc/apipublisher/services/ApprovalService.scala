@@ -96,6 +96,9 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
       case None    => Future.failed(UnknownApiServiceException(s"Unable to Find Service. Unknown Service Name: $serviceName"))
     }
 
+  def deleteApiApproval(serviceName: String): Future[Unit] =
+    apiApprovalRepository.delete(serviceName)
+
   def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
     def migrateApprovedFlagToStatus(approval: APIApproval) = {
       approval.copy(status = if (approval.approved.contains(true)) APPROVED else approval.status)
