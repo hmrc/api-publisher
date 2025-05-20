@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// $COVERAGE-OFF$
 package uk.gov.hmrc.apipublisher.test_only.controllers
 
 import javax.inject.{Inject, Singleton}
@@ -68,3 +69,4 @@ class TestOnlyController @Inject() (
   }
 
 }
+// $COVERAGE-ON$

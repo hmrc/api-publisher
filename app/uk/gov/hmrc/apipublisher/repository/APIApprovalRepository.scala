@@ -69,7 +69,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def delete(serviceName: String): Future[Unit] = {
     collection.deleteOne(equal("serviceName", Codecs.toBson(serviceName)))
       .toFuture()
-      .map(_ => logger.info(s"API with service name '$serviceName' has been deleted successfully"))
+      .map(_ => logger.info(s"API Approval with service name '$serviceName' has been deleted successfully"))
   }
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = {
