@@ -37,6 +37,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.NEW
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.services._
@@ -53,10 +54,10 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   private val api                   = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   private val producerApiDefinition = ProducerApiDefinition(api)
 
-  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), Some(false))
+  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), status = NEW)
 
   private val marriageAllowanceApproval =
-    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), Some(false))
+    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), status = NEW)
   val serviceName                       = "employee-paye"
   val actor                             = Actors.GatekeeperUser("Dave Brown")
   val notes                             = Some("Good for approval")
@@ -228,26 +229,6 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.validate(requestWithBadToken)
 
       status(result) shouldEqual UNAUTHORIZED
-    }
-  }
-
-  "fetch unapproved services" should {
-
-    "retrieve a list of unapproved services" in new Setup {
-
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List(employeeServiceApproval, marriageAllowanceApproval)))
-      val result = underTest.fetchUnapprovedServices()(FakeRequest())
-
-      status(result) shouldEqual OK
-      contentAsJson(result) shouldEqual Json.toJson(Seq(employeeServiceApproval, marriageAllowanceApproval))
-    }
-
-    "retrieve an empty list when there are no unapproved services" in new Setup {
-      when(mockApprovalService.fetchUnapprovedServices()).thenReturn(successful(List.empty))
-      val result = underTest.fetchUnapprovedServices()(FakeRequest())
-
-      status(result) shouldEqual OK
-      contentAsJson(result) shouldEqual Json.toJson(Seq.empty[APIApproval])
     }
   }
 

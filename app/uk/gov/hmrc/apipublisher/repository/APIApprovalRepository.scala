@@ -24,7 +24,7 @@ import org.bson.BsonValue
 import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{equal, exists, in, or}
+import org.mongodb.scala.model.Filters.{equal, in}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
@@ -65,19 +65,10 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(equal("serviceName", Codecs.toBson(serviceName)))
       .headOption()
   }
-
   def delete(serviceName: String): Future[Unit] = {
     collection.deleteOne(equal("serviceName", Codecs.toBson(serviceName)))
       .toFuture()
       .map(_ => logger.info(s"API Approval with service name '$serviceName' has been deleted successfully"))
-  }
-
-  def fetchUnapprovedServices(): Future[Seq[APIApproval]] = {
-    collection.find(or(
-      equal("approved", Codecs.toBson(false)),
-      exists("approved", false)
-    )).toFuture()
-      .map(_.toList)
   }
 
   def fetchAllServices(): Future[Seq[APIApproval]] = {
