@@ -28,6 +28,7 @@ import org.mongodb.scala.model.Filters.{equal, exists, in, or}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
+import play.api.Logging
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
@@ -51,7 +52,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         )
       ),
       replaceIndexes = true
-    ) {
+    ) with Logging {
   override lazy val requiresTtlIndex: Boolean = false
 
   def save(apiApproval: APIApproval): Future[APIApproval] = {
@@ -63,6 +64,12 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetch(serviceName: String): Future[Option[APIApproval]] = {
     collection.find(equal("serviceName", Codecs.toBson(serviceName)))
       .headOption()
+  }
+
+  def delete(serviceName: String): Future[Unit] = {
+    collection.deleteOne(equal("serviceName", Codecs.toBson(serviceName)))
+      .toFuture()
+      .map(_ => logger.info(s"API Approval with service name '$serviceName' has been deleted successfully"))
   }
 
   def fetchUnapprovedServices(): Future[Seq[APIApproval]] = {

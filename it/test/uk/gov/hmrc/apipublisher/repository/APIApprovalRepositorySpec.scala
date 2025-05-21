@@ -198,6 +198,18 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     }
   }
 
+  "delete" should {
+    "delete the api approval from mongo" in new Setup {
+      await(repository.save(apiApproval1))
+      val result = await(repository.fetchAllServices())
+      result.size shouldBe 1
+
+      repository.delete(apiApproval1.serviceName)
+      val result2 = await(repository.fetchAllServices())
+      result2.size shouldBe 0
+    }
+  }
+
   "searchServices" should {
     "return expected result of 1 for approved status search" in new Setup {
 

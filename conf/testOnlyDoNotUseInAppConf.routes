@@ -10,4 +10,7 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 # Add all the application routes to the prod.routes file
+
+DELETE      /test-only/service/:serviceName/approval            uk.gov.hmrc.apipublisher.test_only.controllers.TestOnlyController.deleteApiApproval(serviceName)
+
 ->         /                          prod.Routes
