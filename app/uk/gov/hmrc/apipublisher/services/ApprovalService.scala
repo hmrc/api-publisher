@@ -34,8 +34,6 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig, val clock: Clock)(implicit val ec: ExecutionContext)
     extends ApplicationLogger with ClockNow {
 
-  def fetchUnapprovedServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchUnapprovedServices().map(_.toList)
-
   def fetchAllServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchAllServices().map(_.toList)
 
   def searchServices(searchCriteria: ServicesSearch): Future[List[APIApproval]] = apiApprovalRepository.searchServices(searchCriteria).map(_.toList)
@@ -45,7 +43,6 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval]): Future[APIApproval] =
       maybeExistingApiApproval match {
         case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(
-            approved = existingApproval.approved,
             status = if (existingApproval.status == FAILED) RESUBMITTED else existingApproval.status,
             createdOn = existingApproval.createdOn,
             approvedOn = existingApproval.approvedOn,
@@ -64,7 +61,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     for {
       approval    <- fetchServiceApproval(serviceName)
       stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(APPROVED), notes = notes, changedAt = instant())
-      _           <- apiApprovalRepository.save(approval.copy(approved = Some(true), status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor), stateHistory = stateHistory))
+      _           <- apiApprovalRepository.save(approval.copy(status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor), stateHistory = stateHistory))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
@@ -74,7 +71,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
     for {
       approval    <- fetchServiceApproval(serviceName)
       stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(FAILED), notes = notes, changedAt = instant())
-      _           <- apiApprovalRepository.save(approval.copy(approved = Some(false), status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
+      _           <- apiApprovalRepository.save(approval.copy(status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
     } yield {
       logger.info(s"Declined service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
@@ -98,16 +95,4 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
   def deleteApiApproval(serviceName: String): Future[Unit] =
     apiApprovalRepository.delete(serviceName)
-
-  def migrateApprovedFlag(): Future[Seq[APIApproval]] = {
-    def migrateApprovedFlagToStatus(approval: APIApproval) = {
-      approval.copy(status = if (approval.approved.contains(true)) APPROVED else approval.status)
-    }
-
-    for {
-      approvals       <- apiApprovalRepository.fetchAllServices()
-      updatedApprovals = approvals.map(migrateApprovedFlagToStatus)
-      res             <- Future.sequence(updatedApprovals.map(apiApprovalRepository.save))
-    } yield res
-  }
 }

@@ -42,8 +42,8 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     val gatekeeperUser = Actors.GatekeeperUser("Dave Brown")
 
     val unapprovedServices = Seq(
-      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, Some(false)),
-      APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), Some(false))
+      APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, status = NEW),
+      APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), status = NEW)
     )
 
     val allServices = Seq(
@@ -63,16 +63,6 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "The ApprovalServiceSpec" should {
-
-    "Return a list of unapproved services" in new Setup {
-
-      when(mockApiApprovalRepository.fetchUnapprovedServices()).thenReturn(successful(unapprovedServices))
-
-      val result = await(underTest.fetchUnapprovedServices())
-
-      result shouldBe unapprovedServices
-      verify(mockApiApprovalRepository).fetchUnapprovedServices()
-    }
 
     "Return a list of all services" in new Setup {
 
@@ -96,25 +86,25 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "Prevent publication of previously unknown services" in new Setup {
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(None))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false)))).thenReturn(successful(apiApproval.copy(approved = Some(false))))
+      when(mockApiApprovalRepository.save(apiApproval.copy(status = NEW))).thenReturn(successful(apiApproval.copy(status = NEW)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe false
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(false)))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(status = NEW))
     }
 
     "Prevent publication of previously disabled service" in new Setup {
-      val existingApiApproval = apiApproval.copy(approved = Some(false), createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
+      val existingApiApproval = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
-      when(mockApiApprovalRepository.save(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
-        .thenReturn(successful(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn)))
+      when(mockApiApprovalRepository.save(apiApproval.copy(createdOn = existingApiApproval.createdOn)))
+        .thenReturn(successful(apiApproval.copy(createdOn = existingApiApproval.createdOn)))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe false
-      verify(mockApiApprovalRepository).save(apiApproval.copy(approved = Some(false), createdOn = existingApiApproval.createdOn))
+      verify(mockApiApprovalRepository).save(apiApproval.copy(createdOn = existingApiApproval.createdOn))
     }
 
     "Allow publication of previously enabled service" in new Setup {
@@ -160,7 +150,6 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
         apiApproval.copy(
-          approved = Some(true),
           status = APPROVED,
           createdOn = existingApiApproval.createdOn,
           approvedOn = Some(instant),
@@ -189,7 +178,6 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       val existingApiApproval           = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
       val expectedApproval: APIApproval =
         apiApproval.copy(
-          approved = Some(false),
           status = FAILED,
           createdOn = existingApiApproval.createdOn,
           approvedOn = None,
@@ -259,43 +247,6 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
         await(underTest.fetchServiceApproval(serviceName))
       }
       verify(mockApiApprovalRepository).fetch(serviceName)
-    }
-
-    "Migrate from approved flag to status field, for all api approvals in db" in new Setup {
-      val services = Seq(
-        APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, approved = Some(false)),
-        APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", None, approved = Some(true))
-      )
-
-      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(services))
-      when(mockApiApprovalRepository.save(services(0).copy(status = NEW))).thenReturn(successful(services(0).copy(status = NEW)))
-      when(mockApiApprovalRepository.save(services(1).copy(status = APPROVED))).thenReturn(successful(services(1).copy(status = APPROVED)))
-
-      val result = await(underTest.migrateApprovedFlag())
-
-      result should contain theSameElementsAs Seq(
-        services(0).copy(status = NEW),
-        services(1).copy(status = APPROVED)
-      )
-
-      verify(mockApiApprovalRepository).fetchAllServices()
-    }
-
-    "Migrate from approved flag to status field, for all api approvals in db fails if one of the saves fails" in new Setup {
-      val services = Seq(
-        APIApproval("employee-paye", "http://employee-paye.example.com", "employePAYE", None, approved = Some(false)),
-        APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", None, approved = Some(true))
-      )
-
-      when(mockApiApprovalRepository.fetchAllServices()).thenReturn(successful(services))
-      when(mockApiApprovalRepository.save(services(0).copy(status = NEW))).thenReturn(failed(new RuntimeException("errorMessage")))
-      when(mockApiApprovalRepository.save(services(1).copy(status = APPROVED))).thenReturn(successful(services(1).copy(status = APPROVED)))
-
-      intercept[RuntimeException] {
-        await(underTest.migrateApprovedFlag())
-      }
-
-      verify(mockApiApprovalRepository).fetchAllServices()
     }
 
     "return success when deleting an ApiApproval" in new Setup {

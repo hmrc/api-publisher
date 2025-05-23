@@ -136,43 +136,6 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
   }
 
-  "fetchUnApproved" should {
-
-    "return a list containing only services which are marked as Unapproved" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"))
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), Some(true))
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), Some(false))
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), Some(true))
-
-      await(repository.save(apiApproval1))
-      await(repository.save(apiApproval2))
-      await(repository.save(apiApproval3))
-      await(repository.save(apiApproval4))
-
-      val result = await(repository.fetchUnapprovedServices())
-
-      result.size shouldBe 2
-      result.contains(apiApproval1.copy(approved = Some(false))) shouldBe true
-      result.contains(apiApproval3) shouldBe true
-    }
-
-    "return an empty list as there are no unapproved services" in {
-      val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), Some(true))
-      val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), Some(true))
-      val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), Some(true))
-      val apiApproval4 = APIApproval("retirement", "http://retirement", "Retirement API", Some("Retirement API"), Some(true))
-
-      await(repository.save(apiApproval1))
-      await(repository.save(apiApproval2))
-      await(repository.save(apiApproval3))
-      await(repository.save(apiApproval4))
-
-      val result = await(repository.fetchUnapprovedServices())
-
-      result.size shouldBe 0
-    }
-  }
-
   "fetchAll" should {
 
     "return a list containing all services" in new Setup {
