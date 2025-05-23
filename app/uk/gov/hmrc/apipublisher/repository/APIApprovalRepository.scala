@@ -65,6 +65,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(equal("serviceName", Codecs.toBson(serviceName)))
       .headOption()
   }
+
   def delete(serviceName: String): Future[Unit] = {
     collection.deleteOne(equal("serviceName", Codecs.toBson(serviceName)))
       .toFuture()
