@@ -42,6 +42,7 @@ case class APIApproval(
     description: Option[String] = None,
     createdOn: Option[Instant] = Some(Instant.now()),
     approvedOn: Option[Instant] = None,
+    lastUpdated: Option[Instant] = None,
     approvedBy: Option[Actor] = None,
     status: ApprovalStatus = ApprovalStatus.NEW,
     stateHistory: Seq[ApiApprovalState] = Seq.empty
