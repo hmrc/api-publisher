@@ -223,6 +223,19 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       result.contains(apiApprovalWithStateHistory) shouldBe true
     }
 
+    "return the results sorted by createdOn descending order" in new Setup {
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2.copy(createdOn = apiApproval.createdOn.map(_.plusSeconds(1)))))
+      await(repository.save(apiApproval3.copy(createdOn = apiApproval.createdOn.map(_.plusSeconds(2)))))
+
+      val filters        = List(New, Approved, Failed, Resubmitted)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.map(_.serviceName) shouldBe List(apiApproval3.serviceName, apiApproval2.serviceName, apiApproval1.serviceName)
+    }
+
     "return an empty list as there are no services" in {
       val filters        = List(Approved)
       val searchCriteria = ServicesSearch(filters)
