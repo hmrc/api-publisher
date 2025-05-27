@@ -40,7 +40,6 @@ case class APIApproval(
     serviceUrl: String,
     name: String,
     description: Option[String] = None,
-    approved: Option[Boolean] = Some(false),
     createdOn: Option[Instant] = Some(Instant.now()),
     approvedOn: Option[Instant] = None,
     approvedBy: Option[Actor] = None,

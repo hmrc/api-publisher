@@ -4,7 +4,6 @@ POST        /publish                         uk.gov.hmrc.apipublisher.controller
 
 POST        /validate                        uk.gov.hmrc.apipublisher.controllers.PublisherController.validate
 
-GET         /services/unapproved             uk.gov.hmrc.apipublisher.controllers.PublisherController.fetchUnapprovedServices()
 GET         /services                        uk.gov.hmrc.apipublisher.controllers.PublisherController.fetchAllServices()
 GET         /services/search                 uk.gov.hmrc.apipublisher.controllers.PublisherController.searchServices()
 GET         /service/:serviceName/summary    uk.gov.hmrc.apipublisher.controllers.PublisherController.fetchServiceSummary(serviceName)
