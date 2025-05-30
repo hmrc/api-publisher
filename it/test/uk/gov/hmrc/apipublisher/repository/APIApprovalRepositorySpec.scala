@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.repository
 
+import java.time.Clock
+
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import utils.AsyncHmrcSpec
 
 import play.api.Application
+import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -36,6 +39,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
         "metrics.jvm" -> false,
         "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
       )
+      .overrides(bind[Clock].toInstance(clock))
   }
   implicit lazy val app: Application                = appBuilder.build()
 
@@ -92,7 +96,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
       val result = await(repository.fetch(apiApproval.serviceName)).get
 
-      result shouldBe apiApproval
+      result shouldBe apiApproval.copy(lastUpdated = Some(instant))
       result.isApproved shouldEqual false
     }
 
@@ -101,7 +105,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
       val result = await(repository.fetch(apiApprovalWithStateHistory.serviceName)).get
 
-      result shouldBe apiApprovalWithStateHistory
+      result shouldBe apiApprovalWithStateHistory.copy(lastUpdated = Some(instant))
       result.stateHistory shouldEqual stateHistory
     }
 
@@ -115,7 +119,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
       val result = await(repository.fetch(apiApproval.serviceName)).get
 
-      result shouldBe updatedAPIApproval
+      result shouldBe updatedAPIApproval.copy(lastUpdated = Some(instant))
       result.isApproved shouldEqual true
     }
 
@@ -130,7 +134,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
 
       val result = await(repository.fetch(apiApproval.serviceName)).get
 
-      result shouldBe updatedAPIApproval
+      result shouldBe updatedAPIApproval.copy(lastUpdated = Some(instant))
       result.stateHistory shouldBe newStateHistory
     }
 
@@ -148,10 +152,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       val result = await(repository.fetchAllServices())
 
       result.size shouldBe 4
-      result.contains(apiApproval1) shouldBe true
-      result.contains(apiApproval2) shouldBe true
-      result.contains(apiApproval3) shouldBe true
-      result.contains(apiApprovalWithStateHistory) shouldBe true
+      result.contains(apiApproval1.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApproval2.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApproval3.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApprovalWithStateHistory.copy(lastUpdated = Some(instant))) shouldBe true
     }
 
     "return an empty list as there are no services" in {
@@ -186,7 +190,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       val result         = await(repository.searchServices(searchCriteria))
 
       result.size shouldBe 1
-      result.contains(apiApproval3) shouldBe true
+      result.contains(apiApproval3.copy(lastUpdated = Some(instant))) shouldBe true
     }
 
     "return expected result of 2 for approved and failed status search" in new Setup {
@@ -201,8 +205,8 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       val result         = await(repository.searchServices(searchCriteria))
 
       result.size shouldBe 2
-      result.contains(apiApproval2) shouldBe true
-      result.contains(apiApproval3) shouldBe true
+      result.contains(apiApproval2.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApproval3.copy(lastUpdated = Some(instant))) shouldBe true
     }
 
     "return expected result of 4 for all statuses search" in new Setup {
@@ -217,10 +221,10 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       val result         = await(repository.searchServices(searchCriteria))
 
       result.size shouldBe 4
-      result.contains(apiApproval1) shouldBe true
-      result.contains(apiApproval2) shouldBe true
-      result.contains(apiApproval3) shouldBe true
-      result.contains(apiApprovalWithStateHistory) shouldBe true
+      result.contains(apiApproval1.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApproval2.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApproval3.copy(lastUpdated = Some(instant))) shouldBe true
+      result.contains(apiApprovalWithStateHistory.copy(lastUpdated = Some(instant))) shouldBe true
     }
 
     "return an empty list as there are no services" in {
