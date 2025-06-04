@@ -26,7 +26,7 @@ import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters.{equal, in}
-import org.mongodb.scala.model.Indexes.{ascending, descending}
+import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 import play.api.Logging
@@ -110,8 +110,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
   private def runQuery(statusFilters: Bson) = {
     collection.aggregate[BsonValue](
       Seq(
-        filter(statusFilters),
-        sort(descending("createdOn"))
+        filter(statusFilters)
       )
     ).map(Codecs.fromBson[APIApproval])
       .toFuture()
