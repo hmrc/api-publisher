@@ -20,13 +20,14 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiApprovalState, ServiceLocation, ServicesSearch}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiApprovalState, ApprovalStatus, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -42,11 +43,16 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
 
     def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval]): Future[APIApproval] =
       maybeExistingApiApproval match {
-        case Some(existingApproval) => apiApprovalRepository.save(apiApproval.copy(
+        case Some(existingApproval) => apiApprovalRepository.save(existingApproval.copy(
             status = if (existingApproval.status == FAILED) RESUBMITTED else existingApproval.status,
-            createdOn = existingApproval.createdOn,
-            approvedOn = existingApproval.approvedOn,
-            approvedBy = existingApproval.approvedBy
+            stateHistory = if (existingApproval.status == FAILED) {
+              existingApproval.stateHistory :+ ApiApprovalState(
+                actor = Process("Publish process"),
+                status = Some(ApprovalStatus.RESUBMITTED),
+                notes = Some("Publish process"),
+                changedAt = instant()
+              )
+            } else existingApproval.stateHistory
           ))
         case _                      => apiApprovalRepository.save(apiApproval)
       }

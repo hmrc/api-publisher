@@ -51,15 +51,16 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       APIApproval("marriageallowance", "http://employee-paye.example.com", "marriage-allowance", Some("Calculate Marriage Allowance"), status = APPROVED)
     )
 
-    val serviceName   = "testService"
-    val approvalNotes = Some("Good for approval")
-    val declineNotes  = Some("Failed")
-    val notes         = Some("New note")
-    val processActor  = Actors.Process("Publish process")
-    val newState      = ApiApprovalState(status = Some(ApprovalStatus.NEW), actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
-    val approvedState = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(APPROVED), notes = approvalNotes)
-    val failedState   = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(FAILED), notes = declineNotes)
-    val apiApproval   = APIApproval(serviceName, "http://localhost/myservice", "testServiceName", Some("Test Service Description"), stateHistory = Seq(newState))
+    val serviceName      = "testService"
+    val approvalNotes    = Some("Good for approval")
+    val declineNotes     = Some("Failed")
+    val notes            = Some("New note")
+    val processActor     = Actors.Process("Publish process")
+    val newState         = ApiApprovalState(status = Some(ApprovalStatus.NEW), actor = processActor, notes = Some("Publish process"), changedAt = instant.minus(Duration.ofDays(5)))
+    val approvedState    = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(APPROVED), notes = approvalNotes)
+    val failedState      = ApiApprovalState(actor = gatekeeperUser, changedAt = instant, status = Some(FAILED), notes = declineNotes)
+    val resubmittedState = ApiApprovalState(actor = processActor, notes = Some("Publish process"), changedAt = instant, status = Some(RESUBMITTED))
+    val apiApproval      = APIApproval(serviceName, "http://localhost/myservice", "testServiceName", Some("Test Service Description"), stateHistory = Seq(newState))
   }
 
   "The ApprovalServiceSpec" should {
@@ -84,7 +85,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockApiApprovalRepository).searchServices(new ServicesSearch(List(New, Approved)))
     }
 
-    "Prevent publication of previously unknown services" in new Setup {
+    "Create ApiApproval with status NEW for previously unknown services" in new Setup {
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(None))
       when(mockApiApprovalRepository.save(apiApproval.copy(status = NEW))).thenReturn(successful(apiApproval.copy(status = NEW)))
 
@@ -94,20 +95,20 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockApiApprovalRepository).save(apiApproval.copy(status = NEW))
     }
 
-    "Prevent publication of previously disabled service" in new Setup {
+    "Not change API Approval with NEW status" in new Setup {
       val existingApiApproval = apiApproval.copy(createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))))
 
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
-      when(mockApiApprovalRepository.save(apiApproval.copy(createdOn = existingApiApproval.createdOn)))
-        .thenReturn(successful(apiApproval.copy(createdOn = existingApiApproval.createdOn)))
+      when(mockApiApprovalRepository.save(existingApiApproval))
+        .thenReturn(successful(existingApiApproval))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe false
-      verify(mockApiApprovalRepository).save(apiApproval.copy(createdOn = existingApiApproval.createdOn))
+      verify(mockApiApprovalRepository).save(existingApiApproval)
     }
 
-    "Allow publication of previously enabled service" in new Setup {
+    "Allow publication of previously approved service and not change the API Approval" in new Setup {
       val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
       val existingApiApproval         = apiApproval.copy(
         status = APPROVED,
@@ -117,26 +118,27 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
         stateHistory = apiApproval.stateHistory :+ approvedState
       )
 
-      val expectedApproval: APIApproval = apiApproval.copy(status = APPROVED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(user))
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
-      when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
+      when(mockApiApprovalRepository.save(*)).thenReturn(successful(existingApiApproval))
 
       val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
 
       result shouldBe true
-      verify(mockApiApprovalRepository).save(expectedApproval)
+      verify(mockApiApprovalRepository).save(existingApiApproval)
     }
 
     "Allow publication of previously failed service" in new Setup {
-      val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
-      val existingApiApproval         = apiApproval.copy(
+      val existingApiApproval = apiApproval.copy(
         status = FAILED,
         createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5))),
-        approvedBy = Some(user),
-        approvedOn = Some(instant)
+        stateHistory = apiApproval.stateHistory :+ failedState
       )
 
-      val expectedApproval: APIApproval = apiApproval.copy(status = RESUBMITTED, createdOn = existingApiApproval.createdOn, approvedOn = Some(instant), approvedBy = Some(user))
+      val expectedApproval: APIApproval = existingApiApproval.copy(
+        status = RESUBMITTED,
+        stateHistory = existingApiApproval.stateHistory :+ resubmittedState
+      )
+
       when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
       when(mockApiApprovalRepository.save(*)).thenReturn(successful(expectedApproval))
 
