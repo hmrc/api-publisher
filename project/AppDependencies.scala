@@ -3,9 +3,9 @@ import sbt.*
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
 
-  val bootstrapVersion    = "9.13.0"
-  val mongoVersion        = "2.6.0"
-  val appDomainVersion    = "0.79.0"
+  val bootstrapVersion    = "9.19.0"
+  val mongoVersion        = "2.7.0"
+  val appDomainVersion    = "0.82.0"
 
   private val dependencies = Seq(
     "uk.gov.hmrc"         %% "bootstrap-backend-play-30"       % bootstrapVersion,
