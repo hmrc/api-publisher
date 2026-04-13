@@ -252,7 +252,7 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return success when deleting an ApiApproval" in new Setup {
-      when(mockApiApprovalRepository.delete(*)).thenReturn(successful())
+      when(mockApiApprovalRepository.delete(*)).thenReturn(successful(()))
       await(underTest.deleteApiApproval(serviceName))
 
       verify(mockApiApprovalRepository).delete(serviceName)

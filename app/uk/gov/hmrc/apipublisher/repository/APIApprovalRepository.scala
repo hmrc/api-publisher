@@ -60,7 +60,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
   def save(apiApproval: APIApproval): Future[APIApproval] = {
     val query = equal("serviceName", Codecs.toBson(apiApproval.serviceName))
 
-    collection.replaceOne(query, apiApproval.copy(lastUpdated = Some(instant())), new ReplaceOptions().upsert(true)).toFuture().map(_ => apiApproval)
+    collection.replaceOne(query, apiApproval.copy(lastUpdated = Some(instant)), new ReplaceOptions().upsert(true)).toFuture().map(_ => apiApproval)
   }
 
   def fetch(serviceName: String): Future[Option[APIApproval]] = {
@@ -75,7 +75,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
   }
 
   def fetchAllServices(): Future[Seq[APIApproval]] = {
-    collection.find.toFuture().map(_.toList)
+    collection.find().toFuture().map(_.toList)
   }
 
   def searchServices(searchCriteria: ServicesSearch): Future[Seq[APIApproval]] = {
