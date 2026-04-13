@@ -32,7 +32,7 @@ Used to indicate whether this API version is public or private. If absent, the A
 
 | Name | Type | Required | Values | Description |
 | --- | --- | --- | --- | --- |
-| `type` | _string_ | Required | PUBLIC<br>PRIVATE | Whether the API version is publicly available or only for private use. |
+| `type` | _string_ | Required | PUBLIC<br>PRIVATE<br>CONTROLLED<br>INTERNAL | Whether the API version is publicly available or only for private, controlled or internal use. |
 | `isTrial` | _boolean_ | Optional | False (default) | Whether this API version is a private trial |
 ### `fieldDefinitions`
 Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.
