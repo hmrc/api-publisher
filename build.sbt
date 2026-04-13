@@ -45,12 +45,24 @@ lazy val it = (project in file("it"))
   )
 
 
+lazy val scripts = (project in file("scripts"))
+  .settings(
+    name := "scripts",
+    libraryDependencies ++= AppDependencies.scriptDependencies,
+    Compile / run / baseDirectory := (ThisBuild / baseDirectory).value
+  )
 
 
 commands ++= Seq(
+  Command.args("generateDoc", "<arguments>") { (state, args) =>
+    val argsString = args.mkString(" ")
+      s"scripts/runMain GenerateApiDefinitionMarkdownDoc $argsString" ::
+      state
+  },
+
   Command.command("cleanAll") { state => "clean" :: "it/clean" :: state},
-  Command.command("fmtAll") { state => "scalafmtAll" :: "it/scalafmtAll" :: state},
-  Command.command("fixAll") { state => "scalafixAll" :: "it/scalafixAll" :: state},
+  Command.command("fmtAll") { state => "scalafmtAll" :: "it/scalafmtAll" :: "scripts/scalafmtAll" :: state},
+  Command.command("fixAll") { state => "scalafixAll" :: "it/scalafixAll" :: "scripts/scalafixAll" :: state},
   Command.command("testAll") { state => "test" :: "it/test" :: state},
   Command.command("run-all-tests") { state => "testAll" :: state },
   Command.command("clean-and-test") { state => "cleanAll" :: "compile" :: "run-all-tests" :: state },
