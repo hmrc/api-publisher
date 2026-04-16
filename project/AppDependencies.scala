@@ -27,4 +27,12 @@ object AppDependencies {
     "org.mockito"                   %% "mockito-scala-scalatest"                  % "1.17.29",
     "uk.gov.hmrc"                   %% "api-platform-application-domain-fixtures" % appDomainVersion
   ).map(_ % "test")
+
+   private val circeVersion = "0.14.15"
+
+  val scriptDependencies = Seq(
+    "io.circe" %% "circe-core",
+    "io.circe" %% "circe-generic",
+    "io.circe" %% "circe-parser"
+  ).map(_ % circeVersion)
 }
