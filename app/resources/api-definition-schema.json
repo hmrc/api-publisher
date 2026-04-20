@@ -88,11 +88,11 @@
                 "default": true
               },
               "access": {
-                "description": "Used to indicate whether this API version is public or private. If absent, the API defaults to public.",
+                "description": "Used to indicate whether this API version is public, private (DEPRECATED), controlled or internal. If absent, the API defaults to public.",
                 "type": "object",
                 "properties": {
                   "type": {
-                    "description": "Whether the API version is publicly available or only for private, controlled or internal use.",
+                    "description": "Whether the API version is publicly available or only for private (DEPRECATED), controlled or internal use.",
                     "type": "string",
                     "enum": [
                       "PUBLIC",
@@ -102,7 +102,7 @@
                     ]
                   },
                   "isTrial": {
-                    "description": "Whether this API version is a private trial",
+                    "description": "DEPRECATED (use CONTROLLED type instead). Whether this API version is a private trial",
                     "type": "boolean",
                     "default": false
                   }
