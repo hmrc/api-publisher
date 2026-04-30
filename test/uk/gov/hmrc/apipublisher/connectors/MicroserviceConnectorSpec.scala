@@ -260,7 +260,7 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       }
 
       badGatewayException.statusCode shouldBe BAD_GATEWAY
-      badGatewayException.getMessage should include("<head><title>502 Bad Gateway</title></head>")
+      badGatewayException.getMessage should include("title: 502 Bad Gateway")
     }
   }
 

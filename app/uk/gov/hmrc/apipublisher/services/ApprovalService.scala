@@ -50,7 +50,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
                 actor = Process("Publish process"),
                 status = Some(ApprovalStatus.RESUBMITTED),
                 notes = Some("Publish process"),
-                changedAt = instant()
+                changedAt = instant
               )
             } else existingApproval.stateHistory
           ))
@@ -66,8 +66,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def approveService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(APPROVED), notes = notes, changedAt = instant())
-      _           <- apiApprovalRepository.save(approval.copy(status = APPROVED, approvedOn = Some(instant()), approvedBy = Some(actor), stateHistory = stateHistory))
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(APPROVED), notes = notes, changedAt = instant)
+      _           <- apiApprovalRepository.save(approval.copy(status = APPROVED, approvedOn = Some(instant), approvedBy = Some(actor), stateHistory = stateHistory))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
@@ -76,7 +76,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def declineService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(FAILED), notes = notes, changedAt = instant())
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(FAILED), notes = notes, changedAt = instant)
       _           <- apiApprovalRepository.save(approval.copy(status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
     } yield {
       logger.info(s"Declined service $serviceName")
@@ -86,7 +86,7 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, a
   def addComment(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = None, notes = notes, changedAt = instant())
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = None, notes = notes, changedAt = instant)
       _           <- apiApprovalRepository.save(approval.copy(stateHistory = stateHistory))
     } yield {
       logger.info(s"Added comment for service $serviceName")
