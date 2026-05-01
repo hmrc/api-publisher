@@ -25,9 +25,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{RequestHeader, Result}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.backend.http.JsonErrorHandler
+import uk.gov.hmrc.play.bootstrap.backend.http.{ErrorResponse, JsonErrorHandler}
 import uk.gov.hmrc.play.bootstrap.config.HttpAuditEvent
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 class ErrorHandler @Inject() (configuration: Configuration, httpAuditEvent: HttpAuditEvent, auditConnector: AuditConnector, implicit val ec: ExecutionContext)
     extends JsonErrorHandler(auditConnector, httpAuditEvent, configuration) {

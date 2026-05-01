@@ -88,29 +88,39 @@
                 "default": true
               },
               "access": {
-                "description": "Used to indicate whether this API version is public, private (DEPRECATED), controlled or internal. If absent, the API defaults to public.",
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "description": "Whether the API version is publicly available or only for private (DEPRECATED), controlled or internal use.",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "description": "Whether the API version is publicly available or only for private use. (DEPRECATED USE)",
+                        "type": "string",
+                        "enum": [
+                          "PUBLIC",
+                          "PRIVATE"
+                        ]
+                      },
+                      "isTrial": {
+                        "description": "Whether this API version is a private trial (controlled) or not (internal)",
+                        "type": "boolean",
+                        "default": false
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
                     "type": "string",
+                    "description": "Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public.",
                     "enum": [
                       "PUBLIC",
-                      "PRIVATE",
                       "CONTROLLED",
                       "INTERNAL"
                     ]
-                  },
-                  "isTrial": {
-                    "description": "DEPRECATED (use CONTROLLED type instead). Whether this API version is a private trial",
-                    "type": "boolean",
-                    "default": false
                   }
-                },
-                "required": [
-                  "type"
-                ],
-                "additionalProperties": false
+                ]
               },
               "fieldDefinitions": {
                 "description": "A list of subscription fields for this API version.",

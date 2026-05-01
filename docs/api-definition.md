@@ -25,15 +25,8 @@ Details of an API version
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
 | `status` | _string_ | Required | ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB) |
 | `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA |
-| `access` | _object_ | Optional | [access](#access) | Used to indicate whether this API version is public, private (DEPRECATED), controlled or internal. If absent, the API defaults to public. |
+| `access` | __ | Optional |  |  |
 | `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version. |
-### `access`
-Used to indicate whether this API version is public, private (DEPRECATED), controlled or internal. If absent, the API defaults to public.
-
-| Name | Type | Required | Values | Description |
-| --- | --- | --- | --- | --- |
-| `type` | _string_ | Required | PUBLIC<br>PRIVATE<br>CONTROLLED<br>INTERNAL | Whether the API version is publicly available or only for private (DEPRECATED), controlled or internal use. |
-| `isTrial` | _boolean_ | Optional | False (default) | DEPRECATED (use CONTROLLED type instead). Whether this API version is a private trial |
 ### `fieldDefinitions`
 Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.
 
@@ -45,7 +38,7 @@ Details a subscription field used by this API. If you would like to use subscrip
 | `hint` | _string_ | Optional |  | Hint text to display to users to help them provide a correct value for this field. If left blank the description will be used instead |
 | `shortDescription` | _string_ | Optional |  | A short description that is displayed on the API metadata page |
 | `validation` | _object_ | Optional | [validation](#validation) | Contains Rules to validate the value of the Field Definition. |
-| `access` | _object_ | Optional | [access](#access-1) | Access control for the value of this Subscription Field |
+| `access` | _object_ | Optional | [access](#access) | Access control for the value of this Subscription Field |
 ### `validation`
 Contains Rules to validate the value of the Field Definition.
 

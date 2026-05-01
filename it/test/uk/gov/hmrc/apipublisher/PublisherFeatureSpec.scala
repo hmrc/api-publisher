@@ -966,6 +966,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
        |      {
        |        "version": "1.0",
        |        "status": "STABLE",
+       |        "access": "PUBLIC",
        |        "fieldDefinitions": [
        |          {
        |            "name": "callbackUrl",
