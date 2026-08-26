@@ -6,16 +6,12 @@
     "versions" : [
       {
         "version" : "1.0",
-        "access" : {
-          "type" : "PRIVATE"
-        },
+        "access" : "INTERNAL",
         "status" : "STABLE"
       },
       {
         "version" : "2.0",
-        "access" : {
-          "type" : "PUBLIC"
-        },
+        "access" : "PUBLIC",
         "status" : "STABLE"
       },
       {

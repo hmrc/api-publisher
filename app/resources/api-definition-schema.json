@@ -88,34 +88,12 @@
                 "default": true
               },
               "access": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "description": "Whether the API version is publicly available, for controlled use or internal use.",
-                        "type": "string",
-                        "enum": [
-                          "PUBLIC",
-                          "CONTROLLED",
-                          "INTERNAL"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "type"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "string",
-                    "description": "Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public.",
-                    "enum": [
-                      "PUBLIC",
-                      "CONTROLLED",
-                      "INTERNAL"
-                    ]
-                  }
+                "type": "string",
+                "description": "Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public.",
+                "enum": [
+                  "PUBLIC",
+                  "CONTROLLED",
+                  "INTERNAL"
                 ]
               },
               "fieldDefinitions": {

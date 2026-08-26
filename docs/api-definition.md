@@ -25,7 +25,7 @@ Details of an API version
 | `version` | _string_ | Required | ^[0-9\.P]+$ | The version number. Eg 1.0 |
 | `status` | _string_ | Required | ALPHA<br>BETA<br>STABLE<br>DEPRECATED<br>RETIRED | The current lifecycle status. See [Lifecycle](https://confluence.tools.tax.service.gov.uk/x/iz6kB) |
 | `endpointsEnabled` | _boolean_ | Optional | True (default) | Whether the endpoints are shown as available on the DevHub documentation page. This does not effect if the API can actually be used / called. This value MUST be false if the API versions status is ALPHA |
-| `access` | __ | Optional |  |  |
+| `access` | _string_ | Optional | PUBLIC<br>CONTROLLED<br>INTERNAL | Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public. |
 | `fieldDefinitions` | _object[]_ | Optional | [fielddefinitions](#fieldDefinitions) | A list of subscription fields for this API version. |
 ### `fieldDefinitions`
 Details a subscription field used by this API. If you would like to use subscription fields you should talk to the API Platform team first #team-api-platform-sup.
