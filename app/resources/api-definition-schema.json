@@ -93,18 +93,13 @@
                     "type": "object",
                     "properties": {
                       "type": {
-                        "description": "Whether the API version is publicly available or only for controlled use.",
+                        "description": "Whether the API version is publicly available, for controlled use or internal use.",
                         "type": "string",
                         "enum": [
                           "PUBLIC",
                           "CONTROLLED",
                           "INTERNAL"
                         ]
-                      },
-                      "isTrial": {
-                        "description": "Whether this API version is controlled or internal",
-                        "type": "boolean",
-                        "default": false
                       }
                     },
                     "required": [
