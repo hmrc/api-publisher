@@ -93,7 +93,7 @@
                     "type": "object",
                     "properties": {
                       "type": {
-                        "description": "Whether the API version is publicly available or only for private use. (DEPRECATED USE)",
+                        "description": "Whether the API version is publicly available or only for controlled use. (DEPRECATED USE)",
                         "type": "string",
                         "enum": [
                           "PUBLIC",
@@ -101,7 +101,7 @@
                         ]
                       },
                       "isTrial": {
-                        "description": "Whether this API version is a private trial (controlled) or not (internal)",
+                        "description": "Whether this API version is controlled or internal",
                         "type": "boolean",
                         "default": false
                       }
