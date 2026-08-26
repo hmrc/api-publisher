@@ -97,7 +97,7 @@
                         "type": "string",
                         "enum": [
                           "PUBLIC",
-                          "PRIVATE"
+                          "CONTROLLED"
                         ]
                       },
                       "isTrial": {

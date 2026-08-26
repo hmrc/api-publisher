@@ -105,10 +105,7 @@ The response will contain information regarding why the request could not be und
     "versions":[
       {
         "version":"1.0",
-        "access":
-        {
-          "type":"PRIVATE"
-        },
+        "access":"CONTROLLED",
         "status":"STABLE",
         "fieldDefinitions":[]
       }
