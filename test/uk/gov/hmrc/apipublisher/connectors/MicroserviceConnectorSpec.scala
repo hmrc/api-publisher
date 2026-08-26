@@ -54,10 +54,8 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   val producerApiDefinition = handleGetFileAndClose("/input/valid-api-definition.json")
 
-  val invalidContextInDefinition       = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
-  val invalidDefinitionWithEmptyScopes = handleGetFileAndClose("/input/api-definition-no-scopes-defined.json")
-  val invalidDefinitionWithScopes      = handleGetFileAndClose("/input/invalid-api-definition-with-scopes.json")
-  val invalidEndpointsInDefinition     = handleGetFileAndClose("/input/invalid-api-definition-with-endpoints.json")
+  val invalidContextInDefinition   = handleGetFileAndClose("/input/invalid-context-in-api-definition.json")
+  val invalidEndpointsInDefinition = handleGetFileAndClose("/input/invalid-api-definition-with-endpoints.json")
 
   val api = parse(getClass.getResourceAsStream("/input/valid-api.json")).as[JsObject]
 
