@@ -19,11 +19,8 @@ package uk.gov.hmrc.apipublisher.models
 object ErrorCode extends Enumeration {
 
   type ErrorCode = Value
-  val MALFORMED_JSON          = Value("API_MALFORMED_JSON")
   val INVALID_REQUEST_PAYLOAD = Value("API_PUBLISHER_INVALID_REQUEST_PAYLOAD")
   val INVALID_API_DEFINITION  = Value("API_PUBLISHER_INVALID_API_DEFINITION")
-  val NO_SUCH_SCOPE           = Value("API_NO_SUCH_SCOPE")
-  val UNEXPECTED_ERROR        = Value("API_UNEXPECTED_ERROR")
   val UNKNOWN_ERROR           = Value("API_PUBLISHER_UNKNOWN_ERROR")
   val UNAUTHORIZED            = Value("UNAUTHORIZED")
   val BAD_QUERY_PARAMETER     = Value("BAD_QUERY_PARAMETER")

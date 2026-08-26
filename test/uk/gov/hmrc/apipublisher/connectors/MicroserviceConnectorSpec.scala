@@ -178,24 +178,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
       result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
     }
 
-    "return DefinitionFileFailedSchemaValidation if the API definition has empty scopes" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithEmptyScopes)))
-
-      val result         = await(connector.getProducerApiDefinition(testService)).left.value
-      val expectedErrors =
-        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
-      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-    }
-
-    "return DefinitionFileFailedSchemaValidation if the API definition has scopes" in new Setup {
-      stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidDefinitionWithScopes)))
-
-      val result         = await(connector.getProducerApiDefinition(testService)).left.value
-      val expectedErrors =
-        Json.parse("""{"schemaLocation":"#","pointerToViolation":"#","causingExceptions":[],"keyword":"additionalProperties","message":"extraneous key [scopes] is not permitted"}""")
-      result shouldBe DefinitionFileFailedSchemaValidation(expectedErrors)
-    }
-
     "return DefinitionFileFailedSchemaValidation if the API definition has endpoints" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(invalidEndpointsInDefinition)))
 
