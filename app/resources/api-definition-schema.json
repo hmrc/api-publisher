@@ -88,38 +88,12 @@
                 "default": true
               },
               "access": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "description": "Whether the API version is publicly available or only for private use. (DEPRECATED USE)",
-                        "type": "string",
-                        "enum": [
-                          "PUBLIC",
-                          "PRIVATE"
-                        ]
-                      },
-                      "isTrial": {
-                        "description": "Whether this API version is a private trial (controlled) or not (internal)",
-                        "type": "boolean",
-                        "default": false
-                      }
-                    },
-                    "required": [
-                      "type"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "string",
-                    "description": "Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public.",
-                    "enum": [
-                      "PUBLIC",
-                      "CONTROLLED",
-                      "INTERNAL"
-                    ]
-                  }
+                "type": "string",
+                "description": "Used to indicate whether this API version is public, controlled or internal. If absent, the API defaults to public.",
+                "enum": [
+                  "PUBLIC",
+                  "CONTROLLED",
+                  "INTERNAL"
                 ]
               },
               "fieldDefinitions": {

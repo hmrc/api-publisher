@@ -5,9 +5,7 @@
   "versions" : [
     {
       "version" : "1.0",
-      "access" : {
-        "type" : "PRIVATE"
-      },
+      "access" : "INTERNAL",
       "status" : "RETIRED",
       "fieldDefinitions": [
         {
@@ -51,9 +49,7 @@
     },
     {
       "version" : "2.0",
-      "access" : {
-        "type" : "PUBLIC"
-      },
+      "access" : "PUBLIC",
       "status" : "STABLE",
       "fieldDefinitions": [
         {
