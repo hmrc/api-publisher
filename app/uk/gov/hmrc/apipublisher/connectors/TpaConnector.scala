@@ -32,11 +32,11 @@ object TpaConnector {
 }
 
 @Singleton
-class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(implicit val ec: ExecutionContext) {
+class TpaConnector @Inject() (config: TpaConnector.Config, http: HttpClientV2)(using ExecutionContext) {
 
   protected val serviceBaseUrl: String = config.serviceBaseUrl
 
-  def deleteSubscriptions(apiContext: String, versionNbr: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def deleteSubscriptions(apiContext: String, versionNbr: String)(using HeaderCarrier): Future[Unit] = {
     val url = s"$serviceBaseUrl/apis/$apiContext/versions/$versionNbr/subscribers"
     http.delete(url"$url")
       .execute[Either[UpstreamErrorResponse, HttpResponse]]

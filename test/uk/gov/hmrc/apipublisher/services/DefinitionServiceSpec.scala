@@ -22,7 +22,7 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import utils.AsyncHmrcSpec
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
@@ -31,7 +31,7 @@ import uk.gov.hmrc.apipublisher.models.{DefinitionFileNoBodyReturned, ProducerAp
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends MicroserviceConnectorMockModule
@@ -46,7 +46,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
     val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
-    def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
+    def json[J <: JsValue](path: String)(using Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
 
     def primeOasFor(version: String, endpoints: Endpoint*) = {
       when(oasVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))

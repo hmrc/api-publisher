@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit
 import java.{util => ju}
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, SwaggerParseResult}
@@ -42,8 +42,8 @@ class OASFileLoaderSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceO
 
   trait BaseSetup {
 
-    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
+    given hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
     def oasFileLocator: OASFileLoader.OASFileLocator
     def oasParser: SwaggerParserExtension

@@ -17,10 +17,10 @@
 package uk.gov.hmrc.apipublisher
 
 import scala.concurrent.Await.result
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.language.postfixOps
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.EitherValues
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode

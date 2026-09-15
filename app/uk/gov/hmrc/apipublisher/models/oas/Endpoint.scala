@@ -32,7 +32,7 @@ case class Endpoint(
 
 object Endpoint {
 
-  implicit val queryParamFormat: Format[QueryParam] = Json.format[QueryParam]
-  implicit val endpointFormat: Format[Endpoint]     = Json.format[Endpoint]
+  given Format[QueryParam] = Json.format[QueryParam]
+  given Format[Endpoint]   = Json.format[Endpoint]
 
 }

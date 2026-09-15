@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.EitherValues
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode

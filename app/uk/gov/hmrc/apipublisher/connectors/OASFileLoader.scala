@@ -47,7 +47,7 @@ object OASFileLoader {
 }
 
 @Singleton
-class OASFileLoader @Inject() (oasFileLocator: OASFileLoader.OASFileLocator, openAPIV3Parser: SwaggerParserExtension)(implicit val ec: ExecutionContext, system: ActorSystem)
+class OASFileLoader @Inject() (oasFileLocator: OASFileLoader.OASFileLocator, openAPIV3Parser: SwaggerParserExtension)(using ec: ExecutionContext, system: ActorSystem)
     extends ApplicationLogger {
 
   def load(serviceLocation: ServiceLocation, version: String, oasParserMaxDuration: FiniteDuration): Future[OpenAPI] = {

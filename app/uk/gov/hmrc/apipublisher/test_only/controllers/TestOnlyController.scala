@@ -37,7 +37,7 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 class TestOnlyController @Inject() (
     approvalService: ApprovalService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
   private val FAILED_TO_DELETE_API_APPROVAL = "FAILED_TO_DELETE_API_APPROVAL"

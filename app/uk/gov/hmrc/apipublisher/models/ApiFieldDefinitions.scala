@@ -54,12 +54,9 @@ case object UrlValidationRule extends ValidationRule
 case class Validation(errorMessage: String, rules: NEL[ValidationRule])
 
 object Validation {
-
-  implicit val validationRuleFormat: OFormat[ValidationRule] = derived.withTypeTag.oformat(TypeTagSetting.ShortClassName)
-
-  implicit val nelValidationRuleFormat: Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
-
-  implicit val ValidationJF: Format[Validation] = Json.format[Validation]
+  given OFormat[ValidationRule]     = derived.withTypeTag.oformat(TypeTagSetting.ShortClassName)
+  given Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
+  given Format[Validation]          = Json.format[Validation]
 }
 
 case class ApiFieldDefinitions(apiContext: String, apiVersion: String, fieldDefinitions: Seq[FieldDefinition])
@@ -72,7 +69,7 @@ object FieldDefinitionType extends Enumeration {
   val STRING       = Value("STRING")
   val PPNS_FIELD   = Value("PPNSField")
 
-  implicit val FieldDefitionTypeFormat: Format[FieldDefinitionType] =
+  given Format[FieldDefinitionType] =
     Format(
       Reads.enumNameReads(FieldDefinitionType),
       Writes.enumNameWrites[FieldDefinitionType.type]
@@ -95,7 +92,7 @@ object FieldDefinition {
 
   // implicit val FieldDefinitionReads: Format[FieldDefinition] = Json.format[FieldDefinition]
 
-  implicit val FieldDefinitionReads: Reads[FieldDefinition] = (
+  given Reads[FieldDefinition] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "hint").readNullable[String] and
@@ -105,7 +102,7 @@ object FieldDefinition {
       ((JsPath \ "access").read[AccessRequirements] or Reads.pure(AccessRequirements.Default))
   )(FieldDefinition.apply)
 
-  implicit val FieldDefinitionWrites: Writes[FieldDefinition] = new Writes[FieldDefinition] {
+  given Writes[FieldDefinition] = new Writes[FieldDefinition] {
 
     def dropTail[A, B, C, D, E, F, G](t: Tuple7[A, B, C, D, E, F, G]): Tuple6[A, B, C, D, E, F] = (t._1, t._2, t._3, t._4, t._5, t._6)
 

@@ -28,12 +28,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Unproces
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
+class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClientV2)(using ExecutionContext)
     extends ConnectorRecovery with ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 
-  def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publishAPI(api: JsObject)(using HeaderCarrier): Future[Unit] = {
     import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
     http.post(url"$serviceBaseUrl/api-definition")
@@ -46,7 +46,7 @@ class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpC
       }
   }
 
-  def validateAPIDefinition(definition: JsObject)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+  def validateAPIDefinition(definition: JsObject)(using HeaderCarrier): Future[Option[JsValue]] = {
     import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
     val url = url"$serviceBaseUrl/api-definition/validate"

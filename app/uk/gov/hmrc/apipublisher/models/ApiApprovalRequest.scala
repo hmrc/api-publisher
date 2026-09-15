@@ -22,5 +22,5 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 case class ApiApprovalRequest(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String] = None)
 
 object ApiApprovalRequest {
-  implicit val format: OFormat[ApiApprovalRequest] = Json.format[ApiApprovalRequest]
+  given OFormat[ApiApprovalRequest] = Json.format[ApiApprovalRequest]
 }

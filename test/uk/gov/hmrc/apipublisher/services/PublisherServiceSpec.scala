@@ -26,10 +26,10 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
-import uk.gov.hmrc.apipublisher.connectors._
+import uk.gov.hmrc.apipublisher.connectors.*
 import uk.gov.hmrc.apipublisher.models
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
+import uk.gov.hmrc.apipublisher.models.*
 
 class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 
@@ -65,7 +65,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
   )
 
   trait Setup {
-    implicit val hc: HeaderCarrier                                         = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given hc: HeaderCarrier                                                = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     val mockApiDefinitionConnector: APIDefinitionConnector                 = mock[APIDefinitionConnector]
     val mockApiSubscriptionFieldsConnector: APISubscriptionFieldsConnector = mock[APISubscriptionFieldsConnector]
     val mockTpaConnector: TpaConnector                                     = mock[TpaConnector]

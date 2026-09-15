@@ -27,9 +27,9 @@ import org.mockito.BDDMockito.`given` as mockitoGiven
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
-import play.api.libs.json._
-import play.api.mvc._
-import play.api.test.Helpers._
+import play.api.libs.json.*
+import play.api.mvc.*
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.http.HeaderNames.xRequestId
@@ -38,16 +38,16 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.NEW
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
-import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.apipublisher.services._
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
+import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.services.*
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 
   val serviceLocation              = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
-  implicit val mat: Materializer = app.materializer
+  given mat: Materializer = app.materializer
 
   private val sharedSecret = UUID.randomUUID().toString
 
@@ -74,11 +74,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   )
 
   trait BaseSetup {
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockPublisherService       = mock[PublisherService]
-    val mockApprovalService        = mock[ApprovalService]
-    val mockAppConfig              = mock[AppConfig]
-    val mockDefinitionService      = mock[DefinitionService]
+    given HeaderCarrier       = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val mockPublisherService  = mock[PublisherService]
+    val mockApprovalService   = mock[ApprovalService]
+    val mockAppConfig         = mock[AppConfig]
+    val mockDefinitionService = mock[DefinitionService]
 
     val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppConfig, stubControllerComponents())
   }
@@ -391,11 +391,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
   }
 
-  def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
+  def request[T](data: T, token: String)(using Writes[T]): Request[JsValue] = {
     FakeRequest().withHeaders(("Authorization", base64Encode(token))).withBody(Json.toJson(data))
   }
 
-  def missingAuthHeaderRequest[T](data: T)(implicit writes: Writes[T]): Request[JsValue] = {
+  def missingAuthHeaderRequest[T](data: T)(using Writes[T]): Request[JsValue] = {
     FakeRequest().withBody(Json.toJson(data))
   }
 

@@ -36,7 +36,7 @@ object OasVersionDefinitionService {
 class OasVersionDefinitionService @Inject() (
     microserviceConnector: MicroserviceConnector,
     oasParser: OasVersionDefinitionService.OasParser
-  )(implicit ec: ExecutionContext
+  )(using ExecutionContext
   ) extends DefinitionService.VersionDefinitionService {
 
   override def getDetailForVersion(serviceLocation: ServiceLocation, context: Option[String], version: String): Future[List[Endpoint]] = {

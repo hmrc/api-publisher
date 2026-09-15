@@ -32,7 +32,7 @@ import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig, val clock: Clock)(implicit val ec: ExecutionContext)
+class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig, val clock: Clock)(using ExecutionContext)
     extends ApplicationLogger with ClockNow {
 
   def fetchAllServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchAllServices().map(_.toList)

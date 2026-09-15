@@ -40,7 +40,7 @@ object ApiVersionSource {
     val asText = "UNKNOWN"
   }
 
-  implicit val format: Format[ApiVersionSource] = new Format[ApiVersionSource] {
+  given Format[ApiVersionSource] = new Format[ApiVersionSource] {
 
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
       case JsString(RAML.asText)    => JsSuccess(RAML)
@@ -102,7 +102,7 @@ case class ProducerApiDefinition(api: JsObject) {
   }
 
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {
-    versionJs.validate[OptionalFieldDefinitions](using OptionalFieldDefinitions.reads) match {
+    versionJs.validate[OptionalFieldDefinitions](using OptionalFieldDefinitions.given_Reads_OptionalFieldDefinitions) match {
       case success: JsSuccess[OptionalFieldDefinitions] => for {
           fieldDefinitions <- success.get.fieldDefinitions
           apiVersion        = success.get.version
@@ -122,17 +122,17 @@ case class ProducerApiDefinition(api: JsObject) {
 }
 
 object ProducerApiDefinition {
-  implicit val formats: Format[ProducerApiDefinition] = Json.format[ProducerApiDefinition]
+  given Format[ProducerApiDefinition] = Json.format[ProducerApiDefinition]
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])
 
 object OptionalFieldDefinitions {
-  implicit val reads: Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
+  given Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
 }
 
 case class ServiceLocation(serviceName: String, serviceUrl: String, metadata: Option[Map[String, String]] = None)
 
 object ServiceLocation {
-  implicit val formats: Format[ServiceLocation] = Json.format[ServiceLocation]
+  given Format[ServiceLocation] = Json.format[ServiceLocation]
 }

@@ -42,12 +42,12 @@ object DefinitionService {
 class DefinitionService @Inject() (
     microserviceConnector: MicroserviceConnector,
     oasVersionDefinitionService: OasVersionDefinitionService
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends ApplicationLogger {
 
   val E = EitherTHelper.make[PublishError]
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
+  def getDefinition(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
     (
       for {
         baseProducerApiDefinition     <- E.fromEitherF(microserviceConnector.getProducerApiDefinition(serviceLocation))

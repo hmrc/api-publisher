@@ -23,13 +23,13 @@ case class PublicationResult(approved: Boolean, publisherResponse: PublisherResp
 case class PublisherResponse(name: String, serviceName: String, context: String, description: String, versions: List[PublisherApiVersion])
 
 object PublisherResponse {
-  implicit val format: OFormat[PublisherResponse] = Json.format[PublisherResponse]
+  given OFormat[PublisherResponse] = Json.format[PublisherResponse]
 }
 
 case class PublisherApiVersion(version: String, status: PublisherApiStatus)
 
 object PublisherApiVersion {
-  implicit val format: OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]
+  given OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]
 }
 
 sealed trait PublisherApiStatus
@@ -54,9 +54,7 @@ object PublisherApiStatus {
   private val convert: String => JsResult[PublisherApiStatus] =
     s => PublisherApiStatus(s).fold[JsResult[PublisherApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
 
-  implicit val reads: Reads[PublisherApiStatus] = JsPath.read[String].flatMapResult(convert(_))
-
-  implicit val writes: Writes[PublisherApiStatus] = Writes[PublisherApiStatus](status => JsString(status.toString))
-
-  implicit val format: Format[PublisherApiStatus] = Format(reads, writes)
+  given reads: Reads[PublisherApiStatus]   = JsPath.read[String].flatMapResult(convert(_))
+  given writes: Writes[PublisherApiStatus] = Writes[PublisherApiStatus](status => JsString(status.toString))
+  given Format[PublisherApiStatus]         = Format(reads, writes)
 }

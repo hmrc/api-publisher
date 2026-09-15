@@ -32,7 +32,7 @@ case class ApiApprovalState(
   )
 
 object ApiApprovalState {
-  implicit val stateFormat: Format[ApiApprovalState] = Json.format[ApiApprovalState]
+  given Format[ApiApprovalState] = Json.format[ApiApprovalState]
 }
 
 case class APIApproval(
@@ -51,7 +51,7 @@ case class APIApproval(
 }
 
 object APIApproval {
-  implicit val apiApprovalFormat: Format[APIApproval] = Json.using[Json.WithDefaultValues].format[APIApproval]
+  given Format[APIApproval] = Json.using[Json.WithDefaultValues].format[APIApproval]
 }
 
 // TODO convert to enum
@@ -73,5 +73,5 @@ object ApprovalStatus {
 
   import play.api.libs.json.Format
   import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
-  implicit val format: Format[ApprovalStatus] = SimpleEnumJsonFormatting.createStringFormatFor[ApprovalStatus]("ApprovalStatus", apply)
+  given Format[ApprovalStatus] = SimpleEnumJsonFormatting.createStringFormatFor[ApprovalStatus]("ApprovalStatus", apply)
 }

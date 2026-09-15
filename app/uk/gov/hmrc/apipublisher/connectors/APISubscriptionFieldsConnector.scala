@@ -28,12 +28,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Unproces
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(using ExecutionContext)
     extends ConnectorRecovery {
 
   lazy val serviceBaseUrl = config.baseUrl
 
-  def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(using HeaderCarrier): Future[Unit] = {
     import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
@@ -55,7 +55,7 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
     Future.sequence(putFutures).map(_ => ())
   }
 
-  def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+  def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(using HeaderCarrier): Future[Option[JsValue]] = {
     import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
     if (fieldDefinitions.isEmpty) {

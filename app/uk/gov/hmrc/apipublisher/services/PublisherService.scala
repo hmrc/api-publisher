@@ -37,7 +37,7 @@ class PublisherService @Inject() (
     tpaConnector: TpaConnector,
     approvalService: ApprovalService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
   def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(using HeaderCarrier): Future[PublicationResult] = {
@@ -83,8 +83,8 @@ class PublisherService @Inject() (
 
   }
 
-  def validation(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    def conditionalValidateApiDefinition(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
+  def validation(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(using HeaderCarrier): Future[Option[JsValue]] = {
+    def conditionalValidateApiDefinition(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(using HeaderCarrier) = {
       if (validateApiDefinition) {
         apiDefinitionConnector.validateAPIDefinition(producerApiDefinition.apiWithoutFieldDefinitions)
       } else {

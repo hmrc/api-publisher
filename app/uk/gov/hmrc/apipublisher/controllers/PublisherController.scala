@@ -45,7 +45,7 @@ class PublisherController @Inject() (
     approvalService: ApprovalService,
     appConfig: AppConfig,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
   private val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
@@ -77,7 +77,7 @@ class PublisherController @Inject() (
       BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
   }
 
-  private def ensureAuthorised(implicit request: Request[JsValue]): Option[Result] = {
+  private def ensureAuthorised(using request: Request[JsValue]): Option[Result] = {
     lazy val failedResult = Some(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
     request.headers.get("Authorization") match {
       case None                                                            => failedResult
@@ -86,7 +86,7 @@ class PublisherController @Inject() (
     }
   }
 
-  private def validateRequestPayload[T](implicit request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
+  private def validateRequestPayload[T](using request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
     request.body.validate[T] match {
       case JsSuccess(payload, _) => Right(payload)
       case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, s"Unable to parse request body : ${JsError.toJson(err)}")))
@@ -112,7 +112,7 @@ class PublisherController @Inject() (
       .merge
   }
 
-  private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
+  private def publishService(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
     import cats.implicits._

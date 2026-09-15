@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.io.Source
 
 import com.codahale.metrics.SharedMetricRegistries
@@ -33,14 +33,14 @@ import utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -61,8 +61,8 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
 
   trait Setup {
     WireMock.reset()
-    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
+    given hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
     val appConfig: Configuration = mock[Configuration]
 
