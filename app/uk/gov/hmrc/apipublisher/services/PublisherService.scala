@@ -21,13 +21,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
@@ -40,7 +40,7 @@ class PublisherService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
+  def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(using HeaderCarrier): Future[PublicationResult] = {
 
     val apiDetailsWithServiceLocation: JsObject = {
       producerApiDefinition.apiWithoutFieldDefinitions ++ Json.obj(

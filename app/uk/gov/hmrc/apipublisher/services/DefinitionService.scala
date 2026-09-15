@@ -20,15 +20,15 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import cats.implicits._
+import cats.implicits.*
 
 import play.api.libs.json.Format.GenericFormat
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 

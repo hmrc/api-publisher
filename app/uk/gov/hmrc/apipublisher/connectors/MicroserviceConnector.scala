@@ -32,7 +32,7 @@ import org.json.JSONObject
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
 

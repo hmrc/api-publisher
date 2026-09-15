@@ -18,7 +18,7 @@ package uk.gov.hmrc.apipublisher.models
 
 import scala.io.Source
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 object APICategory extends Enumeration {
   type APICategory = Value

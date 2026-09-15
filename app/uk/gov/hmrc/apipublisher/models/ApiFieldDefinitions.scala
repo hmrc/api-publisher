@@ -20,8 +20,8 @@ import cats.data.{NonEmptyList => NEL}
 import julienrf.json.derived
 import julienrf.json.derived.TypeTagSetting
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 
 import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
 
@@ -91,7 +91,7 @@ case class FieldDefinition(
   )
 
 object FieldDefinition {
-  import AccessRequirementsFormatters._
+  import AccessRequirementsFormatters.*
 
   // implicit val FieldDefinitionReads: Format[FieldDefinition] = Json.format[FieldDefinition]
 
@@ -103,7 +103,7 @@ object FieldDefinition {
       (JsPath \ "shortDescription").readNullable[String] and
       (JsPath \ "validation").readNullable[Validation] and
       ((JsPath \ "access").read[AccessRequirements] or Reads.pure(AccessRequirements.Default))
-  )(FieldDefinition.apply _)
+  )(FieldDefinition.apply)
 
   implicit val FieldDefinitionWrites: Writes[FieldDefinition] = new Writes[FieldDefinition] {
 

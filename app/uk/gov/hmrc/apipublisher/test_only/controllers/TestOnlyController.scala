@@ -23,13 +23,13 @@ import scala.concurrent.ExecutionContext
 import org.everit.json.schema.ValidationException
 
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import uk.gov.hmrc.http.UnprocessableEntityException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.services.ApprovalService
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 

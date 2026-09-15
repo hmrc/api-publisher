@@ -26,15 +26,15 @@ import scala.util.{Failure, Success, Try}
 import org.everit.json.schema.ValidationException
 
 import play.api.libs.json.Json.{JsValueWrapper, toJson}
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -140,9 +140,10 @@ class PublisherController @Inject() (
         publisherResponse     <- E.liftF(publishApi(producerApiDefinition))
       } yield publisherResponse
     )
-      .leftSemiflatTap { err: PublishError =>
-        logger.error(s"Failed to publish api due to ${err.message}")
-        successful(err) // Thrown away
+      .leftSemiflatTap {
+        err =>
+          logger.error(s"Failed to publish api due to ${err.message}")
+          successful(err) // Thrown away
       }
       .leftMap(mapBusinessErrorsToResults)
       .merge
@@ -189,26 +190,29 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      for {
-        serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
-        result          <- publishService(serviceLocation).map {
-                             case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
-                             case other                                           => other
-                           }
-      } yield result
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        for {
+          serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
+          result          <- publishService(serviceLocation).map {
+                               case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
+                               case other                                           => other
+                             }
+        } yield result
     } recover recovery(FAILED_TO_APPROVE_SERVICE)
   }
 
   def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
     }
   }
 
   def addComment(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
     }
   }
 

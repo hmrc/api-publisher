@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.functional.syntax._
+import play.api.libs.functional.syntax.*
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
+import play.api.libs.json.*
 
 trait AccessRequirementsFormatters {
-  import DevhubAccessRequirement._
+  import DevhubAccessRequirement.*
 
   def ignoreDefaultField[T](value: T, default: T, jsonFieldName: String)(implicit w: Writes[T]) =
     if (value == default) None else Some((jsonFieldName, Json.toJsFieldJsValueWrapper(value)))
@@ -45,7 +45,7 @@ trait AccessRequirementsFormatters {
   implicit val DevhubAccessRequirementsReads: Reads[DevhubAccessRequirements] = (
     ((JsPath \ "read").read[DevhubAccessRequirement] or Reads.pure(DevhubAccessRequirement.Default)) and
       ((JsPath \ "write").read[DevhubAccessRequirement] or Reads.pure(DevhubAccessRequirement.Default))
-  )(DevhubAccessRequirements.apply _)
+  )(DevhubAccessRequirements.apply)
 
   implicit val DevhubAccessRequirementsWrites: OWrites[DevhubAccessRequirements] = new OWrites[DevhubAccessRequirements] {
 
@@ -55,7 +55,7 @@ trait AccessRequirementsFormatters {
           ignoreDefaultField(requirements.read, DevhubAccessRequirement.Default, "read") ::
             ignoreDefaultField(requirements.write, DevhubAccessRequirement.Default, "write") ::
             List.empty[Option[(String, JsValueWrapper)]]
-        ).filterNot(_.isEmpty).map(_.get): _*
+        ).filterNot(_.isEmpty).map(_.get)*
       )
     }
   }

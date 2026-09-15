@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.http.UnprocessableEntityException
 
 import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
@@ -102,7 +102,7 @@ case class ProducerApiDefinition(api: JsObject) {
   }
 
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {
-    versionJs.validate[OptionalFieldDefinitions](OptionalFieldDefinitions.reads) match {
+    versionJs.validate[OptionalFieldDefinitions](using OptionalFieldDefinitions.reads) match {
       case success: JsSuccess[OptionalFieldDefinitions] => for {
           fieldDefinitions <- success.get.fieldDefinitions
           apiVersion        = success.get.version

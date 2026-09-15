@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.bootstrap.backend.http.{ErrorResponse, JsonErrorHandler}
 import uk.gov.hmrc.play.bootstrap.config.HttpAuditEvent
 
-class ErrorHandler @Inject() (configuration: Configuration, httpAuditEvent: HttpAuditEvent, auditConnector: AuditConnector, implicit val ec: ExecutionContext)
+class ErrorHandler @Inject() (configuration: Configuration, httpAuditEvent: HttpAuditEvent, auditConnector: AuditConnector)(using ExecutionContext)
     extends JsonErrorHandler(auditConnector, httpAuditEvent, configuration) {
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {

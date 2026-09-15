@@ -23,7 +23,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 import org.apache.pekko.stream.Materializer
-import org.mockito.BDDMockito.given
+import org.mockito.BDDMockito.`given` as mockitoGiven
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import utils.AsyncHmrcSpec
 
@@ -141,7 +141,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val errorMessage         = "Test error"
       val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
-      given(mockPublisherService.publishAPIDefinition(eqTo(errorServiceLocation), *)(*))
+      mockitoGiven(mockPublisherService.publishAPIDefinition(eqTo(errorServiceLocation), *)(*))
         .willReturn(Future.failed(new IllegalArgumentException(errorMessage)))
 
       val errorRequest = request(errorServiceLocation, sharedSecret)

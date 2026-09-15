@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 
@@ -34,6 +34,8 @@ class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpC
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishAPI(api: JsObject)(implicit hc: HeaderCarrier): Future[Unit] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     http.post(url"$serviceBaseUrl/api-definition")
       .withBody(Json.toJson(api))
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
@@ -45,6 +47,8 @@ class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpC
   }
 
   def validateAPIDefinition(definition: JsObject)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     val url = url"$serviceBaseUrl/api-definition/validate"
     http
       .post(url)

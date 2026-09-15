@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 
 case class ApiApprovalRequest(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String] = None)
 

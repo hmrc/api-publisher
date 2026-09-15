@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsString, JsValue, Json}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 
@@ -34,6 +34,8 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
   lazy val serviceBaseUrl = config.baseUrl
 
   def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(implicit hc: HeaderCarrier): Future[Unit] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
         http.put(url"$serviceBaseUrl/definition/context/$apiContext/version/$apiVersion")
@@ -54,6 +56,8 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
   }
 
   def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     if (fieldDefinitions.isEmpty) {
       Future.successful(None)
     } else {
