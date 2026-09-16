@@ -61,24 +61,24 @@ class PublisherController @Inject() (
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
     case err: DefinitionFileNotFound               =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNotFound: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileNotFound: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileNoBodyReturned         =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNoBodyReturned: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileNoBodyReturned: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileUnprocessableEntity    =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileUnprocessableEntity: ${err.message}")
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileUnprocessableEntity: ${err.message}")
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileFailedSchemaValidation =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileFailedSchemaValidation: ${err.message}")
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(err.error)))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileFailedSchemaValidation: ${err.message}")
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, Json.toJson(err.error)))
     case err: GenericValidationFailure             =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - GenericValidationFailure: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - GenericValidationFailure: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
   }
 
   private def ensureAuthorised(using request: Request[JsValue]): Option[Result] = {
-    lazy val failedResult = Some(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
+    lazy val failedResult = Some(Unauthorized(error(ErrorCode.Unauthorized, "Agent must be authorised to perform Publish or Validate actions")))
     request.headers.get("Authorization") match {
       case None                                                            => failedResult
       case Some(value) if (appConfig.publishingKey != base64Decode(value)) => failedResult
@@ -89,7 +89,7 @@ class PublisherController @Inject() (
   private def validateRequestPayload[T](using request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
     request.body.validate[T] match {
       case JsSuccess(payload, _) => Right(payload)
-      case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, s"Unable to parse request body : ${JsError.toJson(err)}")))
+      case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, s"Unable to parse request body : ${JsError.toJson(err)}")))
     }
   }
 
@@ -179,7 +179,7 @@ class PublisherController @Inject() (
   def searchServices(): Action[AnyContent] = Action.async { request =>
     Try(ServicesSearch.fromQueryString(request.queryString)) match {
       case Success(search) => approvalService.searchServices(search).map(apis => Ok(toJson(apis))) recover recovery(FAILED_TO_SEARCH_SERVICES)
-      case Failure(e)      => successful(BadRequest(error(ErrorCode.BAD_QUERY_PARAMETER, e.getMessage)))
+      case Failure(e)      => successful(BadRequest(error(ErrorCode.BadQueryParameter, e.getMessage)))
     }
   }
 
@@ -220,9 +220,9 @@ class PublisherController @Inject() (
     new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
   }
 
-  private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {
+  private def error(errorCode: ErrorCode, message: JsValueWrapper): JsObject = {
     Json.obj(
-      "code"    -> errorCode.toString,
+      "code"    -> errorCode.asText,
       "message" -> message
     )
   }
@@ -230,16 +230,16 @@ class PublisherController @Inject() (
   private def recovery(prefix: String): PartialFunction[Throwable, Result] = {
     case e: ValidationException          =>
       logger.error(s"$prefix - Validation of API definition failed: ${e.toJSON.toString(2)}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.parse(e.toJSON.toString)))
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, Json.parse(e.toJSON.toString)))
     case e: UnprocessableEntityException =>
       logger.error(s"$prefix - Unprocessable request received: ${e.getMessage}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
+      UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, e.getMessage))
     case e: UnknownApiServiceException   =>
       logger.warn(s"$prefix - Unknown Service: ${e.getMessage}")
       NotFound
     case e                               =>
       logger.error(s"$prefix - An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.UNKNOWN_ERROR, s"An unexpected error occurred: ${e.getMessage}"))
+      InternalServerError(error(ErrorCode.UnknownError, s"An unexpected error occurred: ${e.getMessage}"))
   }
 
 }

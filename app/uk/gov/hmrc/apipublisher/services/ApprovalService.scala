@@ -24,7 +24,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
-import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiApprovalState, ApprovalStatus, ServiceLocation, ServicesSearch}
@@ -32,7 +31,7 @@ import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
-class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, appContext: AppConfig, val clock: Clock)(using ExecutionContext)
+class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, val clock: Clock)(using ExecutionContext)
     extends ApplicationLogger with ClockNow {
 
   def fetchAllServices(): Future[List[APIApproval]] = apiApprovalRepository.fetchAllServices().map(_.toList)

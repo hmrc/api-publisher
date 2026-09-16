@@ -109,9 +109,9 @@ case class FieldDefinition(
     description: String,
     hint: Option[String],
     `type`: FieldDefinitionType,
-    shortDescription: Option[String] = None,
-    validation: Option[Validation] = None,
-    access: AccessRequirements = AccessRequirements.Default
+    shortDescription: Option[String],
+    validation: Option[Validation],
+    access: AccessRequirements
   )
 
 object FieldDefinition {
@@ -126,7 +126,7 @@ object FieldDefinition {
       (JsPath \ "type").read[FieldDefinitionType] and
       (JsPath \ "shortDescription").readNullable[String] and
       (JsPath \ "validation").readNullable[Validation] and
-      ((JsPath \ "access").read[AccessRequirements] or Reads.pure(AccessRequirements.Default))
+      (JsPath \ "access").readWithDefault[AccessRequirements](AccessRequirements.Default)
   )(FieldDefinition.apply)
 
   given Writes[FieldDefinition] = new Writes[FieldDefinition] {

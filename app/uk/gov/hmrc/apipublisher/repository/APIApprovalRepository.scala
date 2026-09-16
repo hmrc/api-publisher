@@ -34,7 +34,6 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apipublisher.models.APIApproval.*
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.*
 import uk.gov.hmrc.apipublisher.models.*
 

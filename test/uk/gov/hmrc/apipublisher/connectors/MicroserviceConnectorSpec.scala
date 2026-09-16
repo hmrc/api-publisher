@@ -39,7 +39,7 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apipublisher.models.APICategory.{CUSTOMS, EXAMPLE, OTHER}
+import uk.gov.hmrc.apipublisher.models.APICategory.{Customs, Example, Other}
 import uk.gov.hmrc.apipublisher.models.*
 
 class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
@@ -63,8 +63,6 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     WireMock.reset()
     given hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
     given system: ActorSystem = app.injector.instanceOf[ActorSystem]
-
-    val appConfig: Configuration = mock[Configuration]
 
     lazy val connector = new MicroserviceConnector(
       MicroserviceConnector.Config(validateApiDefinition = true, oasParserMaxDuration = 3.seconds),
@@ -124,28 +122,28 @@ class MicroserviceConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll wit
     "Default categories to OTHER when API is not in categories map" in new Setup {
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(producerApiDefinition)))
 
-      await(connector.getProducerApiDefinition(testService)).value.categories should contain only OTHER
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only Other
     }
 
     "Not default categories when API is in categories map but categories is defined in the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getProducerApiDefinition(testService)).value.categories should contain only CUSTOMS
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only Customs
     }
 
     "Default categories when API is in categories map and categories is missing from the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-without-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getProducerApiDefinition(testService)).value.categories should contain only EXAMPLE
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only Example
     }
 
     "Default categories when API is in categories map and categories is empty from the definition" in new Setup {
       val helloDefinition = handleGetFileAndClose("/input/hello-definition-with-empty-categories.json")
       stubFor(get(urlEqualTo("/api/definition")).willReturn(aResponse().withBody(helloDefinition)))
 
-      await(connector.getProducerApiDefinition(testService)).value.categories should contain only EXAMPLE
+      await(connector.getProducerApiDefinition(testService)).value.categories should contain only Example
     }
 
     "Return DefinitionFileNoBodyReturned if the API endpoint returns 204" in new Setup {

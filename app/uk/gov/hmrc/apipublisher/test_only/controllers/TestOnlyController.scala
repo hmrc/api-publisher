@@ -46,9 +46,9 @@ class TestOnlyController @Inject() (
     approvalService.deleteApiApproval(serviceName).map { _ => NoContent } recover recovery(FAILED_TO_DELETE_API_APPROVAL)
   }
 
-  private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {
+  private def error(errorCode: ErrorCode, message: JsValueWrapper): JsObject = {
     Json.obj(
-      "code"    -> errorCode.toString,
+      "code"    -> errorCode.asText,
       "message" -> message
     )
   }
@@ -56,16 +56,16 @@ class TestOnlyController @Inject() (
   private def recovery(prefix: String): PartialFunction[Throwable, Result] = {
     case e: ValidationException          =>
       logger.error(s"$prefix - Validation of API definition failed: ${e.toJSON.toString(2)}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.parse(e.toJSON.toString)))
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, Json.parse(e.toJSON.toString)))
     case e: UnprocessableEntityException =>
       logger.error(s"$prefix - Unprocessable request received: ${e.getMessage}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
+      UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, e.getMessage))
     case e: UnknownApiServiceException   =>
       logger.warn(s"$prefix - Unknown Service: ${e.getMessage}")
       NotFound
     case e                               =>
       logger.error(s"$prefix - An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.UNKNOWN_ERROR, s"An unexpected error occurred: ${e.getMessage}"))
+      InternalServerError(error(ErrorCode.UnknownError, s"An unexpected error occurred: ${e.getMessage}"))
   }
 
 }

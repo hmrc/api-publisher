@@ -36,7 +36,7 @@ import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
 
-import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
+import uk.gov.hmrc.apipublisher.models.APICategory
 import uk.gov.hmrc.apipublisher.models._
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -105,7 +105,7 @@ class MicroserviceConnector @Inject() (
 
   private def defaultCategories(producerApiDefinition: ProducerApiDefinition): ProducerApiDefinition = {
     if (producerApiDefinition.categories.isEmpty) {
-      val defaultCategories = categoryMap.getOrElse(producerApiDefinition.apiName, Seq(OTHER))
+      val defaultCategories = APICategory.categoryMap.getOrElse(producerApiDefinition.apiName, Seq(APICategory.Other))
       val updatedApi        = producerApiDefinition.api ++ Json.obj("categories" -> defaultCategories)
       producerApiDefinition.copy(api = updatedApi)
     } else {

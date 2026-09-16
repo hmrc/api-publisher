@@ -19,7 +19,7 @@ package uk.gov.hmrc.apipublisher.models
 import play.api.libs.json.*
 import uk.gov.hmrc.http.UnprocessableEntityException
 
-import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
+import uk.gov.hmrc.apipublisher.models.APICategory
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.RETIRED
 
 enum ApiVersionSource {
@@ -82,7 +82,7 @@ case class ProducerApiDefinition(api: JsObject) {
 
   lazy val statusPerVersion: Map[String, String] = versions.value.map(v => ((v \ "version").as[String], (v \ "status").as[String])).toMap
 
-  lazy val retiredVersionNumbers: Set[String] = statusPerVersion.filter { case (v, s) => (s == RETIRED.toString) }.keySet
+  lazy val retiredVersionNumbers: Set[String] = statusPerVersion.filter { case (_, s) => (s == RETIRED.toString) }.keySet
 
   lazy val fieldDefinitions: Seq[ApiFieldDefinitions] = {
     versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs)).toSeq

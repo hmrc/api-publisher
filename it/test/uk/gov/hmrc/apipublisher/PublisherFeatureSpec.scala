@@ -451,7 +451,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """extraneous key [scopes] is not permitted"""
     }
@@ -487,7 +487,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """extraneous key [scopes] is not permitted"""
     }
@@ -511,7 +511,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """string [invalid context] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
     }
@@ -547,7 +547,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [name] not found"""
     }
@@ -583,7 +583,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [regex] not found"""
     }
@@ -619,7 +619,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """expected minimum item count: 1, found: 0"""
     }
@@ -655,7 +655,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [errorMessage] not found"""
     }
@@ -680,7 +680,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
       responseBody shouldBe Json.obj(
-        "code"    -> JsString(ErrorCode.INVALID_API_DEFINITION.toString),
+        "code"    -> JsString(ErrorCode.InvalidApiDefinition.asText),
         "message" -> JsString("Unable to find definition for service test.example.com")
       )
     }

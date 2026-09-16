@@ -68,7 +68,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
       Then("the controller should return 400 with the API Definition error message")
       assert(response.code == StatusCode.BadRequest)
       val body = Json.parse(response.body.left.value)
-      assert((body \ "apiDefinitionErrors").as[String] contains """'{"error":"invalid"}'""")
+      assert((body \ "apiDefinitionErrors").as[String] `contains` """'{"error":"invalid"}'""")
     }
   }
 
