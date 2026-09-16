@@ -17,13 +17,10 @@
 package uk.gov.hmrc.apipublisher.models
 
 import cats.data.{NonEmptyList => NEL}
-// import julienrf.json.derived
-// import julienrf.json.derived.TypeTagSetting
-
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 
-import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 object NonEmptyListOps {
 
@@ -82,27 +79,36 @@ object Validation {
 
 case class ApiFieldDefinitions(apiContext: String, apiVersion: String, fieldDefinitions: Seq[FieldDefinition])
 
-object FieldDefinitionType extends Enumeration {
-  type FieldDefinitionType = Value
+enum FieldDefinitionType {
+  @deprecated("We don't use URL type for any validation", since = "0.5x") case Url
+  case SecureToken, PlainText, PPNSField
+}
 
-  val URL          = Value("URL")
-  val SECURE_TOKEN = Value("SecureToken")
-  val STRING       = Value("STRING")
-  val PPNS_FIELD   = Value("PPNSField")
+object FieldDefinitionType {
 
-  given Format[FieldDefinitionType] =
-    Format(
-      Reads.enumNameReads(FieldDefinitionType),
-      Writes.enumNameWrites[FieldDefinitionType.type]
-    )
+  extension (fdt: FieldDefinitionType) {
+    def label = FieldDefinitionType.labelMe(fdt)
+  }
 
+  def apply(text: String): Option[FieldDefinitionType] = FieldDefinitionType.values.find(_.label == text)
+
+  def unsafeApply(text: String): FieldDefinitionType = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Field Definition Type"))
+
+  private def labelMe(fdt: FieldDefinitionType): String = fdt match {
+    case Url         => "URL"
+    case SecureToken => "SecureToken"
+    case PlainText   => "STRING"
+    case PPNSField   => "PPNSField"
+  }
+
+  given Format[FieldDefinitionType] = SimpleEnumJsonFormatting.createFormatFor[FieldDefinitionType]("Field Definition Type", apply, label)
 }
 
 case class FieldDefinition(
     name: String,
     description: String,
     hint: Option[String],
-    `type`: FieldDefinitionType.Value,
+    `type`: FieldDefinitionType,
     shortDescription: Option[String] = None,
     validation: Option[Validation] = None,
     access: AccessRequirements = AccessRequirements.Default

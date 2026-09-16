@@ -97,7 +97,7 @@ class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFo
       name = "name",
       description = "description",
       hint = Some("hint"),
-      `type` = FieldDefinitionType.STRING,
+      `type` = FieldDefinitionType.PlainText,
       shortDescription = Some("shortDescription"),
       validation = None,
       access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly))
