@@ -19,8 +19,11 @@ package uk.gov.hmrc.apipublisher.models
 import play.api.libs.json.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 
+
 case class ApiApprovalRequest(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String] = None)
 
 object ApiApprovalRequest {
+  import uk.gov.hmrc.apiplatform.modules.common.domain.models.given
+  import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor.given
   given OFormat[ApiApprovalRequest] = Json.format[ApiApprovalRequest]
 }

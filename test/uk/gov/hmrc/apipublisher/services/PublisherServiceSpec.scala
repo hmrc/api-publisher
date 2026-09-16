@@ -80,8 +80,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
     )
 
     when(mockApprovalService.createOrUpdateServiceApproval(*)).thenReturn(successful(true))
-    when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(successful(()))
-    when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(successful(()))
+    when(mockApiDefinitionConnector.publishAPI(*)(using *)).thenReturn(successful(()))
+    when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(using *)).thenReturn(successful(()))
 
     val apiWith2RetiredVersions: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-2-retired-status.json")).as[JsObject]
     val producerApiDefinitionWith2RetiredVersions: ProducerApiDefinition = ProducerApiDefinition(apiWith2RetiredVersions)
@@ -93,8 +93,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition)) shouldBe PublicationResult(approved = true, publisherResponse)
 
-      verify(mockApiDefinitionConnector).publishAPI(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(eqTo(expectedApiFieldDefinitions))(*)
+      verify(mockApiDefinitionConnector).publishAPI(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(eqTo(expectedApiFieldDefinitions))(using *)
     }
 
     "Publish is successful with 1 Retired version" in new Setup {
@@ -113,14 +113,14 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
         )
       )
 
-      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
+      when(mockTpaConnector.deleteSubscriptions(*, *)(using *)).thenReturn(successful(()))
 
       await(publisherService.publishAPIDefinition(testServiceLocation, retiredProducerApiDefinition)) shouldBe PublicationResult(approved = true, retiredPublisherResponse)
 
-      verify(mockApiDefinitionConnector).publishAPI(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(*)(*)
-      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(*)
-      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(*)
+      verify(mockApiDefinitionConnector).publishAPI(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).publishFieldDefinitions(*)(using *)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(using *)
+      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(using *)
     }
 
     "Publish is successful with 2 Retired versions and 1 stable version" in new Setup {
@@ -137,23 +137,23 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
         )
       )
 
-      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(successful(()))
+      when(mockTpaConnector.deleteSubscriptions(*, *)(using *)).thenReturn(successful(()))
 
       await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinitionWith2RetiredVersions)) shouldBe PublicationResult(
         approved = true,
         retiredPublisherResponse
       )
 
-      verify(mockApiDefinitionConnector).publishAPI(*)(*)
+      verify(mockApiDefinitionConnector).publishAPI(*)(using *)
       verifyZeroInteractions(mockApiSubscriptionFieldsConnector)
-      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(*)
-      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(*)
-      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("3.0"))(*)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("1.0"))(using *)
+      verify(mockTpaConnector).deleteSubscriptions(eqTo("test"), eqTo("2.0"))(using *)
+      verify(mockTpaConnector, never).deleteSubscriptions(eqTo("test"), eqTo("3.0"))(using *)
     }
 
     "Fail, propagating an error, when the tpaConnector fails" in new Setup {
 
-      when(mockTpaConnector.deleteSubscriptions(*, *)(*)).thenReturn(failed(emulatedServiceError))
+      when(mockTpaConnector.deleteSubscriptions(*, *)(using *)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
         await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinitionWith2RetiredVersions))
@@ -178,7 +178,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "Fail, propagating an error, when the apiDefinitionConnector fails" in new Setup {
 
-      when(mockApiDefinitionConnector.publishAPI(*)(*)).thenReturn(failed(emulatedServiceError))
+      when(mockApiDefinitionConnector.publishAPI(*)(using *)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
         await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition))
@@ -187,7 +187,7 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "Fail, propagating an error, when the apiSubscriptionFieldsConnector fails" in new Setup {
 
-      when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(*)).thenReturn(failed(emulatedServiceError))
+      when(mockApiSubscriptionFieldsConnector.publishFieldDefinitions(*)(using *)).thenReturn(failed(emulatedServiceError))
 
       intercept[UnsupportedOperationException] {
         await(publisherService.publishAPIDefinition(testServiceLocation, producerApiDefinition))
@@ -198,26 +198,26 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
   "validateAPIDefinition" should {
 
     "Succeed when no validation failures are detected" in new Setup {
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(using *)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(using *)).thenReturn(successful(None))
 
       await(publisherService.validation(producerApiDefinition, true))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(using *)
 
     }
 
     "Fail when Field Definition is invalid" in new Setup {
 
       val errorString = """{"error":"blah"}"""
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(Some(Json.parse(errorString))))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(using *)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(using *)).thenReturn(successful(Some(Json.parse(errorString))))
 
       val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(using *)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"fieldDefinitionErrors":$errorString}"""
@@ -225,29 +225,29 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "Fail when api definition is invalid" in new Setup {
       val errorString = """{"error":"blah"}"""
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(Some(Json.parse("""{"error":"blah"}"""))))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(using *)).thenReturn(successful(Some(Json.parse("""{"error":"blah"}"""))))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(using *)).thenReturn(successful(None))
 
       val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(using *)
 
       result.isDefined shouldBe true
       Json.stringify(result.get) shouldBe s"""{"apiDefinitionErrors":$errorString}"""
     }
 
     "Succeed when status is retired but no API has subscriptions" in new Setup {
-      when(mockApiDefinitionConnector.validateAPIDefinition(*)(*)).thenReturn(successful(None))
-      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(*)).thenReturn(successful(None))
+      when(mockApiDefinitionConnector.validateAPIDefinition(*)(using *)).thenReturn(successful(None))
+      when(mockApiSubscriptionFieldsConnector.validateFieldDefinitions(*)(using *)).thenReturn(successful(None))
 
       val api: JsObject                                = Json.parse(getClass.getResourceAsStream("/input/api-with-retired-status.json")).as[JsObject]
       val producerApiDefinition: ProducerApiDefinition = ProducerApiDefinition(api)
 
       val result: Option[JsValue] = await(publisherService.validation(producerApiDefinition, true))
 
-      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(*)
-      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(*)
+      verify(mockApiDefinitionConnector).validateAPIDefinition(*)(using *)
+      verify(mockApiSubscriptionFieldsConnector).validateFieldDefinitions(*)(using *)
 
       result.isDefined shouldBe false
     }

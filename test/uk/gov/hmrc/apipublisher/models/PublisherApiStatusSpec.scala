@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import utils.HmrcSpec
 
 import play.api.libs.json.{JsResultException, Json}
 
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.{BETA, STABLE}
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 class PublisherApiStatusSpec extends HmrcSpec {
 

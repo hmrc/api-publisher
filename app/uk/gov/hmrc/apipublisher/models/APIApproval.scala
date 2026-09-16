@@ -21,6 +21,7 @@ import scala.collection.immutable.ListSet
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor.given
 
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
 

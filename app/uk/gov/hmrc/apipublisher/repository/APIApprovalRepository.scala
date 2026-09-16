@@ -43,7 +43,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
     extends PlayMongoRepository[APIApproval](
       collectionName = "apiapproval",
       mongoComponent = mongo,
-      domainFormat = apiApprovalFormat,
+      domainFormat = APIApproval.given_Format_APIApproval,
       indexes = Seq(
         IndexModel(
           ascending("serviceName"),

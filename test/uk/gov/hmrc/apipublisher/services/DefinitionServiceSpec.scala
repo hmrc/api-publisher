@@ -53,7 +53,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
     }
 
     def primeOasOnlyFor(version: String, endpoints: Endpoint*) = {
-      primeOasFor(version, endpoints: _*)
+      primeOasFor(version, endpoints*)
     }
 
     def primeOasFailure(version: String, throwable: Throwable) = {
@@ -89,7 +89,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       intercept[IllegalStateException] {
         await(service.getDefinition(aServiceLocation))
       }
-        .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
+        .getMessage `startsWith` "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
     "handle producer api definition with OAS data" in new Setup {

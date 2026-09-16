@@ -22,35 +22,22 @@ import uk.gov.hmrc.http.UnprocessableEntityException
 import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.RETIRED
 
-sealed trait ApiVersionSource {
-  def asText: String
+enum ApiVersionSource {
+  case RAML, OAS, UNKNOWN
 }
 
 object ApiVersionSource {
-
-  case object RAML extends ApiVersionSource {
-    val asText = "RAML"
-  }
-
-  case object OAS extends ApiVersionSource {
-    val asText = "OAS"
-  }
-
-  case object UNKNOWN extends ApiVersionSource {
-    val asText = "UNKNOWN"
-  }
-
   given Format[ApiVersionSource] = new Format[ApiVersionSource] {
 
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
-      case JsString(RAML.asText)    => JsSuccess(RAML)
-      case JsString(OAS.asText)     => JsSuccess(OAS)
-      case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
-      case e                        => JsError(s"Cannot parse source value from '$e'")
+      case JsString("RAML")    => JsSuccess(RAML)
+      case JsString("OAS")     => JsSuccess(OAS)
+      case JsString("UNKNOWN") => JsSuccess(UNKNOWN)
+      case e                   => JsError(s"Cannot parse source value from '$e'")
     }
 
-    def writes(foo: ApiVersionSource): JsValue = {
-      JsString(foo.asText)
+    def writes(avs: ApiVersionSource): JsValue = {
+      JsString(avs.toString())
     }
   }
 }

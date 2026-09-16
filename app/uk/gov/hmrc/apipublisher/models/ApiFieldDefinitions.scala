@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apipublisher.models
 
 import cats.data.{NonEmptyList => NEL}
-import julienrf.json.derived
-import julienrf.json.derived.TypeTagSetting
+// import julienrf.json.derived
+// import julienrf.json.derived.TypeTagSetting
 
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
@@ -53,8 +53,29 @@ case object UrlValidationRule extends ValidationRule
 
 case class Validation(errorMessage: String, rules: NEL[ValidationRule])
 
+
 object Validation {
-  given OFormat[ValidationRule]     = derived.withTypeTag.oformat(TypeTagSetting.ShortClassName)
+
+  given Format[RegexValidationRule] = Json.format[RegexValidationRule]
+  given OFormat[UrlValidationRule.type] = Json.format[UrlValidationRule.type]
+  
+  given OFormat[ValidationRule] = new OFormat[ValidationRule] {
+    override def reads(json: JsValue): JsResult[ValidationRule] = json match {
+      case JsObject(fields) if(fields.contains("RegexValidationRule")) =>
+        Json.fromJson[RegexValidationRule](fields("RegexValidationRule"))
+      case JsObject(fields) if(fields.contains("UrlValidationRule")) =>
+        Json.fromJson[UrlValidationRule.type](fields("UrlValidationRule"))
+      case x: JsValue => {
+        JsError(s"Not a validation rule $x")
+      }
+    }
+
+    override def writes(o: ValidationRule): JsObject = o match {
+      case r: RegexValidationRule => JsObject(Seq("RegexValidationRule" -> Json.toJson(r)))
+      case UrlValidationRule => JsObject(Seq(("UrlValidationRule" -> JsObject(Seq.empty))))
+    }
+  }
+  
   given Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
   given Format[Validation]          = Json.format[Validation]
 }
@@ -88,7 +109,7 @@ case class FieldDefinition(
   )
 
 object FieldDefinition {
-  import AccessRequirementsFormatters.*
+  import AccessRequirementsFormatters.given
 
   // implicit val FieldDefinitionReads: Format[FieldDefinition] = Json.format[FieldDefinition]
 
@@ -104,8 +125,6 @@ object FieldDefinition {
 
   given Writes[FieldDefinition] = new Writes[FieldDefinition] {
 
-    def dropTail[A, B, C, D, E, F, G](t: Tuple7[A, B, C, D, E, F, G]): Tuple6[A, B, C, D, E, F] = (t._1, t._2, t._3, t._4, t._5, t._6)
-
     // This allows us to hide default AccessRequirements from JSON - as this is a rarely used field
     // but not one that business logic would want as an optional field and require getOrElse everywhere.
     override def writes(o: FieldDefinition): JsValue = {
@@ -117,11 +136,16 @@ object FieldDefinition {
           (JsPath \ "shortDescription").writeNullable[String] and
           (JsPath \ "validation").writeNullable[Validation]
 
-      (if (o.access == AccessRequirements.Default) {
-         (common)(unlift(FieldDefinition.unapply).andThen(dropTail))
-       } else {
-         (common and (JsPath \ "access").write[AccessRequirements])(unlift(FieldDefinition.unapply))
-       }).writes(o)
+      (
+        if (o.access == AccessRequirements.Default) {
+          // (common)(unlift(FieldDefinition.unapply).andThen(dropTail))
+          (common)( (fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation))
+        } else {
+          (common and (JsPath \ "access").write[AccessRequirements])(
+            (fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation, fd.access)
+          )
+        }
+      ).writes(o)
     }
   }
 }

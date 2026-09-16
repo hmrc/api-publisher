@@ -60,7 +60,9 @@ class DefinitionService @Inject() (
   private def addDetailFromSpecification(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition): Future[ProducerApiDefinition] = {
     val api      = producerApiDefinition.api
     val context  = (api \ "context").asOpt[String]
-    val versions = (api \ "versions").as[List[JsObject]]
+    val versions = (api \ "versions").as[List[JsValue]].collect {
+      case o: JsObject => o
+    }
 
     val fDetailedVersions =
       Future.sequence(
@@ -72,7 +74,7 @@ class DefinitionService @Inject() (
             case (endpoints, source) =>
               versionObj +
                 ("endpoints"     -> Json.toJson(endpoints).as[JsArray]) +
-                ("versionSource" -> JsString(source.asText))
+                ("versionSource" -> JsString(source.toString))
           }
         }
       )

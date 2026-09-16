@@ -22,10 +22,10 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import org.scalatest.Inside
-import utils.HmrcSpec
 
 import uk.gov.hmrc.apipublisher.models.oas.QueryParam
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
 
