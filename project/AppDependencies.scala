@@ -25,7 +25,6 @@ object AppDependencies {
     "uk.gov.hmrc"                   %% "bootstrap-test-play-30"                   % bootstrapVersion,
     "uk.gov.hmrc.mongo"             %% "hmrc-mongo-test-play-30"                  % mongoVersion,
     "com.softwaremill.sttp.client3" %% "core"                                     % "3.11.0",
-    "org.mockito"                   %% "mockito-scala-scalatest"                  % mockitoScalaVersion,
     "uk.gov.hmrc"                   %% "api-platform-common-domain-fixtures"      % commonDomainVersion
   ).map(_ % "test")
 

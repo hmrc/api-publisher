@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package utils
+package uk.gov.hmrc.apipublisher.utils
 
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec

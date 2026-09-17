@@ -57,7 +57,7 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
               val (authType: String, scope: Option[String]) =
                 operation.securityRequirement match {
                   case OpenSSecurityRequirement                              => ("NONE", None)
-                  case OauthSSecurityRequirement(schemaName, scheme, oscope) => {
+                  case OauthSSecurityRequirement(_, scheme, oscope) => {
                     scheme match {
                       case _: OAuth2AuthorizationCodeSecurityScheme => ("USER", oscope)
                       case _: OAuth2ClientCredentialsSecurityScheme => ("APPLICATION", oscope)

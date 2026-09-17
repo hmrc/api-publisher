@@ -23,18 +23,18 @@ import scala.io.Source
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import io.swagger.v3.parser.OpenAPIV3Parser
 import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.Json.parse
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.*
-import play.api.{Configuration, Environment}
+import play.api.{Environment}
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}

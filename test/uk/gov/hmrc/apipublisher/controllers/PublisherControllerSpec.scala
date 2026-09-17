@@ -25,7 +25,7 @@ import scala.concurrent.Future.successful
 import org.apache.pekko.stream.Materializer
 import org.mockito.BDDMockito.`given` as mockitoGiven
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.*
 import play.api.mvc.*

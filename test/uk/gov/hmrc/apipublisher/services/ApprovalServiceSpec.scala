@@ -20,12 +20,11 @@ import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.*
@@ -35,9 +34,8 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   trait Setup {
     val mockApiApprovalRepository = mock[APIApprovalRepository]
-    val mockAppConfig             = mock[AppConfig]
 
-    val underTest = new ApprovalService(mockApiApprovalRepository, mockAppConfig, clock)
+    val underTest = new ApprovalService(mockApiApprovalRepository, clock)
 
     val gatekeeperUser = Actors.GatekeeperUser("Dave Brown")
 

@@ -35,7 +35,7 @@ case class DevhubAccessRequirements private (
 }
 
 object DevhubAccessRequirements {
-  import DevhubAccessRequirement._
+  import DevhubAccessRequirement.*
 
   final val Default = new DevhubAccessRequirements(DevhubAccessRequirement.Default, DevhubAccessRequirement.Default)
 
@@ -63,7 +63,7 @@ object DevhubAccessLevel {
   case object Developer     extends DevhubAccessLevel
   case object Admininstator extends DevhubAccessLevel
 
-  import DevhubAccessRequirement._
+  import DevhubAccessRequirement.*
 
   def satisfies(requirement: DevhubAccessRequirement)(actual: DevhubAccessLevel): Boolean = (requirement, actual) match {
     case (NoOne, _)             => false

@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.*
 import uk.gov.hmrc.http.HeaderCarrier

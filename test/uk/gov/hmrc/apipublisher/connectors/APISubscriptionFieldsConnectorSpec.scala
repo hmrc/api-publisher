@@ -27,7 +27,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, *}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.Configuration
 import play.api.libs.json.Json

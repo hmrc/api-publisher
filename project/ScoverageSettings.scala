@@ -1,4 +1,4 @@
-import scoverage.ScoverageKeys._
+import scoverage.ScoverageKeys.*
   
 object ScoverageSettings {
   private val excludesRegexes = Seq(

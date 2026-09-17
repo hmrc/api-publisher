@@ -19,8 +19,8 @@ import scala.collection.mutable
 import scala.io.Source
 import scala.util.{Failure, Success, Using}
 
-import io.circe._
-import io.circe.parser._
+import io.circe.*
+import io.circe.parser.*
 
 object GenerateApiDefinitionMarkdownDoc {
 

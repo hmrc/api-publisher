@@ -30,7 +30,7 @@ import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, Swagg
 import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.Configuration
 import uk.gov.hmrc.http.HeaderCarrier
@@ -124,7 +124,7 @@ class OASFileLoaderSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceO
 
     // Flakey test in build server...
     "return timeout when OAS parser takes too long" ignore new SetupWithTimedOutParser {
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
 
       when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
 

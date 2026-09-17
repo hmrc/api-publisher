@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import utils.AsyncHmrcSpec
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.*
 

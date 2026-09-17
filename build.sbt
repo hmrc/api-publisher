@@ -17,13 +17,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(ScoverageSettings())
   .settings(
     libraryDependencies ++= AppDependencies(),
-    retrieveManaged := true,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
   )
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    Test / fork := false,
-    Test / parallelExecution := false,
     Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
   )
@@ -35,15 +32,13 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(
-    name := "integration-tests",
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
   )
-
 
 lazy val scripts = (project in file("scripts"))
   .settings(
@@ -51,7 +46,6 @@ lazy val scripts = (project in file("scripts"))
     libraryDependencies ++= AppDependencies.scriptDependencies,
     Compile / run / baseDirectory := (ThisBuild / baseDirectory).value
   )
-
 
 commands ++= Seq(
   Command.args("generateDoc", "<arguments>") { (state, args) =>

@@ -26,7 +26,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, *}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
 
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
@@ -34,6 +33,7 @@ import play.api.test.Helpers.{CONTENT_TYPE, JSON, *}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class APIDefinitionConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 

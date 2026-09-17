@@ -115,7 +115,7 @@ class PublisherController @Inject() (
   private def publishService(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
-    import cats.implicits._
+    import cats.implicits.*
     val E = EitherTHelper.make[PublishError]
 
     def validateApi(producerApiDefinition: ProducerApiDefinition): Future[Either[PublishError, ProducerApiDefinition]] = {
