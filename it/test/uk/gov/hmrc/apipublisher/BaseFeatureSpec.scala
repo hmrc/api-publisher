@@ -18,6 +18,7 @@ package uk.gov.hmrc.apipublisher
 
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
+import scala.compiletime.uninitialized
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -28,7 +29,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import sttp.client3.{Request, Response, SimpleHttpClient}
-import scala.compiletime.uninitialized
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -54,17 +55,17 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
 
   override protected val repository: PlayMongoRepository[APIApproval] = app.injector.instanceOf[APIApprovalRepository]
 
-  val apiDefinitionPort: Int      = sys.env.getOrElse("WIREMOCK", "9604").toInt
-  val apiDefinitionHost           = "localhost"
-  var apiDefinitionUrl            = s"http://$apiDefinitionHost:$apiDefinitionPort"
-  val apiDefinitionServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
-  var apiDefinitionMock: WireMock = uninitialized
+  val apiDefinitionPort: Int              = sys.env.getOrElse("WIREMOCK", "9604").toInt
+  val apiDefinitionHost                   = "localhost"
+  var apiDefinitionUrl                    = s"http://$apiDefinitionHost:$apiDefinitionPort"
+  val apiDefinitionServer                 = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
+  var apiDefinitionMock: WireMock         = uninitialized
 //
-  val apiProducerPort: Int      = sys.env.getOrElse("WIREMOCK", "21112").toInt
-  val apiProducerHost           = "127.0.0.1"
-  val apiProducerUrl            = s"http://$apiProducerHost:$apiProducerPort"
-  val apiProducerServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
-  var apiProducerMock: WireMock = uninitialized 
+  val apiProducerPort: Int                = sys.env.getOrElse("WIREMOCK", "21112").toInt
+  val apiProducerHost                     = "127.0.0.1"
+  val apiProducerUrl                      = s"http://$apiProducerHost:$apiProducerPort"
+  val apiProducerServer                   = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
+  var apiProducerMock: WireMock           = uninitialized
 //
   val apiSubscriptionFieldsPort: Int      = sys.env.getOrElse("WIREMOCK", "9650").toInt
   val apiSubscriptionFieldsHost           = "localhost"
@@ -72,11 +73,11 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
   val apiSubscriptionFieldsServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
   var apiSubscriptionFieldsMock: WireMock = uninitialized
 //
-  val tpaPort: Int      = sys.env.getOrElse("WIREMOCK", "9607").toInt
-  val tpaHost           = "localhost"
-  var tpaUrl            = s"http://$tpaHost:$tpaPort"
-  val tpaServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(tpaPort))
-  var tpaMock: WireMock = uninitialized
+  val tpaPort: Int                        = sys.env.getOrElse("WIREMOCK", "9607").toInt
+  val tpaHost                             = "localhost"
+  var tpaUrl                              = s"http://$tpaHost:$tpaPort"
+  val tpaServer                           = new WireMockServer(WireMockConfiguration.wireMockConfig().port(tpaPort))
+  var tpaMock: WireMock                   = uninitialized
 
   override def beforeAll(): Unit = {
     apiDefinitionServer.start()

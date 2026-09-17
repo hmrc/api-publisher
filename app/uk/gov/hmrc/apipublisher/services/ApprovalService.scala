@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.{APIApproval, ApiApprovalState, ApprovalStatus, ServiceLocation, ServicesSearch}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -43,11 +42,11 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, v
     def saveApproval(apiApproval: APIApproval, maybeExistingApiApproval: Option[APIApproval]): Future[APIApproval] =
       maybeExistingApiApproval match {
         case Some(existingApproval) => apiApprovalRepository.save(existingApproval.copy(
-            status = if (existingApproval.status == FAILED) RESUBMITTED else existingApproval.status,
-            stateHistory = if (existingApproval.status == FAILED) {
+            status = if (existingApproval.status == ApprovalStatus.Failed) ApprovalStatus.Resubmitted else existingApproval.status,
+            stateHistory = if (existingApproval.status == ApprovalStatus.Failed) {
               existingApproval.stateHistory :+ ApiApprovalState(
                 actor = Process("Publish process"),
-                status = Some(ApprovalStatus.RESUBMITTED),
+                status = Some(ApprovalStatus.Resubmitted),
                 notes = Some("Publish process"),
                 changedAt = instant
               )
@@ -65,8 +64,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, v
   def approveService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(APPROVED), notes = notes, changedAt = instant)
-      _           <- apiApprovalRepository.save(approval.copy(status = APPROVED, approvedOn = Some(instant), approvedBy = Some(actor), stateHistory = stateHistory))
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(ApprovalStatus.Approved), notes = notes, changedAt = instant)
+      _           <- apiApprovalRepository.save(approval.copy(status = ApprovalStatus.Approved, approvedOn = Some(instant), approvedBy = Some(actor), stateHistory = stateHistory))
     } yield {
       logger.info(s"Approved service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)
@@ -75,8 +74,8 @@ class ApprovalService @Inject() (apiApprovalRepository: APIApprovalRepository, v
   def declineService(serviceName: String, actor: Actors.GatekeeperUser, notes: Option[String]): Future[ServiceLocation] =
     for {
       approval    <- fetchServiceApproval(serviceName)
-      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(FAILED), notes = notes, changedAt = instant)
-      _           <- apiApprovalRepository.save(approval.copy(status = FAILED, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
+      stateHistory = approval.stateHistory :+ ApiApprovalState(actor = actor, status = Some(ApprovalStatus.Failed), notes = notes, changedAt = instant)
+      _           <- apiApprovalRepository.save(approval.copy(status = ApprovalStatus.Failed, approvedOn = None, approvedBy = None, stateHistory = stateHistory))
     } yield {
       logger.info(s"Declined service $serviceName")
       ServiceLocation(approval.serviceName, approval.serviceUrl)

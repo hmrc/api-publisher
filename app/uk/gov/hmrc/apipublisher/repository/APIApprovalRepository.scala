@@ -35,7 +35,6 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import uk.gov.hmrc.apipublisher.models.*
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.*
 
 @Singleton
 class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(using ExecutionContext)
@@ -95,10 +94,10 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
 
     def getFilterState(filter: ServicesSearchFilter): ApprovalStatus = {
       filter match {
-        case New         => NEW
-        case Approved    => APPROVED
-        case Failed      => FAILED
-        case Resubmitted => RESUBMITTED
+        case ServicesStatusFilter.New         => ApprovalStatus.New
+        case ServicesStatusFilter.Approved    => ApprovalStatus.Approved
+        case ServicesStatusFilter.Failed      => ApprovalStatus.Failed
+        case ServicesStatusFilter.Resubmitted => ApprovalStatus.Resubmitted
       }
     }
 

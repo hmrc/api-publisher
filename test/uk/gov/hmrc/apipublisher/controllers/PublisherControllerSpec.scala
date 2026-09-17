@@ -37,7 +37,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
 import uk.gov.hmrc.apipublisher.models.*
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.NEW
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
 import uk.gov.hmrc.apipublisher.services.*
 import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
@@ -54,10 +53,10 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
   private val api                   = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   private val producerApiDefinition = ProducerApiDefinition(api)
 
-  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), status = NEW)
+  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), status = ApprovalStatus.New)
 
   private val marriageAllowanceApproval =
-    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), status = NEW)
+    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), status = ApprovalStatus.New)
   val serviceName                       = "employee-paye"
   val actor                             = Actors.GatekeeperUser("Dave Brown")
   val notes                             = Some("Good for approval")
@@ -260,7 +259,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual OK
       contentAsJson(result) shouldEqual Json.toJson(Seq(employeeServiceApproval, marriageAllowanceApproval))
-      verify(mockApprovalService).searchServices(new ServicesSearch(List(New, Approved)))
+      verify(mockApprovalService).searchServices(new ServicesSearch(List(ServicesStatusFilter.New, ServicesStatusFilter.Approved)))
     }
 
     "retrieve an empty list when there are no services" in new Setup {

@@ -29,8 +29,7 @@ import play.api.http.Status.NOT_FOUND
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ErrorCode}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ApprovalStatus, ErrorCode}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
 class PublisherFeatureSpec extends BaseFeatureSpec
@@ -100,7 +99,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == APPROVED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Approved
       }
 
       When("publisher is triggered")
@@ -188,7 +187,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == FAILED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Failed
       }
     }
 
@@ -236,7 +235,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of FAILED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == FAILED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Failed
       }
 
       When("publisher is triggered again")
@@ -251,7 +250,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of RESUBMITTED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == RESUBMITTED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Resubmitted
       }
 
       And("api-publisher responded with status 202")
@@ -272,7 +271,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of APPROVED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == APPROVED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Approved
       }
 
       When("publisher is triggered")

@@ -16,14 +16,12 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-sealed trait DevhubAccessRequirement
+enum DevhubAccessRequirement {
+  case NoOne, AdminOnly, Anyone
+}
 
 object DevhubAccessRequirement {
-  final val Default: DevhubAccessRequirement = Anyone
-
-  case object NoOne     extends DevhubAccessRequirement
-  case object AdminOnly extends DevhubAccessRequirement
-  case object Anyone    extends DevhubAccessRequirement
+  val Default: DevhubAccessRequirement = Anyone
 }
 
 case class DevhubAccessRequirements private (
@@ -55,19 +53,12 @@ object AccessRequirements {
   final val Default = AccessRequirements(devhub = DevhubAccessRequirements.Default)
 }
 
-sealed trait DevhubAccessLevel {
-  def satisfiesRequirement(requirement: DevhubAccessRequirement): Boolean = DevhubAccessLevel.satisfies(requirement)(this)
-}
+enum DevhubAccessLevel {
+  case Developer, Admininstator
 
-object DevhubAccessLevel {
-  case object Developer     extends DevhubAccessLevel
-  case object Admininstator extends DevhubAccessLevel
-
-  import DevhubAccessRequirement.*
-
-  def satisfies(requirement: DevhubAccessRequirement)(actual: DevhubAccessLevel): Boolean = (requirement, actual) match {
-    case (NoOne, _)             => false
-    case (AdminOnly, Developer) => false
-    case _                      => true
+  def satisfiesRequirement(requirement: DevhubAccessRequirement): Boolean = (requirement, this) match {
+    case (DevhubAccessRequirement.NoOne, _)             => false
+    case (DevhubAccessRequirement.AdminOnly, Developer) => false
+    case _                                              => true
   }
 }

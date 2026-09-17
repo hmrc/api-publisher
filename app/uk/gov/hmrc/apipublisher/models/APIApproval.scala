@@ -17,13 +17,10 @@
 package uk.gov.hmrc.apipublisher.models
 
 import java.time.Instant
-import scala.collection.immutable.ListSet
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor.given
-
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.APPROVED
 
 case class ApiApprovalState(
     actor: Actor,
@@ -45,28 +42,23 @@ case class APIApproval(
     approvedOn: Option[Instant] = None,
     lastUpdated: Option[Instant] = None,
     approvedBy: Option[Actor] = None,
-    status: ApprovalStatus = ApprovalStatus.NEW,
+    status: ApprovalStatus = ApprovalStatus.New,
     stateHistory: Seq[ApiApprovalState] = Seq.empty
   ) {
-  def isApproved: Boolean = status == APPROVED
+  def isApproved: Boolean = status == ApprovalStatus.Approved
 }
 
 object APIApproval {
   given Format[APIApproval] = Json.using[Json.WithDefaultValues].format[APIApproval]
 }
 
-// TODO convert to enum
-sealed trait ApprovalStatus
+/* The order of the following declarations is important since it defines the ordering of the enumeration.
+ * Be very careful when changing this, code may be relying on certain values being larger/smaller than others. */
+enum ApprovalStatus {
+  case New, Failed, Approved, Resubmitted
+}
 
 object ApprovalStatus {
-  case object NEW         extends ApprovalStatus
-  case object FAILED      extends ApprovalStatus
-  case object APPROVED    extends ApprovalStatus
-  case object RESUBMITTED extends ApprovalStatus
-
-  /* The order of the following declarations is important since it defines the ordering of the enumeration.
-   * Be very careful when changing this, code may be relying on certain values being larger/smaller than others. */
-  val values = ListSet(NEW, FAILED, APPROVED, RESUBMITTED)
 
   def apply(text: String): Option[ApprovalStatus] = ApprovalStatus.values.find(_.toString.toUpperCase == text.toUpperCase())
 

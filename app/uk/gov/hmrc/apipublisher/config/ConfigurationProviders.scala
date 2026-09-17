@@ -39,7 +39,7 @@ class ConfigurationModule extends Module {
 }
 
 @Singleton
-class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+class ApiDefinitionConfigProvider @Inject() (val configuration: Configuration, servicesConfig: ServicesConfig)
     extends Provider[ApiDefinitionConfig] {
 
   override def get(): ApiDefinitionConfig = {
@@ -49,7 +49,7 @@ class ApiDefinitionConfigProvider @Inject() (val runModeConfiguration: Configura
 }
 
 @Singleton
-class TpaConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+class TpaConnectorConfigProvider @Inject() (val configuration: Configuration, servicesConfig: ServicesConfig)
     extends Provider[TpaConnector.Config] {
 
   override def get(): TpaConnector.Config = {
@@ -59,7 +59,7 @@ class TpaConnectorConfigProvider @Inject() (val runModeConfiguration: Configurat
 }
 
 @Singleton
-class ApiSSubscriptionFieldsConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+class ApiSSubscriptionFieldsConfigProvider @Inject() (val configuration: Configuration, servicesConfig: ServicesConfig)
     extends Provider[ApiSSubscriptionFieldsConfig] {
 
   override def get(): ApiSSubscriptionFieldsConfig = {
@@ -69,12 +69,12 @@ class ApiSSubscriptionFieldsConfigProvider @Inject() (val runModeConfiguration: 
 }
 
 @Singleton
-class MicroserviceConnectorConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig)
+class MicroserviceConnectorConfigProvider @Inject() (val configuration: Configuration)
     extends Provider[MicroserviceConnector.Config] {
 
   override def get(): MicroserviceConnector.Config = {
-    val validateApiDefinition = runModeConfiguration.getOptional[Boolean]("validateApiDefinition").getOrElse(true)
-    val oasParserMaxDuration  = FiniteDuration(runModeConfiguration.getMillis("oasParserMaxDuration"), TimeUnit.MILLISECONDS)
+    val validateApiDefinition = configuration.getOptional[Boolean]("validateApiDefinition").getOrElse(true)
+    val oasParserMaxDuration  = FiniteDuration(configuration.getMillis("oasParserMaxDuration"), TimeUnit.MILLISECONDS)
 
     MicroserviceConnector.Config(validateApiDefinition, oasParserMaxDuration)
   }
