@@ -25,9 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.connectors.*
-import uk.gov.hmrc.apipublisher.models
 import uk.gov.hmrc.apipublisher.models.*
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
 import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -43,8 +41,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
   val apiContext = "test/api"
 
   val expectedApiFieldDefinitions: Seq[ApiFieldDefinitions] = Seq(
-    models.ApiFieldDefinitions(apiContext, "1.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
-    models.ApiFieldDefinitions(apiContext, "2.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]])
+    ApiFieldDefinitions(apiContext, "1.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_1.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]]),
+    ApiFieldDefinitions(apiContext, "2.0", (Json.parse(getClass.getResourceAsStream("/input/field-definitions_2.json")) \ "fieldDefinitions").as[Seq[FieldDefinition]])
   )
 
   val expectedApiDocumentationRegistration: RegistrationRequest = RegistrationRequest("test", "http://example.com", Seq("1.0", "2.0", "3.0"))
@@ -57,9 +55,9 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
     context = "test/api",
     description = "Test API",
     versions = List(
-      PublisherApiVersion(version = "1.0", status = STABLE),
-      PublisherApiVersion(version = "2.0", status = STABLE),
-      PublisherApiVersion(version = "3.0", status = BETA)
+      PublisherApiVersion(version = "1.0", status = PublisherApiStatus.Stable),
+      PublisherApiVersion(version = "2.0", status = PublisherApiStatus.Stable),
+      PublisherApiVersion(version = "3.0", status = PublisherApiStatus.Beta)
     )
   )
 
@@ -107,8 +105,8 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
         context = "test",
         description = "Test API",
         versions = List(
-          PublisherApiVersion(version = "1.0", status = RETIRED),
-          PublisherApiVersion(version = "2.0", status = STABLE)
+          PublisherApiVersion(version = "1.0", status = PublisherApiStatus.Retired),
+          PublisherApiVersion(version = "2.0", status = PublisherApiStatus.Stable)
         )
       )
 
@@ -130,9 +128,9 @@ class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
         context = "test",
         description = "Test API",
         versions = List(
-          PublisherApiVersion(version = "1.0", status = RETIRED),
-          PublisherApiVersion(version = "2.0", status = RETIRED),
-          PublisherApiVersion(version = "3.0", status = STABLE)
+          PublisherApiVersion(version = "1.0", status = PublisherApiStatus.Retired),
+          PublisherApiVersion(version = "2.0", status = PublisherApiStatus.Retired),
+          PublisherApiVersion(version = "3.0", status = PublisherApiStatus.Stable)
         )
       )
 
