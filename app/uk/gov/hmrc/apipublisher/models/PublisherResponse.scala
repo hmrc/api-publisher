@@ -38,12 +38,6 @@ enum PublisherApiStatus {
 }
 
 object PublisherApiStatus {
-  // case object ALPHA      extends PublisherApiStatus
-  // case object BETA       extends PublisherApiStatus
-  // case object STABLE     extends PublisherApiStatus
-  // case object DEPRECATED extends PublisherApiStatus
-  // case object RETIRED    extends PublisherApiStatus
-
   // When the api-definition service stops returning PROTOTYPED and PUBLISHED, the conversions below can be removed
   def apply(text: String): Option[PublisherApiStatus] = text.toUpperCase() match {
     case "ALPHA"                => Some(Alpha)
