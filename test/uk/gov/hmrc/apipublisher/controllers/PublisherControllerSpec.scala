@@ -25,7 +25,6 @@ import scala.concurrent.Future.successful
 import org.apache.pekko.stream.Materializer
 import org.mockito.BDDMockito.`given` as mockitoGiven
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -37,10 +36,11 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.models.ApprovalStatus.NEW
 import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
-import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.services.*
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 

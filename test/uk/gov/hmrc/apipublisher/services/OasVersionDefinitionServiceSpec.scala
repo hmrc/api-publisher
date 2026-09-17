@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.libs.json.*
 import uk.gov.hmrc.http.HeaderCarrier
@@ -28,6 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
   val aServiceLocation    = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))

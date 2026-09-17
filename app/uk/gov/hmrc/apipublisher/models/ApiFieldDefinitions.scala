@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import cats.data.{NonEmptyList => NEL}
+import cats.data.NonEmptyList as NEL
+
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 object NonEmptyListOps {
@@ -50,29 +50,29 @@ case object UrlValidationRule extends ValidationRule
 
 case class Validation(errorMessage: String, rules: NEL[ValidationRule])
 
-
 object Validation {
 
-  given Format[RegexValidationRule] = Json.format[RegexValidationRule]
+  given Format[RegexValidationRule]     = Json.format[RegexValidationRule]
   given OFormat[UrlValidationRule.type] = Json.format[UrlValidationRule.type]
-  
+
   given OFormat[ValidationRule] = new OFormat[ValidationRule] {
+
     override def reads(json: JsValue): JsResult[ValidationRule] = json match {
-      case JsObject(fields) if(fields.contains("RegexValidationRule")) =>
+      case JsObject(fields) if (fields.contains("RegexValidationRule")) =>
         Json.fromJson[RegexValidationRule](fields("RegexValidationRule"))
-      case JsObject(fields) if(fields.contains("UrlValidationRule")) =>
+      case JsObject(fields) if (fields.contains("UrlValidationRule"))   =>
         Json.fromJson[UrlValidationRule.type](fields("UrlValidationRule"))
-      case x: JsValue => {
+      case x: JsValue                                                   => {
         JsError(s"Not a validation rule $x")
       }
     }
 
     override def writes(o: ValidationRule): JsObject = o match {
       case r: RegexValidationRule => JsObject(Seq("RegexValidationRule" -> Json.toJson(r)))
-      case UrlValidationRule => JsObject(Seq(("UrlValidationRule" -> JsObject(Seq.empty))))
+      case UrlValidationRule      => JsObject(Seq(("UrlValidationRule" -> JsObject(Seq.empty))))
     }
   }
-  
+
   given Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
   given Format[Validation]          = Json.format[Validation]
 }
@@ -145,10 +145,10 @@ object FieldDefinition {
       (
         if (o.access == AccessRequirements.Default) {
           // (common)(unlift(FieldDefinition.unapply).andThen(dropTail))
-          (common)( (fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation))
+          (common)((fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation))
         } else {
-          (common and (JsPath \ "access").write[AccessRequirements])(
-            (fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation, fd.access)
+          (common and (JsPath \ "access").write[AccessRequirements])((fd: FieldDefinition) =>
+            (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation, fd.access)
           )
         }
       ).writes(o)

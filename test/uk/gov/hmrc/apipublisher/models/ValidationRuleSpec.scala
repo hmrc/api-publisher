@@ -16,17 +16,13 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.utils.{BaseJsonFormattersSpec, HmrcSpec}
 
 import uk.gov.hmrc.apipublisher.models.DevhubAccessLevel.*
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement.*
-import uk.gov.hmrc.apipublisher.models.{DevhubAccessRequirement, DevhubAccessRequirements}
-import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
-import uk.gov.hmrc.apipublisher.models.RegexValidationRule
 import uk.gov.hmrc.apipublisher.models.Validation.given
-import play.api.libs.json._
-import uk.gov.hmrc.apipublisher.models.UrlValidationRule
-import uk.gov.hmrc.apipublisher.models.ValidationRule
+import uk.gov.hmrc.apipublisher.models.{DevhubAccessRequirement, DevhubAccessRequirements, RegexValidationRule, UrlValidationRule, ValidationRule}
 
 class ValidationRuleSpec extends BaseJsonFormattersSpec {
   "RegexValidationRule" should {

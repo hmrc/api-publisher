@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import java.io.FileNotFoundException
+import java.util as ju
 import java.util.concurrent.TimeUnit
-import java.{util => ju}
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
@@ -30,13 +30,13 @@ import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, Swagg
 import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 import play.api.Configuration
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class OASFileLoaderSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 

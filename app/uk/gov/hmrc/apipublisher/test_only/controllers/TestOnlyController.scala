@@ -22,8 +22,8 @@ import scala.concurrent.ExecutionContext
 
 import org.everit.json.schema.ValidationException
 
-import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.*
+import play.api.libs.json.Json.JsValueWrapper
 import play.api.mvc.*
 import uk.gov.hmrc.http.UnprocessableEntityException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController

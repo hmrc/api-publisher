@@ -22,8 +22,8 @@ import scala.util.control.NonFatal
 
 import cats.implicits.*
 
-import play.api.libs.json.Format.GenericFormat
 import play.api.libs.json.*
+import play.api.libs.json.Format.GenericFormat
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
 

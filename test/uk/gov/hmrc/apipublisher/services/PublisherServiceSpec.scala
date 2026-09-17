@@ -19,8 +19,6 @@ package uk.gov.hmrc.apipublisher.services
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
-
 import play.api.libs.json.{JsObject, JsValue, Json}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
@@ -28,8 +26,9 @@ import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.connectors.*
 import uk.gov.hmrc.apipublisher.models
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
 import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.*
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class PublisherServiceSpec extends AsyncHmrcSpec with FixedClock {
 

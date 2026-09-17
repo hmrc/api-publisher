@@ -28,7 +28,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen}
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import sttp.client3.{Request, Response, SimpleHttpClient}
-
+import scala.compiletime.uninitialized
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
@@ -58,25 +58,25 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec
   val apiDefinitionHost           = "localhost"
   var apiDefinitionUrl            = s"http://$apiDefinitionHost:$apiDefinitionPort"
   val apiDefinitionServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiDefinitionPort))
-  var apiDefinitionMock: WireMock = _
-
+  var apiDefinitionMock: WireMock = uninitialized
+//
   val apiProducerPort: Int      = sys.env.getOrElse("WIREMOCK", "21112").toInt
   val apiProducerHost           = "127.0.0.1"
   val apiProducerUrl            = s"http://$apiProducerHost:$apiProducerPort"
   val apiProducerServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiProducerPort))
-  var apiProducerMock: WireMock = _
-
+  var apiProducerMock: WireMock = uninitialized 
+//
   val apiSubscriptionFieldsPort: Int      = sys.env.getOrElse("WIREMOCK", "9650").toInt
   val apiSubscriptionFieldsHost           = "localhost"
   var apiSubscriptionFieldsUrl            = s"http://$apiSubscriptionFieldsHost:$apiSubscriptionFieldsPort"
   val apiSubscriptionFieldsServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(apiSubscriptionFieldsPort))
-  var apiSubscriptionFieldsMock: WireMock = _
-
+  var apiSubscriptionFieldsMock: WireMock = uninitialized
+//
   val tpaPort: Int      = sys.env.getOrElse("WIREMOCK", "9607").toInt
   val tpaHost           = "localhost"
   var tpaUrl            = s"http://$tpaHost:$tpaPort"
   val tpaServer         = new WireMockServer(WireMockConfiguration.wireMockConfig().port(tpaPort))
-  var tpaMock: WireMock = _
+  var tpaMock: WireMock = uninitialized
 
   override def beforeAll(): Unit = {
     apiDefinitionServer.start()

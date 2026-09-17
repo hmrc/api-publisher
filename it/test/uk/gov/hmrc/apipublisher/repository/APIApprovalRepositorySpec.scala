@@ -18,17 +18,18 @@ package uk.gov.hmrc.apipublisher.repository
 
 import java.time.Clock
 
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import utils.AsyncHmrcSpec
 
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import org.mongodb.scala.SingleObservableFuture
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
+
 import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
     with BeforeAndAfterEach with BeforeAndAfterAll with FixedClock {

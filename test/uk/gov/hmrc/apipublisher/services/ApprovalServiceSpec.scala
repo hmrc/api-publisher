@@ -20,15 +20,14 @@ import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
-
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW, RESUBMITTED}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
 

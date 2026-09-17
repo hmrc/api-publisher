@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
-
 import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement.*
 import uk.gov.hmrc.apipublisher.models.{AccessRequirementsFormatters, FieldDefinition, FieldDefinitionType, *}

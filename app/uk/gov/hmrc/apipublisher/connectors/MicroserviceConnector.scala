@@ -36,8 +36,7 @@ import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
 
-import uk.gov.hmrc.apipublisher.models.APICategory
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.{APICategory, *}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object MicroserviceConnector {

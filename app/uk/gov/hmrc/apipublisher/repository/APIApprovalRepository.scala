@@ -34,8 +34,8 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.*
 import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.models.ApprovalStatus.*
 
 @Singleton
 class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(using ExecutionContext)

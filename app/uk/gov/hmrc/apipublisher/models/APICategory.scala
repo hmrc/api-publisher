@@ -23,7 +23,7 @@ import play.api.libs.json.*
 enum APICategory {
 
   case Example, Agents, BusinessRates, Charities, ConstructionIndustryScheme, CorporationTax, Customs, Estates, HelpToSave, IncomeTaxMtd, LifetimeIsa, MarriageAllowance,
-      NationalInsurance, Paye, Pensions, PrivateGovernment, ReliefAtSource, SelfAssessment, StampDuty, Trusts, Vat, VatMtd, Other 
+    NationalInsurance, Paye, Pensions, PrivateGovernment, ReliefAtSource, SelfAssessment, StampDuty, Trusts, Vat, VatMtd, Other
 
 }
 

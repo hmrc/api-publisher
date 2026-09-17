@@ -27,6 +27,7 @@ enum ApiVersionSource {
 }
 
 object ApiVersionSource {
+
   given Format[ApiVersionSource] = new Format[ApiVersionSource] {
 
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {

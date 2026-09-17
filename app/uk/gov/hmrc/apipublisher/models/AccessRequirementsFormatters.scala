@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apipublisher.models
 
 import play.api.libs.functional.syntax.*
-import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.*
+import play.api.libs.json.Json.JsValueWrapper
 
 trait AccessRequirementsFormatters {
   import DevhubAccessRequirement.*

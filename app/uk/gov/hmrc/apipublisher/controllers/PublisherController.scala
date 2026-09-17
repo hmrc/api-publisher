@@ -25,8 +25,8 @@ import scala.util.{Failure, Success, Try}
 
 import org.everit.json.schema.ValidationException
 
-import play.api.libs.json.Json.{JsValueWrapper, toJson}
 import play.api.libs.json.*
+import play.api.libs.json.Json.{JsValueWrapper, toJson}
 import play.api.mvc.*
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
