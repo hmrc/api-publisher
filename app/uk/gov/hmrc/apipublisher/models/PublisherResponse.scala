@@ -38,6 +38,7 @@ enum PublisherApiStatus {
 }
 
 object PublisherApiStatus {
+
   // When the api-definition service stops returning PROTOTYPED and PUBLISHED, the conversions below can be removed
   def apply(text: String): Option[PublisherApiStatus] = text.toUpperCase() match {
     case "ALPHA"                => Some(Alpha)

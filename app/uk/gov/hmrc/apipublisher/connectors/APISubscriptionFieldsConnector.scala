@@ -28,8 +28,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, Unproces
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(using ExecutionContext)
-    extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(using ExecutionContext) {
 
   lazy val serviceBaseUrl = config.baseUrl
 

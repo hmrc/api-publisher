@@ -29,7 +29,7 @@ import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
 class APIDefinitionConnector @Inject() (config: ApiDefinitionConfig, http: HttpClientV2)(using ExecutionContext)
-    extends ConnectorRecovery with ApplicationLogger {
+    extends ApplicationLogger {
 
   lazy val serviceBaseUrl = config.baseUrl
 

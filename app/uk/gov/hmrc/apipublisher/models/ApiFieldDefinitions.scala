@@ -92,8 +92,6 @@ object FieldDefinitionType {
 
   def apply(text: String): Option[FieldDefinitionType] = FieldDefinitionType.values.find(_.label == text)
 
-  def unsafeApply(text: String): FieldDefinitionType = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Field Definition Type"))
-
   private def labelMe(fdt: FieldDefinitionType): String = fdt match {
     case Url         => "URL"
     case SecureToken => "SecureToken"

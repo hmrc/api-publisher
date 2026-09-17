@@ -50,7 +50,7 @@ class MicroserviceConnector @Inject() (
     http: HttpClientV2,
     env: Environment
   )(using ExecutionContext
-  ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
+  ) extends HttpReadsOption with ApplicationLogger {
 
   private val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get

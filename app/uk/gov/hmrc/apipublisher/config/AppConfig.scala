@@ -27,5 +27,4 @@ class AppConfig @Inject() (val configuration: Configuration) {
   lazy val publisherUrl  = s"$appUrl/publish"
   lazy val publishToken  = configuration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
   lazy val publishingKey = configuration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
-
 }
