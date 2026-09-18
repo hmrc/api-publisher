@@ -19,14 +19,14 @@ package uk.gov.hmrc.apipublisher.models.oas
 import java.util.function.BiConsumer
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.Buffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import io.swagger.models.Method
-import io.swagger.v3.oas.models._
+import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 
-import uk.gov.hmrc.apipublisher.models.oas.SOpenAPI.Helpers._
+import uk.gov.hmrc.apipublisher.models.oas.SOpenAPI.Helpers.*
 
 object SOpenAPI {
 
@@ -38,7 +38,7 @@ object SOpenAPI {
     }
 
     implicit class AsImmutableMapSyntax[A, B](wrap: java.util.Map[A, B]) {
-      def asScalaIMap: Map[A, B] = Map(Option(wrap).map(_.asScala).getOrElse(Map.empty).toSeq: _*)
+      def asScalaIMap: Map[A, B] = Map(Option(wrap).map(_.asScala).getOrElse(Map.empty).toSeq*)
     }
 
     implicit class AsImmutableListMapMapSyntax[A, B](wrap: java.util.LinkedHashMap[A, B]) {
@@ -50,7 +50,7 @@ object SOpenAPI {
         }
         wrap.forEach(bc)
 
-        ListMap.apply(buffer.toSeq: _*)
+        ListMap.apply(buffer.toSeq*)
       }
     }
   }
@@ -65,7 +65,7 @@ final case class ParameterName(value: String) extends AnyVal
 final case class ParameterKey(name: ParameterName, in: ParameterIn)
 
 final case class SOpenAPI(inner: OpenAPI) {
-  lazy val components: Option[SComponents] = Option(inner.getComponents()).map(SComponents)
+  lazy val components: Option[SComponents] = Option(inner.getComponents()).map(SComponents.apply)
 
   lazy val securitySchemes: Map[String, SSecurityScheme] =
     components
@@ -215,7 +215,7 @@ object SParameters {
         val param = SParameter(p)
 
         (key, param)
-      }: _*
+      }*
     )
   }
 }

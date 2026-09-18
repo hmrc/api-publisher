@@ -20,18 +20,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import utils.AsyncHmrcSpec
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 import uk.gov.hmrc.apipublisher.models.{DefinitionFileNoBodyReturned, ProducerApiDefinition, ServiceLocation}
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class DefinitionServiceSpec extends AsyncHmrcSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends MicroserviceConnectorMockModule
@@ -46,14 +46,14 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
 
     val aServiceLocation = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
 
-    def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
+    def json[J <: JsValue](path: String)(using Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
 
     def primeOasFor(version: String, endpoints: Endpoint*) = {
       when(oasVDS.getDetailForVersion(*, *, eqTo(version))).thenReturn(successful(endpoints.toList))
     }
 
     def primeOasOnlyFor(version: String, endpoints: Endpoint*) = {
-      primeOasFor(version, endpoints: _*)
+      primeOasFor(version, endpoints*)
     }
 
     def primeOasFailure(version: String, throwable: Throwable) = {
@@ -89,7 +89,7 @@ class DefinitionServiceSpec extends AsyncHmrcSpec {
       intercept[IllegalStateException] {
         await(service.getDefinition(aServiceLocation))
       }
-        .getMessage startsWith "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
+        .getMessage `startsWith` "No endpoints defined for 1.0 of test due to failure in OAS Parsing"
     }
 
     "handle producer api definition with OAS data" in new Setup {

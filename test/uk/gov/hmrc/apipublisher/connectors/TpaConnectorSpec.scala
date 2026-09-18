@@ -21,17 +21,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.{verify => verifyStub, _}
+import com.github.tomakehurst.wiremock.client.WireMock.{verify as verifyStub, *}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
 
 import play.api.Configuration
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class TpaConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
@@ -44,7 +45,7 @@ class TpaConnectorSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOn
     WireMock.reset()
     val tpaConfig = TpaConnector.Config("http://localhost:21112")
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val appConfig: Configuration = mock[Configuration]
 

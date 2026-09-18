@@ -17,33 +17,33 @@
 package uk.gov.hmrc.apipublisher.connectors
 
 import java.io.FileNotFoundException
+import java.util as ju
 import java.util.concurrent.TimeUnit
-import java.{util => ju}
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import io.swagger.v3.parser.core.models.{AuthorizationValue, ParseOptions, SwaggerParseResult}
 import org.apache.pekko.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
 
 import play.api.Configuration
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class OASFileLoaderSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceOneAppPerSuite {
 
   trait BaseSetup {
 
-    implicit val hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    implicit val system: ActorSystem = app.injector.instanceOf[ActorSystem]
+    given hc: HeaderCarrier   = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given system: ActorSystem = app.injector.instanceOf[ActorSystem]
 
     def oasFileLocator: OASFileLoader.OASFileLocator
     def oasParser: SwaggerParserExtension
@@ -124,7 +124,7 @@ class OASFileLoaderSpec extends AsyncHmrcSpec with BeforeAndAfterAll with GuiceO
 
     // Flakey test in build server...
     "return timeout when OAS parser takes too long" ignore new SetupWithTimedOutParser {
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
 
       when(oasFileLocator.locationOf(*, *)).thenReturn("/input/oas/no-such-application.yaml")
 

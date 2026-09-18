@@ -25,16 +25,16 @@ import scala.util.{Failure, Success, Try}
 
 import org.everit.json.schema.ValidationException
 
+import play.api.libs.json.*
 import play.api.libs.json.Json.{JsValueWrapper, toJson}
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.services.{ApprovalService, DefinitionService, PublisherService}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -45,7 +45,7 @@ class PublisherController @Inject() (
     approvalService: ApprovalService,
     appConfig: AppConfig,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
   private val FAILED_TO_PUBLISH                   = "FAILED_TO_PUBLISH_SERVICE"
@@ -61,24 +61,24 @@ class PublisherController @Inject() (
 
   private val mapBusinessErrorsToResults: PublishError => Result = _ match {
     case err: DefinitionFileNotFound               =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNotFound: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileNotFound: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileNoBodyReturned         =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileNoBodyReturned: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileNoBodyReturned: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileUnprocessableEntity    =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileUnprocessableEntity: ${err.message}")
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileUnprocessableEntity: ${err.message}")
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, err.message))
     case err: DefinitionFileFailedSchemaValidation =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - DefinitionFileFailedSchemaValidation: ${err.message}")
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.toJson(err.error)))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - DefinitionFileFailedSchemaValidation: ${err.message}")
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, Json.toJson(err.error)))
     case err: GenericValidationFailure             =>
-      logger.warn(s"${ErrorCode.INVALID_API_DEFINITION} - GenericValidationFailure: ${err.message}")
-      BadRequest(error(ErrorCode.INVALID_API_DEFINITION, err.message))
+      logger.warn(s"${ErrorCode.InvalidApiDefinition} - GenericValidationFailure: ${err.message}")
+      BadRequest(error(ErrorCode.InvalidApiDefinition, err.message))
   }
 
-  private def ensureAuthorised(implicit request: Request[JsValue]): Option[Result] = {
-    lazy val failedResult = Some(Unauthorized(error(ErrorCode.UNAUTHORIZED, "Agent must be authorised to perform Publish or Validate actions")))
+  private def ensureAuthorised(using request: Request[JsValue]): Option[Result] = {
+    lazy val failedResult = Some(Unauthorized(error(ErrorCode.Unauthorized, "Agent must be authorised to perform Publish or Validate actions")))
     request.headers.get("Authorization") match {
       case None                                                            => failedResult
       case Some(value) if (appConfig.publishingKey != base64Decode(value)) => failedResult
@@ -86,10 +86,10 @@ class PublisherController @Inject() (
     }
   }
 
-  private def validateRequestPayload[T](implicit request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
+  private def validateRequestPayload[T](using request: Request[JsValue], reads: Reads[T]): Either[Result, T] = {
     request.body.validate[T] match {
       case JsSuccess(payload, _) => Right(payload)
-      case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, s"Unable to parse request body : ${JsError.toJson(err)}")))
+      case err: JsError          => Left(UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, s"Unable to parse request body : ${JsError.toJson(err)}")))
     }
   }
 
@@ -112,10 +112,10 @@ class PublisherController @Inject() (
       .merge
   }
 
-  private def publishService(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Result] = {
+  private def publishService(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Result] = {
     logger.info(s"Publishing service $serviceLocation")
 
-    import cats.implicits._
+    import cats.implicits.*
     val E = EitherTHelper.make[PublishError]
 
     def validateApi(producerApiDefinition: ProducerApiDefinition): Future[Either[PublishError, ProducerApiDefinition]] = {
@@ -140,9 +140,10 @@ class PublisherController @Inject() (
         publisherResponse     <- E.liftF(publishApi(producerApiDefinition))
       } yield publisherResponse
     )
-      .leftSemiflatTap { err: PublishError =>
-        logger.error(s"Failed to publish api due to ${err.message}")
-        successful(err) // Thrown away
+      .leftSemiflatTap {
+        err =>
+          logger.error(s"Failed to publish api due to ${err.message}")
+          successful(err) // Thrown away
       }
       .leftMap(mapBusinessErrorsToResults)
       .merge
@@ -178,7 +179,7 @@ class PublisherController @Inject() (
   def searchServices(): Action[AnyContent] = Action.async { request =>
     Try(ServicesSearch.fromQueryString(request.queryString)) match {
       case Success(search) => approvalService.searchServices(search).map(apis => Ok(toJson(apis))) recover recovery(FAILED_TO_SEARCH_SERVICES)
-      case Failure(e)      => successful(BadRequest(error(ErrorCode.BAD_QUERY_PARAMETER, e.getMessage)))
+      case Failure(e)      => successful(BadRequest(error(ErrorCode.BadQueryParameter, e.getMessage)))
     }
   }
 
@@ -189,26 +190,29 @@ class PublisherController @Inject() (
   }
 
   def approve(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      for {
-        serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
-        result          <- publishService(serviceLocation).map {
-                             case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
-                             case other                                           => other
-                           }
-      } yield result
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        for {
+          serviceLocation <- approvalService.approveService(serviceName, body.actor, body.notes)
+          result          <- publishService(serviceLocation).map {
+                               case Result(ResponseHeader(OK, _, _), _, _, _, _, _) => NoContent
+                               case other                                           => other
+                             }
+        } yield result
     } recover recovery(FAILED_TO_APPROVE_SERVICE)
   }
 
   def decline(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        approvalService.declineService(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_DECLINE_SERVICE)
     }
   }
 
   def addComment(serviceName: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ApiApprovalRequest] { body: ApiApprovalRequest =>
-      approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
+    withJsonBody[ApiApprovalRequest] {
+      body =>
+        approvalService.addComment(serviceName, body.actor, body.notes).map(_ => NoContent) recover recovery(FAILED_TO_ADD_COMMENT)
     }
   }
 
@@ -216,9 +220,9 @@ class PublisherController @Inject() (
     new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
   }
 
-  private def error(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject = {
+  private def error(errorCode: ErrorCode, message: JsValueWrapper): JsObject = {
     Json.obj(
-      "code"    -> errorCode.toString,
+      "code"    -> errorCode.asText,
       "message" -> message
     )
   }
@@ -226,16 +230,16 @@ class PublisherController @Inject() (
   private def recovery(prefix: String): PartialFunction[Throwable, Result] = {
     case e: ValidationException          =>
       logger.error(s"$prefix - Validation of API definition failed: ${e.toJSON.toString(2)}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_API_DEFINITION, Json.parse(e.toJSON.toString)))
+      UnprocessableEntity(error(ErrorCode.InvalidApiDefinition, Json.parse(e.toJSON.toString)))
     case e: UnprocessableEntityException =>
       logger.error(s"$prefix - Unprocessable request received: ${e.getMessage}", e)
-      UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
+      UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, e.getMessage))
     case e: UnknownApiServiceException   =>
       logger.warn(s"$prefix - Unknown Service: ${e.getMessage}")
       NotFound
     case e                               =>
       logger.error(s"$prefix - An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.UNKNOWN_ERROR, s"An unexpected error occurred: ${e.getMessage}"))
+      InternalServerError(error(ErrorCode.UnknownError, s"An unexpected error occurred: ${e.getMessage}"))
   }
 
 }

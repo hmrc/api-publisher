@@ -5,7 +5,7 @@ lazy val appName = "api-publisher"
 Global / bloopAggregateSourceDependencies := true
 Global / bloopExportJarClassifiers := Some(Set("sources"))
 
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.7.4"
 ThisBuild / majorVersion := 0
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
@@ -17,13 +17,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(ScoverageSettings())
   .settings(
     libraryDependencies ++= AppDependencies(),
-    retrieveManaged := true,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "app" / "resources"
   )
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    Test / fork := false,
-    Test / parallelExecution := false,
     Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
   )
@@ -35,15 +32,13 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-
 lazy val it = (project in file("it"))
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(
-    name := "integration-tests",
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
   )
-
 
 lazy val scripts = (project in file("scripts"))
   .settings(
@@ -52,11 +47,10 @@ lazy val scripts = (project in file("scripts"))
     Compile / run / baseDirectory := (ThisBuild / baseDirectory).value
   )
 
-
 commands ++= Seq(
   Command.args("generateDoc", "<arguments>") { (state, args) =>
     val argsString = args.mkString(" ")
-      s"scripts/runMain GenerateApiDefinitionMarkdownDoc $argsString" ::
+      s"scripts/Test/runMain GenerateApiDefinitionMarkdownDoc $argsString" ::
       state
   },
 

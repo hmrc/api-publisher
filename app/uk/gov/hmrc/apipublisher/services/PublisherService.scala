@@ -21,13 +21,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.Process
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.{APIDefinitionConnector, APISubscriptionFieldsConnector, TpaConnector}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
@@ -37,10 +37,10 @@ class PublisherService @Inject() (
     tpaConnector: TpaConnector,
     approvalService: ApprovalService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(implicit hc: HeaderCarrier): Future[PublicationResult] = {
+  def publishAPIDefinition(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition)(using HeaderCarrier): Future[PublicationResult] = {
 
     val apiDetailsWithServiceLocation: JsObject = {
       producerApiDefinition.apiWithoutFieldDefinitions ++ Json.obj(
@@ -83,8 +83,8 @@ class PublisherService @Inject() (
 
   }
 
-  def validation(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
-    def conditionalValidateApiDefinition(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(implicit hc: HeaderCarrier) = {
+  def validation(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(using HeaderCarrier): Future[Option[JsValue]] = {
+    def conditionalValidateApiDefinition(producerApiDefinition: ProducerApiDefinition, validateApiDefinition: Boolean)(using HeaderCarrier) = {
       if (validateApiDefinition) {
         apiDefinitionConnector.validateAPIDefinition(producerApiDefinition.apiWithoutFieldDefinitions)
       } else {
@@ -115,7 +115,7 @@ class PublisherService @Inject() (
   }
 
   def createOrUpdateApproval(serviceLocation: ServiceLocation, apiName: String, apiDescription: Option[String]): Future[Boolean] = {
-    val state       = ApiApprovalState(actor = Process("Publish process"), status = Some(ApprovalStatus.NEW), notes = Some("Publish process"), changedAt = instant)
+    val state       = ApiApprovalState(actor = Process("Publish process"), status = Some(ApprovalStatus.New), notes = Some("Publish process"), changedAt = instant)
     val apiApproval = APIApproval(serviceLocation.serviceName, serviceLocation.serviceUrl, apiName, apiDescription, stateHistory = Seq(state))
     approvalService.createOrUpdateServiceApproval(apiApproval)
   }

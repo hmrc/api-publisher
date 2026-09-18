@@ -18,15 +18,13 @@ package uk.gov.hmrc.apipublisher.config
 
 import javax.inject.Inject
 
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import play.api.Configuration
 
-class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
+class AppConfig @Inject() (val configuration: Configuration) {
 
-  lazy val appName       = runModeConfiguration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
-  lazy val appUrl        = runModeConfiguration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
+  lazy val appName       = configuration.getOptional[String]("appName").getOrElse(throw new RuntimeException("appName is not configured"))
+  lazy val appUrl        = configuration.getOptional[String]("appUrl").getOrElse(throw new RuntimeException("appUrl is not configured"))
   lazy val publisherUrl  = s"$appUrl/publish"
-  lazy val publishToken  = runModeConfiguration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
-  lazy val publishingKey = runModeConfiguration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
-
+  lazy val publishToken  = configuration.getOptional[String]("publishToken").getOrElse(throw new RuntimeException("publishToken is not configured"))
+  lazy val publishingKey = configuration.getOptional[String]("publishingKey").getOrElse(throw new RuntimeException("publishingKey is not configured"))
 }

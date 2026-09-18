@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import cats.data.{NonEmptyList => NEL}
-import julienrf.json.derived
-import julienrf.json.derived.TypeTagSetting
+import cats.data.NonEmptyList as NEL
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-
-import uk.gov.hmrc.apipublisher.models.FieldDefinitionType.FieldDefinitionType
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 object NonEmptyListOps {
 
@@ -55,59 +52,80 @@ case class Validation(errorMessage: String, rules: NEL[ValidationRule])
 
 object Validation {
 
-  implicit val validationRuleFormat: OFormat[ValidationRule] = derived.withTypeTag.oformat(TypeTagSetting.ShortClassName)
+  given Format[RegexValidationRule]     = Json.format[RegexValidationRule]
+  given OFormat[UrlValidationRule.type] = Json.format[UrlValidationRule.type]
 
-  implicit val nelValidationRuleFormat: Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
+  given OFormat[ValidationRule] = new OFormat[ValidationRule] {
 
-  implicit val ValidationJF: Format[Validation] = Json.format[Validation]
+    override def reads(json: JsValue): JsResult[ValidationRule] = json match {
+      case JsObject(fields) if (fields.contains("RegexValidationRule")) =>
+        Json.fromJson[RegexValidationRule](fields("RegexValidationRule"))
+      case JsObject(fields) if (fields.contains("UrlValidationRule"))   =>
+        Json.fromJson[UrlValidationRule.type](fields("UrlValidationRule"))
+      case x: JsValue                                                   => {
+        JsError(s"Not a validation rule $x")
+      }
+    }
+
+    override def writes(o: ValidationRule): JsObject = o match {
+      case r: RegexValidationRule => JsObject(Seq("RegexValidationRule" -> Json.toJson(r)))
+      case UrlValidationRule      => JsObject(Seq(("UrlValidationRule" -> JsObject(Seq.empty))))
+    }
+  }
+
+  given Format[NEL[ValidationRule]] = NonEmptyListOps.format[ValidationRule]
+  given Format[Validation]          = Json.format[Validation]
 }
 
 case class ApiFieldDefinitions(apiContext: String, apiVersion: String, fieldDefinitions: Seq[FieldDefinition])
 
-object FieldDefinitionType extends Enumeration {
-  type FieldDefinitionType = Value
+enum FieldDefinitionType {
+  @deprecated("We don't use URL type for any validation", since = "0.5x") case Url
+  case SecureToken, PlainText, PPNSField
+}
 
-  val URL          = Value("URL")
-  val SECURE_TOKEN = Value("SecureToken")
-  val STRING       = Value("STRING")
-  val PPNS_FIELD   = Value("PPNSField")
+object FieldDefinitionType {
 
-  implicit val FieldDefitionTypeFormat: Format[FieldDefinitionType] =
-    Format(
-      Reads.enumNameReads(FieldDefinitionType),
-      Writes.enumNameWrites[FieldDefinitionType.type]
-    )
+  extension (fdt: FieldDefinitionType) {
+    def label = FieldDefinitionType.labelMe(fdt)
+  }
 
+  def apply(text: String): Option[FieldDefinitionType] = FieldDefinitionType.values.find(_.label == text)
+
+  private def labelMe(fdt: FieldDefinitionType): String = fdt match {
+    case Url         => "URL"
+    case SecureToken => "SecureToken"
+    case PlainText   => "STRING"
+    case PPNSField   => "PPNSField"
+  }
+
+  given Format[FieldDefinitionType] = SimpleEnumJsonFormatting.createFormatFor[FieldDefinitionType]("Field Definition Type", apply, label)
 }
 
 case class FieldDefinition(
     name: String,
     description: String,
     hint: Option[String],
-    `type`: FieldDefinitionType.Value,
-    shortDescription: Option[String] = None,
-    validation: Option[Validation] = None,
-    access: AccessRequirements = AccessRequirements.Default
+    `type`: FieldDefinitionType,
+    shortDescription: Option[String],
+    validation: Option[Validation],
+    access: AccessRequirements
   )
 
 object FieldDefinition {
-  import AccessRequirementsFormatters._
+  import AccessRequirementsFormatters.given
 
-  // implicit val FieldDefinitionReads: Format[FieldDefinition] = Json.format[FieldDefinition]
-
-  implicit val FieldDefinitionReads: Reads[FieldDefinition] = (
+  given Reads[FieldDefinition] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "hint").readNullable[String] and
       (JsPath \ "type").read[FieldDefinitionType] and
       (JsPath \ "shortDescription").readNullable[String] and
       (JsPath \ "validation").readNullable[Validation] and
-      ((JsPath \ "access").read[AccessRequirements] or Reads.pure(AccessRequirements.Default))
-  )(FieldDefinition.apply _)
+      (JsPath \ "access").readWithDefault[AccessRequirements](AccessRequirements.Default)
+  )(FieldDefinition.apply)
 
-  implicit val FieldDefinitionWrites: Writes[FieldDefinition] = new Writes[FieldDefinition] {
-
-    def dropTail[A, B, C, D, E, F, G](t: Tuple7[A, B, C, D, E, F, G]): Tuple6[A, B, C, D, E, F] = (t._1, t._2, t._3, t._4, t._5, t._6)
+  given Writes[FieldDefinition] = new Writes[FieldDefinition] {
 
     // This allows us to hide default AccessRequirements from JSON - as this is a rarely used field
     // but not one that business logic would want as an optional field and require getOrElse everywhere.
@@ -120,11 +138,15 @@ object FieldDefinition {
           (JsPath \ "shortDescription").writeNullable[String] and
           (JsPath \ "validation").writeNullable[Validation]
 
-      (if (o.access == AccessRequirements.Default) {
-         (common)(unlift(FieldDefinition.unapply).andThen(dropTail))
-       } else {
-         (common and (JsPath \ "access").write[AccessRequirements])(unlift(FieldDefinition.unapply))
-       }).writes(o)
+      (
+        if (o.access == AccessRequirements.Default) {
+          (common)((fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation))
+        } else {
+          (common and (JsPath \ "access").write[AccessRequirements])((fd: FieldDefinition) =>
+            (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation, fd.access)
+          )
+        }
+      ).writes(o)
     }
   }
 }

@@ -16,41 +16,28 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.http.UnprocessableEntityException
 
-import uk.gov.hmrc.apipublisher.models.APICategory.{APICategory, formatAPICategory}
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.RETIRED
+import uk.gov.hmrc.apipublisher.models.{APICategory, PublisherApiStatus}
 
-sealed trait ApiVersionSource {
-  def asText: String
+enum ApiVersionSource {
+  case RAML, OAS, UNKNOWN
 }
 
 object ApiVersionSource {
 
-  case object RAML extends ApiVersionSource {
-    val asText = "RAML"
-  }
-
-  case object OAS extends ApiVersionSource {
-    val asText = "OAS"
-  }
-
-  case object UNKNOWN extends ApiVersionSource {
-    val asText = "UNKNOWN"
-  }
-
-  implicit val format: Format[ApiVersionSource] = new Format[ApiVersionSource] {
+  given Format[ApiVersionSource] = new Format[ApiVersionSource] {
 
     def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
-      case JsString(RAML.asText)    => JsSuccess(RAML)
-      case JsString(OAS.asText)     => JsSuccess(OAS)
-      case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
-      case e                        => JsError(s"Cannot parse source value from '$e'")
+      case JsString("RAML")    => JsSuccess(RAML)
+      case JsString("OAS")     => JsSuccess(OAS)
+      case JsString("UNKNOWN") => JsSuccess(UNKNOWN)
+      case e                   => JsError(s"Cannot parse source value from '$e'")
     }
 
-    def writes(foo: ApiVersionSource): JsValue = {
-      JsString(foo.asText)
+    def writes(avs: ApiVersionSource): JsValue = {
+      JsString(avs.toString())
     }
   }
 }
@@ -95,14 +82,14 @@ case class ProducerApiDefinition(api: JsObject) {
 
   lazy val statusPerVersion: Map[String, String] = versions.value.map(v => ((v \ "version").as[String], (v \ "status").as[String])).toMap
 
-  lazy val retiredVersionNumbers: Set[String] = statusPerVersion.filter { case (v, s) => (s == RETIRED.toString) }.keySet
+  lazy val retiredVersionNumbers: Set[String] = statusPerVersion.filter { case (_, s) => (PublisherApiStatus.unsafeApply(s) == PublisherApiStatus.Retired) }.keySet
 
   lazy val fieldDefinitions: Seq[ApiFieldDefinitions] = {
     versions.value.flatMap(versionJs => readFieldDefinitionsForVersion(versionJs)).toSeq
   }
 
   private def readFieldDefinitionsForVersion(versionJs: JsValue): Option[ApiFieldDefinitions] = {
-    versionJs.validate[OptionalFieldDefinitions](OptionalFieldDefinitions.reads) match {
+    versionJs.validate[OptionalFieldDefinitions](using OptionalFieldDefinitions.given_Reads_OptionalFieldDefinitions) match {
       case success: JsSuccess[OptionalFieldDefinitions] => for {
           fieldDefinitions <- success.get.fieldDefinitions
           apiVersion        = success.get.version
@@ -122,17 +109,17 @@ case class ProducerApiDefinition(api: JsObject) {
 }
 
 object ProducerApiDefinition {
-  implicit val formats: Format[ProducerApiDefinition] = Json.format[ProducerApiDefinition]
+  given Format[ProducerApiDefinition] = Json.format[ProducerApiDefinition]
 }
 
 case class OptionalFieldDefinitions(version: String, fieldDefinitions: Option[Seq[FieldDefinition]])
 
 object OptionalFieldDefinitions {
-  implicit val reads: Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
+  given Reads[OptionalFieldDefinitions] = Json.reads[OptionalFieldDefinitions]
 }
 
 case class ServiceLocation(serviceName: String, serviceUrl: String, metadata: Option[Map[String, String]] = None)
 
 object ServiceLocation {
-  implicit val formats: Format[ServiceLocation] = Json.format[ServiceLocation]
+  given Format[ServiceLocation] = Json.format[ServiceLocation]
 }

@@ -21,5 +21,5 @@ import play.api.libs.json.{Format, Json}
 case class Subscription(serviceName: String, callbackUrl: String, criteria: Option[Map[String, String]] = None)
 
 object Subscription {
-  implicit val format: Format[Subscription] = Json.format[Subscription]
+  given Format[Subscription] = Json.format[Subscription]
 }

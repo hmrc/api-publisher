@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-package utils
-
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
-import org.scalatestplus.play.WsScalaTestClient
+package uk.gov.hmrc.apipublisher.utils
 
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
-
-abstract class HmrcSpec extends AnyWordSpec with Matchers with OptionValues with EitherValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 abstract class AsyncHmrcSpec extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}

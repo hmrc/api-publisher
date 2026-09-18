@@ -16,38 +16,37 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import utils.HmrcSpec
-
 import play.api.libs.json.{JsResultException, Json}
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus.{BETA, STABLE}
+import uk.gov.hmrc.apipublisher.models.PublisherApiStatus
 
 class PublisherApiStatusSpec extends HmrcSpec {
 
   "Parsing an ApiStatus" should {
     "parse STABLE correctly" in {
       val status = parseStatus("STABLE")
-      status shouldBe STABLE
+      status shouldBe PublisherApiStatus.Stable
     }
 
     "parse BETA correctly" in {
       val status = parseStatus("BETA")
-      status shouldBe BETA
+      status shouldBe PublisherApiStatus.Beta
     }
 
     "convert PUBLISHED to STABLE" in {
       val status = parseStatus("PUBLISHED")
-      status shouldBe STABLE
+      status shouldBe PublisherApiStatus.Stable
     }
 
     "convert PROTOTYPED to BETA" in {
       val status = parseStatus("PROTOTYPED")
-      status shouldBe BETA
+      status shouldBe PublisherApiStatus.Beta
     }
 
     "thrown an exception if the status is INVALID" in {
       val exception = intercept[JsResultException](parseStatus("INVALID"))
-      exception.getMessage should include("INVALID is not a status")
+      exception.getMessage should include("INVALID is not a valid PublisherApiStatus")
     }
   }
 

@@ -18,8 +18,8 @@ package uk.gov.hmrc.apipublisher.repository
 
 import java.time.Clock
 
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import utils.AsyncHmrcSpec
 
 import play.api.Application
 import play.api.inject.bind
@@ -27,8 +27,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, NEW}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class APIApprovalRepositorySpec extends AsyncHmrcSpec
     with BeforeAndAfterEach with BeforeAndAfterAll with FixedClock {
@@ -59,22 +59,22 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     val processActor = Actors.Process("Publish process")
     val notes        = Some("Good for approval")
 
-    val newState = ApiApprovalState(status = Some(ApprovalStatus.NEW), actor = processActor, notes = Some("Publish process"), changedAt = instant)
+    val newState = ApiApprovalState(status = Some(ApprovalStatus.New), actor = processActor, notes = Some("Publish process"), changedAt = instant)
 
     val failedState      = ApiApprovalState(
       actor = actor,
-      status = Some(ApprovalStatus.FAILED),
+      status = Some(ApprovalStatus.Failed),
       notes = Some("API does not meet requirements and is Declined"),
       changedAt = instant
     )
-    val resubmittedState = ApiApprovalState(status = Some(ApprovalStatus.RESUBMITTED), actor = processActor, notes = Some("Publish process"), changedAt = instant)
-    val approvedState    = failedState.copy(status = Some(ApprovalStatus.APPROVED), actor = actor, notes = Some("API has met all requirements and is Approved"))
+    val resubmittedState = ApiApprovalState(status = Some(ApprovalStatus.Resubmitted), actor = processActor, notes = Some("Publish process"), changedAt = instant)
+    val approvedState    = failedState.copy(status = Some(ApprovalStatus.Approved), actor = actor, notes = Some("API has met all requirements and is Approved"))
 
     val stateHistory = Seq(newState, failedState, resubmittedState)
 
-    val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = NEW)
-    val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = FAILED)
-    val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = APPROVED)
+    val apiApproval1 = APIApproval("calendar", "http://calendar", "Calendar API", Some("My Calendar API"), status = ApprovalStatus.New)
+    val apiApproval2 = APIApproval("employment", "http://employment", "Employment API", Some("Employment API"), status = ApprovalStatus.Failed)
+    val apiApproval3 = APIApproval("marriage", "http://marriage", "Marriage Allowance API", Some("Marriage Allowance API"), status = ApprovalStatus.Approved)
 
     val apiApproval = APIApproval("testService", "http://localhost:9000/testService", "MyTestService", Some("Dummy Service created for Integration Tests"))
 
@@ -83,7 +83,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       "http://localhost:9000/testService",
       "MyTestService",
       Some("Dummy Service created for Integration Tests"),
-      status = ApprovalStatus.RESUBMITTED,
+      status = ApprovalStatus.Resubmitted,
       stateHistory = stateHistory
     )
 
@@ -114,7 +114,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval))
 
       // Update and Approve Service
-      val updatedAPIApproval = APIApproval("testService", "http://localhost:9000/updatedService", "MyUpdatedService", Some("Updated description"), status = APPROVED)
+      val updatedAPIApproval = APIApproval("testService", "http://localhost:9000/updatedService", "MyUpdatedService", Some("Updated description"), status = ApprovalStatus.Approved)
       await(repository.save(updatedAPIApproval))
 
       val result = await(repository.fetch(apiApproval.serviceName)).get
@@ -129,7 +129,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       val newStateHistory = stateHistory :+ approvedState
 
       // Update and Approve Service
-      val updatedAPIApproval = apiApprovalWithStateHistory.copy(status = ApprovalStatus.APPROVED, stateHistory = newStateHistory)
+      val updatedAPIApproval = apiApprovalWithStateHistory.copy(status = ApprovalStatus.Approved, stateHistory = newStateHistory)
       await(repository.save(updatedAPIApproval))
 
       val result = await(repository.fetch(apiApproval.serviceName)).get
@@ -185,7 +185,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval3))
       await(repository.save(apiApprovalWithStateHistory))
 
-      val filters        = List(Approved)
+      val filters        = List(ServicesStatusFilter.Approved)
       val searchCriteria = ServicesSearch(filters)
       val result         = await(repository.searchServices(searchCriteria))
 
@@ -200,7 +200,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval3))
       await(repository.save(apiApprovalWithStateHistory))
 
-      val filters        = List(Approved, Failed)
+      val filters        = List(ServicesStatusFilter.Approved, ServicesStatusFilter.Failed)
       val searchCriteria = ServicesSearch(filters)
       val result         = await(repository.searchServices(searchCriteria))
 
@@ -216,7 +216,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       await(repository.save(apiApproval3))
       await(repository.save(apiApprovalWithStateHistory))
 
-      val filters        = List(New, Approved, Failed, Resubmitted)
+      val filters        = List(ServicesStatusFilter.New, ServicesStatusFilter.Approved, ServicesStatusFilter.Failed, ServicesStatusFilter.Resubmitted)
       val searchCriteria = ServicesSearch(filters)
       val result         = await(repository.searchServices(searchCriteria))
 
@@ -228,7 +228,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
     }
 
     "return an empty list as there are no services" in {
-      val filters        = List(Approved)
+      val filters        = List(ServicesStatusFilter.Approved)
       val searchCriteria = ServicesSearch(filters)
       val result         = await(repository.searchServices(searchCriteria))
 

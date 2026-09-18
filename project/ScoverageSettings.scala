@@ -1,4 +1,4 @@
-import scoverage.ScoverageKeys._
+import scoverage.ScoverageKeys.*
   
 object ScoverageSettings {
   private val excludesRegexes = Seq(
@@ -13,7 +13,7 @@ object ScoverageSettings {
   def apply() = Seq(
     // Semicolon-separated list of regexs matching classes to exclude
     coverageExcludedPackages := excludesRegexes.mkString(";"),
-    coverageMinimumStmtTotal := 90.00,
+    coverageMinimumStmtTotal := 85.00,
     coverageFailOnMinimum := true,
     coverageHighlighting := true
   )

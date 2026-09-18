@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.apipublisher.model
 
-import utils.HmrcSpec
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
-import play.api.libs.json._
-
-import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement._
-import uk.gov.hmrc.apipublisher.models.{AccessRequirementsFormatters, FieldDefinition, FieldDefinitionType, _}
+import uk.gov.hmrc.apipublisher.models.DevhubAccessRequirement.*
+import uk.gov.hmrc.apipublisher.models.{AccessRequirementsFormatters, FieldDefinition, FieldDefinitionType, *}
 
 class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFormatters {
 
-  private def objectAsJsonString[A](a: A)(implicit t: Writes[A]) = Json.asciiStringify(Json.toJson(a))
+  private def objectAsJsonString[A](a: A)(using Writes[A]) = Json.asciiStringify(Json.toJson(a))
 
   "DevhubAccessRequirements" should {
     "marshall a default correctly" in {
@@ -97,7 +96,7 @@ class AccessRequirementsFormatterSpec extends HmrcSpec with AccessRequirementsFo
       name = "name",
       description = "description",
       hint = Some("hint"),
-      `type` = FieldDefinitionType.STRING,
+      `type` = FieldDefinitionType.PlainText,
       shortDescription = Some("shortDescription"),
       validation = None,
       access = AccessRequirements(devhub = DevhubAccessRequirements(read = AdminOnly))

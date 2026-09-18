@@ -16,47 +16,42 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 case class PublicationResult(approved: Boolean, publisherResponse: PublisherResponse)
 
 case class PublisherResponse(name: String, serviceName: String, context: String, description: String, versions: List[PublisherApiVersion])
 
 object PublisherResponse {
-  implicit val format: OFormat[PublisherResponse] = Json.format[PublisherResponse]
+  given OFormat[PublisherResponse] = Json.format[PublisherResponse]
 }
 
 case class PublisherApiVersion(version: String, status: PublisherApiStatus)
 
 object PublisherApiVersion {
-  implicit val format: OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]
+  given OFormat[PublisherApiVersion] = Json.format[PublisherApiVersion]
 }
 
-sealed trait PublisherApiStatus
+enum PublisherApiStatus {
+  case Alpha, Beta, Stable, Deprecated, Retired
+}
 
 object PublisherApiStatus {
-  case object ALPHA      extends PublisherApiStatus
-  case object BETA       extends PublisherApiStatus
-  case object STABLE     extends PublisherApiStatus
-  case object DEPRECATED extends PublisherApiStatus
-  case object RETIRED    extends PublisherApiStatus
 
   // When the api-definition service stops returning PROTOTYPED and PUBLISHED, the conversions below can be removed
   def apply(text: String): Option[PublisherApiStatus] = text.toUpperCase() match {
-    case "ALPHA"                => Some(ALPHA)
-    case "PROTOTYPED" | "BETA"  => Some(BETA)
-    case "PUBLISHED" | "STABLE" => Some(STABLE)
-    case "DEPRECATED"           => Some(DEPRECATED)
-    case "RETIRED"              => Some(RETIRED)
+    case "ALPHA"                => Some(Alpha)
+    case "PROTOTYPED" | "BETA"  => Some(Beta)
+    case "PUBLISHED" | "STABLE" => Some(Stable)
+    case "DEPRECATED"           => Some(Deprecated)
+    case "RETIRED"              => Some(Retired)
     case _                      => None
   }
 
-  private val convert: String => JsResult[PublisherApiStatus] =
-    s => PublisherApiStatus(s).fold[JsResult[PublisherApiStatus]](JsError(s"$s is not a status"))(status => JsSuccess(status))
+  def unsafeApply(text: String): PublisherApiStatus = {
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a status"))
+  }
 
-  implicit val reads: Reads[PublisherApiStatus] = JsPath.read[String].flatMapResult(convert(_))
-
-  implicit val writes: Writes[PublisherApiStatus] = Writes[PublisherApiStatus](status => JsString(status.toString))
-
-  implicit val format: Format[PublisherApiStatus] = Format(reads, writes)
+  given Format[PublisherApiStatus] = SimpleEnumJsonFormatting.createStringFormatFor[PublisherApiStatus]("PublisherApiStatus", apply, _.toString.toUpperCase)
 }

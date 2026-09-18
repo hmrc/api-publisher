@@ -23,13 +23,12 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 import org.apache.pekko.stream.Materializer
-import org.mockito.BDDMockito.given
+import org.mockito.BDDMockito.`given` as mockitoGiven
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import utils.AsyncHmrcSpec
 
-import play.api.libs.json._
-import play.api.mvc._
-import play.api.test.Helpers._
+import play.api.libs.json.*
+import play.api.mvc.*
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.http.HeaderNames.xRequestId
@@ -37,27 +36,26 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnprocessableEntityException}
 
 import uk.gov.hmrc.apipublisher.config.AppConfig
 import uk.gov.hmrc.apipublisher.exceptions.UnknownApiServiceException
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.NEW
-import uk.gov.hmrc.apipublisher.models.PublisherApiStatus._
-import uk.gov.hmrc.apipublisher.models._
-import uk.gov.hmrc.apipublisher.services._
+import uk.gov.hmrc.apipublisher.models.{PublisherApiStatus, *}
+import uk.gov.hmrc.apipublisher.services.*
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory {
 
   val serviceLocation              = ServiceLocation("test", "http://example.com", Some(Map("third-party-api" -> "true")))
   private val errorServiceLocation = ServiceLocation("ErrorService", "http://test.example.com")
 
-  implicit val mat: Materializer = app.materializer
+  given mat: Materializer = app.materializer
 
   private val sharedSecret = UUID.randomUUID().toString
 
   private val api                   = Json.parse(getClass.getResourceAsStream("/input/api-with-fields.json")).as[JsObject]
   private val producerApiDefinition = ProducerApiDefinition(api)
 
-  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), status = NEW)
+  private val employeeServiceApproval = APIApproval("employee-paye", "http://employeepaye.example.com", "Employee PAYE", Some("Test Description"), status = ApprovalStatus.New)
 
   private val marriageAllowanceApproval =
-    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), status = NEW)
+    APIApproval("marriage-allowance", "http://marriage.example.com", "Marriage Allowance", Some("Check Marriage Allowance"), status = ApprovalStatus.New)
   val serviceName                       = "employee-paye"
   val actor                             = Actors.GatekeeperUser("Dave Brown")
   val notes                             = Some("Good for approval")
@@ -69,24 +67,24 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     description = "An example of an API",
     versions = List(PublisherApiVersion(
       version = "1.0",
-      status = STABLE
+      status = PublisherApiStatus.Stable
     ))
   )
 
   trait BaseSetup {
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-    val mockPublisherService       = mock[PublisherService]
-    val mockApprovalService        = mock[ApprovalService]
-    val mockAppConfig              = mock[AppConfig]
-    val mockDefinitionService      = mock[DefinitionService]
+    given HeaderCarrier       = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    val mockPublisherService  = mock[PublisherService]
+    val mockApprovalService   = mock[ApprovalService]
+    val mockAppConfig         = mock[AppConfig]
+    val mockDefinitionService = mock[DefinitionService]
 
     val underTest = new PublisherController(mockDefinitionService, mockPublisherService, mockApprovalService, mockAppConfig, stubControllerComponents())
   }
 
   trait Setup extends BaseSetup {
-    when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(producerApiDefinition)))
-    when(mockPublisherService.validation(eqTo(producerApiDefinition), eqTo(false))(*)).thenReturn(successful(None))
-    when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+    when(mockDefinitionService.getDefinition(*)(using *)).thenReturn(successful(Right(producerApiDefinition)))
+    when(mockPublisherService.validation(eqTo(producerApiDefinition), eqTo(false))(using *)).thenReturn(successful(None))
+    when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(using *)).thenReturn(successful(PublicationResult(
       approved = true,
       publisherResponse
     )))
@@ -98,7 +96,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     val validRequest = request(serviceLocation, sharedSecret)
 
     "respond with BAD_REQUEST when no definition is found" in new Setup {
-      when(mockDefinitionService.getDefinition(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNotFound(serviceLocation))))
+      when(mockDefinitionService.getDefinition(eqTo(serviceLocation))(using *)).thenReturn(successful(Left(DefinitionFileNotFound(serviceLocation))))
 
       val result = underTest.publish(validRequest)
 
@@ -106,8 +104,8 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "respond with BAD_REQUEST with payload when validation returns an error" in new Setup {
-      when(mockDefinitionService.getDefinition(*)(*)).thenReturn(successful(Right(producerApiDefinition)))
-      when(mockPublisherService.validation(eqTo(producerApiDefinition), eqTo(false))(*)).thenReturn(successful(Some(JsString("Bang"))))
+      when(mockDefinitionService.getDefinition(*)(using *)).thenReturn(successful(Right(producerApiDefinition)))
+      when(mockPublisherService.validation(eqTo(producerApiDefinition), eqTo(false))(using *)).thenReturn(successful(Some(JsString("Bang"))))
 
       val result = underTest.publish(validRequest)
 
@@ -122,11 +120,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual OK
       contentAsJson(result) shouldBe Json.toJson(publisherResponse)
-      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(using *)
     }
 
     "respond with 202 (ACCEPTED) when service APIs not published because it awaits an approval" in new Setup {
-      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(approved = false, publisherResponse)))
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(using *)).thenReturn(successful(PublicationResult(approved = false, publisherResponse)))
 
       val validRequest = request(serviceLocation, sharedSecret)
 
@@ -134,14 +132,14 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual ACCEPTED
       contentAsJson(result) shouldBe Json.toJson(publisherResponse)
-      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(using *)
     }
 
     "return 500 (internal server error) when publisher service fails with an unexpected exception" in new Setup {
       val errorMessage         = "Test error"
       val expectedResponseBody = s"""{"code":"API_PUBLISHER_UNKNOWN_ERROR","message":"An unexpected error occurred: $errorMessage"}"""
 
-      given(mockPublisherService.publishAPIDefinition(eqTo(errorServiceLocation), *)(*))
+      mockitoGiven(mockPublisherService.publishAPIDefinition(eqTo(errorServiceLocation), *)(using *))
         .willReturn(Future.failed(new IllegalArgumentException(errorMessage)))
 
       val errorRequest = request(errorServiceLocation, sharedSecret)
@@ -169,7 +167,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
 
     "return 422 when publishing fails" in new Setup {
-      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*))
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(using *))
         .thenReturn(Future.failed(new UnprocessableEntityException("")))
 
       val result = underTest.publish(request(serviceLocation, sharedSecret))
@@ -182,7 +180,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
     "succeed when given a valid payload" in new Setup {
 
-      when(mockPublisherService.validation(eqTo(producerApiDefinition), *)(*)).thenReturn(successful(None))
+      when(mockPublisherService.validation(eqTo(producerApiDefinition), *)(using *)).thenReturn(successful(None))
 
       val result = underTest.validate()(request(producerApiDefinition, sharedSecret))
 
@@ -193,7 +191,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = """{"error":"invalid-scope"}"""
       val input       = Json.parse(getClass.getResourceAsStream("/input/api-definition-invalid-scope.json"))
-      when(mockPublisherService.validation(eqTo(input.as[ProducerApiDefinition]), *)(*))
+      when(mockPublisherService.validation(eqTo(input.as[ProducerApiDefinition]), *)(using *))
         .thenReturn(successful(Some(Json.parse(errorString))))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))
@@ -206,7 +204,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       val errorString = "Testing error"
       val input       = Json.parse(getClass.getResourceAsStream("/input/valid-api-definition.json"))
-      when(mockPublisherService.validation(eqTo(input.as[ProducerApiDefinition]), *)(*))
+      when(mockPublisherService.validation(eqTo(input.as[ProducerApiDefinition]), *)(using *))
         .thenReturn(Future.failed(new UnprocessableEntityException(errorString)))
 
       val result = underTest.validate()(FakeRequest().withHeaders(("Authorization", base64Encode(sharedSecret))).withBody(input))
@@ -260,7 +258,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldEqual OK
       contentAsJson(result) shouldEqual Json.toJson(Seq(employeeServiceApproval, marriageAllowanceApproval))
-      verify(mockApprovalService).searchServices(new ServicesSearch(List(New, Approved)))
+      verify(mockApprovalService).searchServices(new ServicesSearch(List(ServicesStatusFilter.New, ServicesStatusFilter.Approved)))
     }
 
     "retrieve an empty list when there are no services" in new Setup {
@@ -306,7 +304,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     "approve a known service" in new Setup {
 
       when(mockApprovalService.approveService(*, *, *)).thenReturn(successful(serviceLocation))
-      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(*)).thenReturn(successful(PublicationResult(
+      when(mockPublisherService.publishAPIDefinition(eqTo(serviceLocation), *)(using *)).thenReturn(successful(PublicationResult(
         approved = true,
         publisherResponse
       )))
@@ -315,7 +313,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
 
       status(result) shouldBe NO_CONTENT
       verify(mockApprovalService).approveService(serviceName, actor, notes)
-      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(*)
+      verify(mockPublisherService).publishAPIDefinition(eqTo(serviceLocation), *)(using *)
     }
 
     "raise an error when attempting to approve an unknown service" in new Setup {
@@ -325,7 +323,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.approve("unknown-service")(fakeRequest)
 
       status(result) shouldBe NOT_FOUND
-      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
+      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(using *)
     }
 
     "raise an error when attempting to approve without the correct body" in new Setup {
@@ -335,7 +333,7 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
       val result = underTest.approve("unknown-service")(FakeRequest().withHeaders("content-type" -> "application/json"))
 
       status(result) shouldBe BAD_REQUEST
-      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(*)
+      verify(mockPublisherService, never).publishAPIDefinition(any[ServiceLocation], *)(using *)
     }
   }
 
@@ -391,11 +389,11 @@ class PublisherControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wit
     }
   }
 
-  def request[T](data: T, token: String)(implicit writes: Writes[T]): Request[JsValue] = {
+  def request[T](data: T, token: String)(using Writes[T]): Request[JsValue] = {
     FakeRequest().withHeaders(("Authorization", base64Encode(token))).withBody(Json.toJson(data))
   }
 
-  def missingAuthHeaderRequest[T](data: T)(implicit writes: Writes[T]): Request[JsValue] = {
+  def missingAuthHeaderRequest[T](data: T)(using Writes[T]): Request[JsValue] = {
     FakeRequest().withBody(Json.toJson(data))
   }
 

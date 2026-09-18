@@ -21,19 +21,20 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.Status.{BAD_REQUEST, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.{JsString, JsValue, Json}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UnprocessableEntityException, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apipublisher.models.{ApiFieldDefinitions, ApiSubscriptionFieldDefinitionsRequest, FieldDefinition}
 
 @Singleton
-class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(implicit val ec: ExecutionContext)
-    extends ConnectorRecovery {
+class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsConfig, http: HttpClientV2)(using ExecutionContext) {
 
   lazy val serviceBaseUrl = config.baseUrl
 
-  def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publishFieldDefinitions(apiFieldDefinitions: Seq[ApiFieldDefinitions])(using HeaderCarrier): Future[Unit] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     val putFutures: Iterable[Future[Unit]] = apiFieldDefinitions.map {
       case ApiFieldDefinitions(apiContext, apiVersion, fieldDefinitions) =>
         http.put(url"$serviceBaseUrl/definition/context/$apiContext/version/$apiVersion")
@@ -53,7 +54,9 @@ class APISubscriptionFieldsConnector @Inject() (config: ApiSSubscriptionFieldsCo
     Future.sequence(putFutures).map(_ => ())
   }
 
-  def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(implicit hc: HeaderCarrier): Future[Option[JsValue]] = {
+  def validateFieldDefinitions(fieldDefinitions: Seq[FieldDefinition])(using HeaderCarrier): Future[Option[JsValue]] = {
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
     if (fieldDefinitions.isEmpty) {
       Future.successful(None)
     } else {

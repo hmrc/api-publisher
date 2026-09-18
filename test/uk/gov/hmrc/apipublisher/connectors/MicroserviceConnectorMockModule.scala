@@ -25,7 +25,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apipublisher.models.{DefinitionFileNoBodyReturned, ProducerApiDefinition, ServiceLocation}
 
 trait MicroserviceConnectorMockModule {
-  self: MockitoSugar with ArgumentMatchersSugar =>
+  self: MockitoSugar & ArgumentMatchersSugar =>
 
   trait BaseMicroserviceConnectorMock {
     def aMock: MicroserviceConnector
@@ -33,15 +33,15 @@ trait MicroserviceConnectorMockModule {
     object GetProducerApiDefinition {
 
       def findsNone(serviceLocation: ServiceLocation) =
-        when(aMock.getProducerApiDefinition(eqTo(serviceLocation))(*)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
+        when(aMock.getProducerApiDefinition(eqTo(serviceLocation))(using *)).thenReturn(successful(Left(DefinitionFileNoBodyReturned(serviceLocation))))
 
       def fails = {
         val errorMessage = "something went wrong"
-        when(aMock.getProducerApiDefinition(*)(*)).thenReturn(failed(new RuntimeException(errorMessage)))
+        when(aMock.getProducerApiDefinition(*)(using *)).thenReturn(failed(new RuntimeException(errorMessage)))
       }
 
       def returns(in: ProducerApiDefinition) = {
-        when(aMock.getProducerApiDefinition(*)(*)).thenReturn(successful(Right(in)))
+        when(aMock.getProducerApiDefinition(*)(using *)).thenReturn(successful(Right(in)))
       }
     }
 

@@ -17,10 +17,10 @@
 package uk.gov.hmrc.apipublisher
 
 import scala.concurrent.Await.result
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.language.postfixOps
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.EitherValues
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
@@ -29,8 +29,7 @@ import play.api.http.Status.NOT_FOUND
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.test.Helpers.{AUTHORIZATION, CONTENT_TYPE, JSON}
 
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus.{APPROVED, FAILED, RESUBMITTED}
-import uk.gov.hmrc.apipublisher.models.{APIApproval, ErrorCode}
+import uk.gov.hmrc.apipublisher.models.{APIApproval, ApprovalStatus, ErrorCode}
 import uk.gov.hmrc.apipublisher.repository.APIApprovalRepository
 
 class PublisherFeatureSpec extends BaseFeatureSpec
@@ -100,7 +99,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == APPROVED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Approved
       }
 
       When("publisher is triggered")
@@ -188,7 +187,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == FAILED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Failed
       }
     }
 
@@ -236,7 +235,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of FAILED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == FAILED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Failed
       }
 
       When("publisher is triggered again")
@@ -251,7 +250,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of RESUBMITTED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == RESUBMITTED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Resubmitted
       }
 
       And("api-publisher responded with status 202")
@@ -272,7 +271,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("API Approval has status of APPROVED")
       result(repository.asInstanceOf[APIApprovalRepository].fetch("test.example.com"), 10 seconds) match {
         case None                        => fail()
-        case Some(approval: APIApproval) => approval.status == APPROVED
+        case Some(approval: APIApproval) => approval.status == ApprovalStatus.Approved
       }
 
       When("publisher is triggered")
@@ -451,7 +450,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """extraneous key [scopes] is not permitted"""
     }
@@ -487,7 +486,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """extraneous key [scopes] is not permitted"""
     }
@@ -511,7 +510,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = (responseBody \ "message" \ "message").as[String]
       errorMessages shouldBe """string [invalid context] does not match pattern ^[a-z]+[a-z/\-]{4,}$"""
     }
@@ -547,7 +546,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [name] not found"""
     }
@@ -583,7 +582,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [regex] not found"""
     }
@@ -619,7 +618,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """expected minimum item count: 1, found: 0"""
     }
@@ -655,7 +654,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
 
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
-      (responseBody \ "code").as[String] shouldBe ErrorCode.INVALID_API_DEFINITION.toString
+      (responseBody \ "code").as[String] shouldBe ErrorCode.InvalidApiDefinition.asText
       val errorMessages         = ((responseBody \ "message" \ "causingExceptions")(0) \ "message").as[String]
       errorMessages shouldBe """required key [errorMessage] not found"""
     }
@@ -680,7 +679,7 @@ class PublisherFeatureSpec extends BaseFeatureSpec
       And("The validation errors are present in the response body")
       val responseBody: JsValue = Json.parse(publishResponse.body.left.value)
       responseBody shouldBe Json.obj(
-        "code"    -> JsString(ErrorCode.INVALID_API_DEFINITION.toString),
+        "code"    -> JsString(ErrorCode.InvalidApiDefinition.asText),
         "message" -> JsString("Unable to find definition for service test.example.com")
       )
     }

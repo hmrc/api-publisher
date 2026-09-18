@@ -18,15 +18,23 @@ package uk.gov.hmrc.apipublisher.models
 
 import scala.io.Source
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
-object APICategory extends Enumeration {
-  type APICategory = Value
+enum APICategory {
 
-  val EXAMPLE, AGENTS, BUSINESS_RATES, CHARITIES, CONSTRUCTION_INDUSTRY_SCHEME, CORPORATION_TAX, CUSTOMS, ESTATES, HELP_TO_SAVE, INCOME_TAX_MTD, LIFETIME_ISA, MARRIAGE_ALLOWANCE,
-      NATIONAL_INSURANCE, PAYE, PENSIONS, PRIVATE_GOVERNMENT, RELIEF_AT_SOURCE, SELF_ASSESSMENT, STAMP_DUTY, TRUSTS, VAT, VAT_MTD, OTHER = Value
+  case Example, Agents, BusinessRates, Charities, ConstructionIndustryScheme, CorporationTax, Customs, Estates, HelpToSave, IncomeTaxMtd, LifetimeIsa, MarriageAllowance,
+    NationalInsurance, Paye, Pensions, PrivateGovernment, ReliefAtSource, SelfAssessment, StampDuty, Trusts, Vat, VatMtd, Other
 
-  implicit val formatAPICategory: Format[APICategory] = Format(Reads.enumNameReads(APICategory), Writes.enumNameWrites[APICategory.type])
+}
+
+object APICategory {
+  def apply(text: String): Option[APICategory] = APICategory.values.find(_.toString().equalsIgnoreCase(text))
+
+  def unsafeApply(text: String): APICategory = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid API Category"))
+
+  import play.api.libs.json.Format
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
+  given Format[APICategory] = SimpleEnumJsonFormatting.screamingSnakeCaseFormatFor[APICategory]("API Category", apply)
 
   val categoryMap: Map[String, Seq[APICategory]] =
     Json.parse(Source.fromInputStream(getClass.getResourceAsStream("/categories.json")).mkString).as[Map[String, Seq[APICategory]]]

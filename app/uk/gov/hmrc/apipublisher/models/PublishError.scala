@@ -32,7 +32,7 @@ case class DefinitionFileUnprocessableEntity(serviceLocation: ServiceLocation, v
   val message = s"Unable to read result as a ProducerApiDefinition for service ${serviceLocation.serviceName}: $validationMessage"
 }
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class DefinitionFileFailedSchemaValidation(error: JsValue) extends PublishError {
   val message = error.toString

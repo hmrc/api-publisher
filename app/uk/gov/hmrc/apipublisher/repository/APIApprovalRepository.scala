@@ -24,7 +24,7 @@ import com.mongodb.client.model.ReplaceOptions
 import org.bson.BsonValue
 import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Aggregates.*
 import org.mongodb.scala.model.Filters.{equal, in}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
@@ -34,16 +34,14 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apipublisher.models.APIApproval._
-import uk.gov.hmrc.apipublisher.models.ApprovalStatus._
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 
 @Singleton
-class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(implicit val ec: ExecutionContext)
+class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(using ExecutionContext)
     extends PlayMongoRepository[APIApproval](
       collectionName = "apiapproval",
       mongoComponent = mongo,
-      domainFormat = apiApprovalFormat,
+      domainFormat = APIApproval.given_Format_APIApproval,
       indexes = Seq(
         IndexModel(
           ascending("serviceName"),
@@ -90,21 +88,21 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
         Document()
       } else {
         val bsonStates = states.map(s => Codecs.toBson(s))
-        in("status", bsonStates: _*)
+        in("status", bsonStates*)
       }
     }
 
     def getFilterState(filter: ServicesSearchFilter): ApprovalStatus = {
       filter match {
-        case New         => NEW
-        case Approved    => APPROVED
-        case Failed      => FAILED
-        case Resubmitted => RESUBMITTED
+        case ServicesStatusFilter.New         => ApprovalStatus.New
+        case ServicesStatusFilter.Approved    => ApprovalStatus.Approved
+        case ServicesStatusFilter.Failed      => ApprovalStatus.Failed
+        case ServicesStatusFilter.Resubmitted => ApprovalStatus.Resubmitted
       }
     }
 
     val statusFilters = filters.collect { case sf: ServicesSearchFilter => sf }
-    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+    statusMatch(statusFilters.map(sf => getFilterState(sf))*)
   }
 
   private def runQuery(statusFilters: Bson) = {

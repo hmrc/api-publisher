@@ -21,7 +21,7 @@ import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.models.OpenAPI
 
-import uk.gov.hmrc.apipublisher.models.oas.{Endpoint, QueryParam, _}
+import uk.gov.hmrc.apipublisher.models.oas.{Endpoint, QueryParam, *}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 @Singleton
@@ -56,8 +56,8 @@ class OasParserImpl() extends OasVersionDefinitionService.OasParser with Applica
 
               val (authType: String, scope: Option[String]) =
                 operation.securityRequirement match {
-                  case OpenSSecurityRequirement                              => ("NONE", None)
-                  case OauthSSecurityRequirement(schemaName, scheme, oscope) => {
+                  case OpenSSecurityRequirement                     => ("NONE", None)
+                  case OauthSSecurityRequirement(_, scheme, oscope) => {
                     scheme match {
                       case _: OAuth2AuthorizationCodeSecurityScheme => ("USER", oscope)
                       case _: OAuth2ClientCredentialsSecurityScheme => ("APPLICATION", oscope)

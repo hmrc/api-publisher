@@ -21,5 +21,5 @@ import play.api.libs.json.{Format, Json}
 case class ApiSubscriptionFieldDefinitionsRequest(fieldDefinitions: Seq[FieldDefinition])
 
 object ApiSubscriptionFieldDefinitionsRequest {
-  implicit val formats: Format[ApiSubscriptionFieldDefinitionsRequest] = Json.format[ApiSubscriptionFieldDefinitionsRequest]
+  given Format[ApiSubscriptionFieldDefinitionsRequest] = Json.format[ApiSubscriptionFieldDefinitionsRequest]
 }

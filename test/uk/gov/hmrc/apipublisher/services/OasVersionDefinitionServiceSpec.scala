@@ -20,25 +20,25 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import utils.AsyncHmrcSpec
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnectorMockModule
 import uk.gov.hmrc.apipublisher.models.ServiceLocation
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
+import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
 
 class OasVersionDefinitionServiceSpec extends AsyncHmrcSpec {
-  val aServiceLocation           = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  val aServiceLocation    = ServiceLocation("test", "http://test.example.com", Some(Map("third-party-api" -> "true")))
+  given hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends MicroserviceConnectorMockModule
       with MockitoSugar
       with ArgumentMatchersSugar {
 
-    def json[J <: JsValue](path: String)(implicit fjs: Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
+    def json[J <: JsValue](path: String)(using Reads[J]): J = Json.parse(getClass.getResourceAsStream(path)).as[J]
 
     val mockParser = mock[OasVersionDefinitionService.OasParser]
     val context    = None

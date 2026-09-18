@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apipublisher.services
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.ParseOptions
 import org.scalatest.Inside
-import utils.HmrcSpec
+
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
 import uk.gov.hmrc.apipublisher.models.oas.QueryParam
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
@@ -33,7 +34,7 @@ class OasParserImplSpec extends HmrcSpec with ApplicationLogger {
     val parser = new OasParserImpl()
 
     def generate(oasSpec: String): OpenAPI = {
-      val parseOptions  = new ParseOptions();
+      val parseOptions  = new ParseOptions()
       parseOptions.setResolve(true);
       val emptyAuthList = java.util.Collections.emptyList[io.swagger.v3.parser.core.models.AuthorizationValue]()
 

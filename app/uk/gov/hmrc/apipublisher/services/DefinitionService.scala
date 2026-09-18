@@ -20,15 +20,15 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import cats.implicits._
+import cats.implicits.*
 
+import play.api.libs.json.*
 import play.api.libs.json.Format.GenericFormat
-import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apipublisher.connectors.MicroserviceConnector
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.models.oas.Endpoint
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
@@ -42,12 +42,12 @@ object DefinitionService {
 class DefinitionService @Inject() (
     microserviceConnector: MicroserviceConnector,
     oasVersionDefinitionService: OasVersionDefinitionService
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends ApplicationLogger {
 
   val E = EitherTHelper.make[PublishError]
 
-  def getDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
+  def getDefinition(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
     (
       for {
         baseProducerApiDefinition     <- E.fromEitherF(microserviceConnector.getProducerApiDefinition(serviceLocation))
@@ -60,7 +60,9 @@ class DefinitionService @Inject() (
   private def addDetailFromSpecification(serviceLocation: ServiceLocation, producerApiDefinition: ProducerApiDefinition): Future[ProducerApiDefinition] = {
     val api      = producerApiDefinition.api
     val context  = (api \ "context").asOpt[String]
-    val versions = (api \ "versions").as[List[JsObject]]
+    val versions = (api \ "versions").as[List[JsValue]].collect {
+      case o: JsObject => o
+    }
 
     val fDetailedVersions =
       Future.sequence(
@@ -72,7 +74,7 @@ class DefinitionService @Inject() (
             case (endpoints, source) =>
               versionObj +
                 ("endpoints"     -> Json.toJson(endpoints).as[JsArray]) +
-                ("versionSource" -> JsString(source.asText))
+                ("versionSource" -> JsString(source.toString))
           }
         }
       )

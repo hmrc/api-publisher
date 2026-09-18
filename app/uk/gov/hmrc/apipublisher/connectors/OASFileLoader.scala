@@ -20,7 +20,7 @@ import java.io.FileNotFoundException
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, blocking}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
@@ -47,7 +47,7 @@ object OASFileLoader {
 }
 
 @Singleton
-class OASFileLoader @Inject() (oasFileLocator: OASFileLoader.OASFileLocator, openAPIV3Parser: SwaggerParserExtension)(implicit val ec: ExecutionContext, system: ActorSystem)
+class OASFileLoader @Inject() (oasFileLocator: OASFileLoader.OASFileLocator, openAPIV3Parser: SwaggerParserExtension)(using ec: ExecutionContext, system: ActorSystem)
     extends ApplicationLogger {
 
   def load(serviceLocation: ServiceLocation, version: String, oasParserMaxDuration: FiniteDuration): Future[OpenAPI] = {

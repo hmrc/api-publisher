@@ -16,14 +16,16 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-object ErrorCode extends Enumeration {
+enum ErrorCode {
+  case InvalidRequestPayload, InvalidApiDefinition, UnknownError, Unauthorized, BadQueryParameter
 
-  type ErrorCode = Value
-  val INVALID_REQUEST_PAYLOAD = Value("API_PUBLISHER_INVALID_REQUEST_PAYLOAD")
-  val INVALID_API_DEFINITION  = Value("API_PUBLISHER_INVALID_API_DEFINITION")
-  val UNKNOWN_ERROR           = Value("API_PUBLISHER_UNKNOWN_ERROR")
-  val UNAUTHORIZED            = Value("UNAUTHORIZED")
-  val BAD_QUERY_PARAMETER     = Value("BAD_QUERY_PARAMETER")
+  def asText = this match {
+    case InvalidRequestPayload => "API_PUBLISHER_INVALID_REQUEST_PAYLOAD"
+    case InvalidApiDefinition  => "API_PUBLISHER_INVALID_API_DEFINITION"
+    case UnknownError          => "API_PUBLISHER_UNKNOWN_ERROR"
+    case Unauthorized          => "UNAUTHORIZED"
+    case BadQueryParameter     => "BAD_QUERY_PARAMETER"
+  }
 }
 
 sealed trait ScopesDefinedResult

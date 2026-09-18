@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.apipublisher.models
 
-import play.api.libs.functional.syntax._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
 
 trait AccessRequirementsFormatters {
-  import DevhubAccessRequirement._
+  import DevhubAccessRequirement.*
 
-  def ignoreDefaultField[T](value: T, default: T, jsonFieldName: String)(implicit w: Writes[T]) =
+  def ignoreDefaultField[T](value: T, default: T, jsonFieldName: String)(using Writes[T]) =
     if (value == default) None else Some((jsonFieldName, Json.toJsFieldJsValueWrapper(value)))
 
-  implicit val DevhubAccessRequirementFormat: Format[DevhubAccessRequirement] = new Format[DevhubAccessRequirement] {
+  given Format[DevhubAccessRequirement] = new Format[DevhubAccessRequirement] {
 
     override def writes(o: DevhubAccessRequirement): JsValue = JsString(o match {
       case AdminOnly => "adminOnly"
@@ -42,12 +42,12 @@ trait AccessRequirementsFormatters {
     }
   }
 
-  implicit val DevhubAccessRequirementsReads: Reads[DevhubAccessRequirements] = (
+  given Reads[DevhubAccessRequirements] = (
     ((JsPath \ "read").read[DevhubAccessRequirement] or Reads.pure(DevhubAccessRequirement.Default)) and
       ((JsPath \ "write").read[DevhubAccessRequirement] or Reads.pure(DevhubAccessRequirement.Default))
-  )(DevhubAccessRequirements.apply _)
+  )(DevhubAccessRequirements.apply)
 
-  implicit val DevhubAccessRequirementsWrites: OWrites[DevhubAccessRequirements] = new OWrites[DevhubAccessRequirements] {
+  given OWrites[DevhubAccessRequirements] = new OWrites[DevhubAccessRequirements] {
 
     def writes(requirements: DevhubAccessRequirements) = {
       Json.obj(
@@ -55,14 +55,14 @@ trait AccessRequirementsFormatters {
           ignoreDefaultField(requirements.read, DevhubAccessRequirement.Default, "read") ::
             ignoreDefaultField(requirements.write, DevhubAccessRequirement.Default, "write") ::
             List.empty[Option[(String, JsValueWrapper)]]
-        ).filterNot(_.isEmpty).map(_.get): _*
+        ).filterNot(_.isEmpty).map(_.get)*
       )
     }
   }
 
-  implicit val AccessRequirementsReads: Reads[AccessRequirements] = Json.reads[AccessRequirements]
+  given Reads[AccessRequirements] = Json.reads[AccessRequirements]
 
-  implicit val AccessRequirementsWrites: Writes[AccessRequirements] = Json.writes[AccessRequirements]
+  given Writes[AccessRequirements] = Json.writes[AccessRequirements]
 }
 
 object AccessRequirementsFormatters extends AccessRequirementsFormatters

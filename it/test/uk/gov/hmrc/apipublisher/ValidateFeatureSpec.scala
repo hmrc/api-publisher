@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apipublisher
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.scalatest.EitherValues
 import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
@@ -68,7 +68,7 @@ class ValidateFeatureSpec extends BaseFeatureSpec with EitherValues {
       Then("the controller should return 400 with the API Definition error message")
       assert(response.code == StatusCode.BadRequest)
       val body = Json.parse(response.body.left.value)
-      assert((body \ "apiDefinitionErrors").as[String] contains """'{"error":"invalid"}'""")
+      assert((body \ "apiDefinitionErrors").as[String] `contains` """'{"error":"invalid"}'""")
     }
   }
 

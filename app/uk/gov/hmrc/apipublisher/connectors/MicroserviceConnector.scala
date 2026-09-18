@@ -32,12 +32,11 @@ import org.json.JSONObject
 import play.api.Environment
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpReadsOption, HttpResponse, StringContextOps}
 
-import uk.gov.hmrc.apipublisher.models.APICategory.{OTHER, categoryMap}
-import uk.gov.hmrc.apipublisher.models._
+import uk.gov.hmrc.apipublisher.models.{APICategory, *}
 import uk.gov.hmrc.apipublisher.util.ApplicationLogger
 
 object MicroserviceConnector {
@@ -50,8 +49,8 @@ class MicroserviceConnector @Inject() (
     oasFileLoader: OASFileLoader,
     http: HttpClientV2,
     env: Environment
-  )(implicit val ec: ExecutionContext
-  ) extends ConnectorRecovery with HttpReadsOption with ApplicationLogger {
+  )(using ExecutionContext
+  ) extends HttpReadsOption with ApplicationLogger {
 
   private val apiDefinitionSchema: Schema = {
     val inputStream: InputStream = env.resourceAsStream("api-definition-schema.json").get
@@ -61,7 +60,7 @@ class MicroserviceConnector @Inject() (
   }
 
   // Overridden so we can map only 204 to None, rather than also including 404
-  implicit override def readOptionOfNotFound[P](implicit rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
+  implicit override def readOptionOfNotFound[P](using rds: HttpReads[P]): HttpReads[Option[P]] = new HttpReads[Option[P]] {
 
     def read(method: String, url: String, response: HttpResponse): Option[P] = response.status match {
       case NO_CONTENT => None
@@ -69,7 +68,7 @@ class MicroserviceConnector @Inject() (
     }
   }
 
-  def getProducerApiDefinition(serviceLocation: ServiceLocation)(implicit hc: HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
+  def getProducerApiDefinition(serviceLocation: ServiceLocation)(using HeaderCarrier): Future[Either[PublishError, ProducerApiDefinition]] = {
     import play.api.http.Status.{NOT_FOUND, UNPROCESSABLE_ENTITY}
 
     import uk.gov.hmrc.http.UpstreamErrorResponse
@@ -105,7 +104,7 @@ class MicroserviceConnector @Inject() (
 
   private def defaultCategories(producerApiDefinition: ProducerApiDefinition): ProducerApiDefinition = {
     if (producerApiDefinition.categories.isEmpty) {
-      val defaultCategories = categoryMap.getOrElse(producerApiDefinition.apiName, Seq(OTHER))
+      val defaultCategories = APICategory.categoryMap.getOrElse(producerApiDefinition.apiName, Seq(APICategory.Other))
       val updatedApi        = producerApiDefinition.api ++ Json.obj("categories" -> defaultCategories)
       producerApiDefinition.copy(api = updatedApi)
     } else {

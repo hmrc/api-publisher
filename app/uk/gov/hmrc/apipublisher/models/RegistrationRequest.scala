@@ -21,5 +21,5 @@ import play.api.libs.json.{Json, OFormat}
 case class RegistrationRequest(serviceName: String, serviceUrl: String, serviceVersions: Seq[String])
 
 object RegistrationRequest {
-  implicit val format: OFormat[RegistrationRequest] = Json.format[RegistrationRequest]
+  given OFormat[RegistrationRequest] = Json.format[RegistrationRequest]
 }

@@ -42,13 +42,11 @@ object ServicesSearch {
 
 sealed trait ServicesSearchFilter
 
-sealed trait ServicesStatusFilter extends ServicesSearchFilter
-case object New                   extends ServicesStatusFilter
-case object Approved              extends ServicesStatusFilter
-case object Failed                extends ServicesStatusFilter
-case object Resubmitted           extends ServicesStatusFilter
+enum ServicesStatusFilter extends ServicesSearchFilter {
+  case New, Approved, Failed, Resubmitted
+}
 
-case object ServicesStatusFilter {
+object ServicesStatusFilter {
 
   def apply(values: Seq[String]): Seq[Option[ServicesStatusFilter]] = {
     values.map {
