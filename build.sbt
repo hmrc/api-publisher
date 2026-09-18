@@ -50,7 +50,7 @@ lazy val scripts = (project in file("scripts"))
 commands ++= Seq(
   Command.args("generateDoc", "<arguments>") { (state, args) =>
     val argsString = args.mkString(" ")
-      s"scripts/runMain GenerateApiDefinitionMarkdownDoc $argsString" ::
+      s"scripts/Test/runMain GenerateApiDefinitionMarkdownDoc $argsString" ::
       state
   },
 

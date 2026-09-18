@@ -138,7 +138,7 @@ object GenerateApiDefinitionMarkdownDoc {
     * @param property
     *   A Circe cursor for the property
     * @param required
-    *   True if the key Required, false if it is Optional
+    *   True if the key Required, false if it ishttps://github.com/hmrc/api-publisher/pull/160/changes Optional
     */
   private def outputRow(propertyKey: String, property: ACursor, required: String): String = {
     val items = property.downField("items")
