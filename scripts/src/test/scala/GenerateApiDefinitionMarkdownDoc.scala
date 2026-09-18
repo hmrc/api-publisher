@@ -35,7 +35,7 @@ object GenerateApiDefinitionMarkdownDoc {
     }
   }
 
-  private def parseArgs(args: List[String], config: Config = Config()): Option[Config] = {
+  private def parseArgs(args: List[String]): Option[Config] = {
     args match {
       case Nil                                                                           => None
       case ("-h" | "--help") :: _                                                        => None
@@ -138,7 +138,7 @@ object GenerateApiDefinitionMarkdownDoc {
     * @param property
     *   A Circe cursor for the property
     * @param required
-    *   True if the key Required, false if it ishttps://github.com/hmrc/api-publisher/pull/160/changes Optional
+    *   True if the key Required, false if it is https://github.com/hmrc/api-publisher/pull/160/changes Optional
     */
   private def outputRow(propertyKey: String, property: ACursor, required: String): String = {
     val items = property.downField("items")
