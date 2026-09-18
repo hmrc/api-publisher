@@ -115,8 +115,6 @@ case class FieldDefinition(
 object FieldDefinition {
   import AccessRequirementsFormatters.given
 
-  // implicit val FieldDefinitionReads: Format[FieldDefinition] = Json.format[FieldDefinition]
-
   given Reads[FieldDefinition] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and
@@ -142,7 +140,6 @@ object FieldDefinition {
 
       (
         if (o.access == AccessRequirements.Default) {
-          // (common)(unlift(FieldDefinition.unapply).andThen(dropTail))
           (common)((fd: FieldDefinition) => (fd.name, fd.description, fd.hint, fd.`type`, fd.shortDescription, fd.validation))
         } else {
           (common and (JsPath \ "access").write[AccessRequirements])((fd: FieldDefinition) =>
