@@ -64,5 +64,5 @@ object ApprovalStatus {
 
   import play.api.libs.json.Format
   import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
-  given Format[ApprovalStatus] = SimpleEnumJsonFormatting.createStringFormatFor[ApprovalStatus]("ApprovalStatus", apply)
+  given Format[ApprovalStatus] = SimpleEnumJsonFormatting.createStringFormatFor[ApprovalStatus]("ApprovalStatus", apply, _.toString().toUpperCase())
 }
