@@ -19,6 +19,7 @@ package uk.gov.hmrc.apipublisher.repository
 import java.time.Clock
 
 import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.bson.Document
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import play.api.Application
@@ -26,6 +27,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
+import uk.gov.hmrc.mongo.MongoComponent
 
 import uk.gov.hmrc.apipublisher.models.*
 import uk.gov.hmrc.apipublisher.utils.AsyncHmrcSpec
@@ -44,6 +46,7 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
   implicit lazy val app: Application                = appBuilder.build()
 
   private val repository: APIApprovalRepository = app.injector.instanceOf[APIApprovalRepository]
+  private val mongoComponent: MongoComponent    = app.injector.instanceOf[MongoComponent]
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
@@ -225,6 +228,19 @@ class APIApprovalRepositorySpec extends AsyncHmrcSpec
       result.contains(apiApproval2.copy(lastUpdated = Some(instant))) shouldBe true
       result.contains(apiApproval3.copy(lastUpdated = Some(instant))) shouldBe true
       result.contains(apiApprovalWithStateHistory.copy(lastUpdated = Some(instant))) shouldBe true
+    }
+
+    "return expected result of 2 for all statuses search with bad capitalization value" in new Setup {
+
+      await(repository.save(apiApproval1))
+      await(repository.save(apiApproval2))
+      await(mongoComponent.database.getCollection("apiapproval").updateOne(Document("""{serviceName: "employment"}"""), Document("""{$set: {"status": "New"}}""")).toFuture())
+
+      val filters        = List(ServicesStatusFilter.New)
+      val searchCriteria = ServicesSearch(filters)
+      val result         = await(repository.searchServices(searchCriteria))
+
+      result.size shouldBe 2
     }
 
     "return an empty list as there are no services" in {
