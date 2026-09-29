@@ -87,7 +87,7 @@ class APIApprovalRepository @Inject() (mongo: MongoComponent, val clock: Clock)(
       if (states.isEmpty) {
         Document()
       } else {
-        val bsonStates = states.map(s => Codecs.toBson(s))
+        val bsonStates = states.map(s => Codecs.toBson(s)) ++ states.map(s => Codecs.toBson(s.toString()))
         in("status", bsonStates*)
       }
     }

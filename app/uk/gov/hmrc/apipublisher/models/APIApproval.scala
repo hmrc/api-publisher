@@ -60,7 +60,7 @@ enum ApprovalStatus {
 
 object ApprovalStatus {
 
-  def apply(text: String): Option[ApprovalStatus] = ApprovalStatus.values.find(_.toString.toUpperCase == text.toUpperCase())
+  def apply(text: String): Option[ApprovalStatus] = ApprovalStatus.values.find(_.toString.equalsIgnoreCase(text))
 
   import play.api.libs.json.Format
   import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
