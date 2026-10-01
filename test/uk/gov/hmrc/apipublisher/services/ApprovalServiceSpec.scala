@@ -104,6 +104,23 @@ class ApprovalServiceSpec extends AsyncHmrcSpec with FixedClock {
       verify(mockApiApprovalRepository).save(existingApiApproval)
     }
 
+    "Refresh name and description for an existing API Approval" in new Setup {
+      val existingApiApproval = apiApproval.copy(
+        name = "Old API name",
+        description = Some("Old API description"),
+        createdOn = apiApproval.createdOn.map(_.minus(Duration.ofDays(5)))
+      )
+      val updatedApiApproval  = existingApiApproval.copy(name = apiApproval.name, description = apiApproval.description)
+
+      when(mockApiApprovalRepository.fetch(serviceName)).thenReturn(successful(Some(existingApiApproval)))
+      when(mockApiApprovalRepository.save(updatedApiApproval)).thenReturn(successful(updatedApiApproval))
+
+      val result = await(underTest.createOrUpdateServiceApproval(apiApproval))
+
+      result shouldBe false
+      verify(mockApiApprovalRepository).save(updatedApiApproval)
+    }
+
     "Allow publication of previously approved service and not change the API Approval" in new Setup {
       val user: Actors.GatekeeperUser = Actors.GatekeeperUser("T T")
       val existingApiApproval         = apiApproval.copy(
